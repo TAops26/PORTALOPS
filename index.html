@@ -453,6 +453,7 @@ function renderDeptHome() {
   };
   const deptLabel = { limpieza:'Limpieza', mantenimiento:'Mantenimiento', proveeduria:'Proveduría y Transportes', seguridad:'Seguridad' };
   const d = CU.departamento;
+  CD = d; // ← establece el dept activo para que nav('dept') funcione
   const cfg = deptCfg[d] || { lbl:d, sub:'', ico:'OP', cls:'a' };
 
   document.getElementById('home-profile').innerHTML = `
