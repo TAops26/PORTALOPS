@@ -481,7 +481,7 @@ function renderDeptHome() {
 
   if (dept) {
     dept.resources.forEach(r => {
-      btns += `<button class="dept-btn" onclick="openResource('${r.id}','${r.title}','${r.type||'doc'}')">
+      btns += `<button class="dept-btn" onclick="openResourceFromHome('${r.id}','${r.title}','${r.type||'doc'}')">
         <div class="dico ${cfg.cls}">${cfg.ico}</div>
         <div class="dinf"><h3>${r.title}</h3><p>${r.desc||''}</p></div>
         <span style="color:var(--tm);font-size:.75rem;">→</span>
@@ -490,7 +490,7 @@ function renderDeptHome() {
     if (dept.reports.length) {
       btns += `<div class="sec-lbl" style="margin-top:.6rem;">Reportes</div>`;
       dept.reports.forEach(r => {
-        btns += `<button class="rbtn ${r.cls}" onclick="openForm('${r.form}')">
+        btns += `<button class="rbtn ${r.cls}" onclick="openFormFromHome('${r.form}')">
           <div class="rdot"></div><span>${r.label}</span><span class="arr">→</span>
         </button>`;
       });
@@ -583,6 +583,26 @@ function filterCards() {
   document.querySelectorAll('.gcard').forEach(c => {
     c.style.display = c.textContent.toLowerCase().includes(q) ? '' : 'none';
   });
+}
+
+// Versión de openResource para colaboradores — el atrás regresa al home del dept
+function openResourceFromHome(id, title, type) {
+  // Sobrescribir el back de con-screen para regresar a renderDeptHome
+  const origBack = () => { renderDeptHome(); show('home'); };
+  if (type === 'checklist')   { 
+    document.getElementById('cl-back').onclick = () => { renderDeptHome(); show('home'); };
+    openChecklistMenu(id); return; 
+  }
+  if (type === 'cal')         { openCalendar(id); document.getElementById('con-back').onclick = origBack; return; }
+  if (type === 'inventarios') { openInventarios(); document.getElementById('con-back').onclick = origBack; return; }
+  if (type === 'proveedores') { openProveedores(); document.getElementById('con-back').onclick = origBack; return; }
+  if (type === 'piscina')     { openOperacionPiscina(); document.getElementById('con-back').onclick = origBack; return; }
+  if (id === 'frases-en') {
+    setConScreen('Frases Comunes en Inglés', origBack,
+      `<div class="cs"><h3>Frases Comunes en Inglés</h3><p>Esta sección estará disponible próximamente.</p></div>`);
+    return;
+  }
+  setConScreen(title, origBack, getDocContent(id, title));
 }
 
 function openResource(id, title, type) {
@@ -845,6 +865,12 @@ function startRec(wid) {
 function stopRec(){if(activeRec){try{activeRec.rec.stop();}catch(e){}cleanMic(activeRec.wid);activeRec=null;}}
 function setMs(wid,msg,on){const el=document.getElementById('ms-'+wid);if(!el)return;el.textContent=msg;on?el.classList.add('on'):el.classList.remove('on');}
 function cleanMic(wid){const b=document.getElementById('mic-'+wid);if(!b)return;b.classList.remove('rec');b.innerHTML='🎙';b.onclick=()=>toggleMic(wid);}
+
+// Versión de openForm para colaboradores — el atrás regresa al home del dept
+function openFormFromHome(formId) {
+  openForm(formId);
+  document.getElementById('fs-back').onclick = () => { renderDeptHome(); show('home'); };
+}
 
 function openForm(formId) {
   stopRec();
