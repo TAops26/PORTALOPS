@@ -513,6 +513,7 @@ const DEPTS = {
       { id:'manual-limp',   title:'Manual de Limpieza General', desc:'Procedimientos y estándares', type:'doc' },
       { id:'checklist-limp',title:'Checklist por Área',          desc:'Verificación de tareas',       type:'checklist' },
       { id:'inventarios',   title:'Inventarios',                 desc:'Control de insumos',           type:'inventarios' },
+      { id:'insumos-limp',  title:'Insumos',                     desc:'Catálogo y solicitud',          type:'insumos' },
       { id:'frases-en',     title:'Frases Comunes en Inglés',    desc:'Próximamente disponible' },
       { id:'cal-limpieza',  title:'Calendario',                  desc:'Turnos y eventos del equipo',  type:'cal' },
     ],
@@ -598,12 +599,26 @@ function openResource(id, title, type) {
   if (type === 'inventarios') { openInventarios(); return; }
   if (type === 'proveedores') { openProveedores(); return; }
   if (type === 'piscina')     { openOperacionPiscina(); return; }
+  if (type === 'insumos')     { openInsumosLimp(); return; }
   if (id === 'frases-en') {
     setConScreen('Frases Comunes en Inglés', () => goBack(),
       `<div class="cs"><h3>Frases Comunes en Inglés</h3><p>Esta sección estará disponible próximamente.</p></div>`);
     return;
   }
   setConScreen(title, () => goBack(), getDocContent(id, title));
+}
+
+function openInsumosLimp() {
+  setConScreen('Insumos', () => goBack(),
+    `<div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Gestión de insumos del departamento de Limpieza</div>
+     <div class="gcard" onclick="openCatalogoProductos()" style="margin-bottom:.7rem;">
+       <div class="ct">Catálogo de Productos</div>
+       <div class="cd">Insumos aprobados para uso en Tierramor</div>
+     </div>
+     <div class="gcard" onclick="openSolicitudInsumos()">
+       <div class="ct">Solicitud de Insumos</div>
+       <div class="cd">Solicita los insumos que necesitas</div>
+     </div>`);
 }
 
 function setConScreen(title, backFn, html) {
@@ -1252,29 +1267,33 @@ const MANUAL_LMP_SECS = [
   { id:'marco-principios', title:'Marco de Principios' },
   { id:'criterios-todo', title:'Criterios, Preparación y Procedimientos Generales' },
   { divider:'Áreas Comunes' },
-  { id:'oficina', title:'Oficina' }, { id:'juicebar', title:'Juice Bar' },
-  { id:'recepcion', title:'Recepción' }, { id:'comedor', title:'Cocina / Comedor' },
-  { id:'templo', title:'Estudio de Movimiento' }, { id:'lounge', title:'Lounge' },
+  { id:'oficina',        title:'Oficina' },
+  { id:'juicebar',       title:'Juice Bar' },
+  { id:'recepcion',      title:'Recepción' },
+  { id:'comedor',        title:'Cocina' },
+  { id:'templo',         title:'Estudio de Movimiento' },
+  { id:'lounge',         title:'Lounge' },
+  { id:'duchas-limp',    title:'Duchas Principales' },
+  { id:'banos-limp',     title:'Baños Principales' },
   { divider:'Habitaciones' },
-  { id:'casitas-madera', title:'Casitas de Madera' }, { id:'casitas-bah', title:'Casitas de Bahareque' },
-  { divider:'Insumos' },
-  { id:'catalogo-prod', title:'Catálogo de Productos', type:'catalogo' },
-  { id:'solicitud-ins', title:'Solicitud de Insumos', type:'solicitud' },
+  { id:'casitas-madera', title:'Casitas de Madera' },
+  { id:'casitas-bah',    title:'Casitas de Bahareque' },
+  { id:'catalogo-prod',  title:'Catálogo de Productos', type:'catalogo' },
+  { id:'solicitud-ins',  title:'Solicitud de Insumos',  type:'solicitud' },
 ];
 
 function renderManualLimp(){
   let html=`<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Estándares, procedimientos y criterios de limpieza · Versión 2.0 · 2025</div>`;
   MANUAL_LMP_SECS.forEach(s=>{
     if(s.divider){html+=`<div class="sec-band">${s.divider}</div>`;}
-    else if(s.type==='catalogo'){html+=`<div class="gcard" onclick="openCatalogoProductos()" style="margin-bottom:.6rem;"><div class="ct">${s.title}</div><div class="cd">Insumos aprobados para uso en Tierramor</div></div>`;}
-    else if(s.type==='solicitud'){html+=`<div class="gcard" onclick="openSolicitudInsumos()" style="margin-bottom:.6rem;"><div class="ct">${s.title}</div><div class="cd">Solicita los insumos que necesitas</div></div>`;}
+    else if(s.type==='catalogo'||s.type==='solicitud'){return;}
     else{html+=`<div class="gcard" onclick="openManualSection('limp','${s.id}','${s.title}')" style="margin-bottom:.6rem;"><div class="ct">${s.title}</div></div>`;}
   });
   return html;
 }
 
 function openCatalogoProductos(){
-  setConScreen('Catálogo de Productos',()=>setConScreen('Manual de Housekeeping',()=>goBack(),renderManualLimp()),
+  setConScreen('Catálogo de Productos',()=>openInsumosLimp(),
     `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:.75rem;">Productos aprobados por efectividad, seguridad y compatibilidad con materiales naturales. La dilución específica está en la ficha técnica disponible en bodega.</div>
      <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;overflow:hidden;">
        <div style="display:grid;grid-template-columns:1.4fr 1.5fr 1.3fr;background:var(--brown);padding:.55rem .75rem;gap:.5rem;">${['Producto','Uso principal','Precauciones'].map(h=>`<div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--cream);font-family:sans-serif;">${h}</div>`).join('')}</div>
@@ -1285,7 +1304,7 @@ function openCatalogoProductos(){
 function openSolicitudInsumos(){
   const today=new Date().toISOString().split('T')[0];
   document.getElementById('con-title').textContent='Solicitud de Insumos';
-  document.getElementById('con-back').onclick=()=>setConScreen('Manual de Limpieza General',()=>goBack(),renderManualLimp());
+  document.getElementById('con-back').onclick=()=>openInsumosLimp();
   document.getElementById('conbody').innerHTML=`
     <div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1rem;">Agrega todos los insumos que necesitas en esta solicitud.</div>
     <div class="fg"><label>Solicitante</label><select id="ins-colab"><option value="">— Seleccionar —</option>${COLABS_LIMP.map(n=>`<option${CU&&n===CU.nombre?' selected':''}>${n}</option>`).join('')}</select></div>
@@ -1325,14 +1344,36 @@ async function submitSolicitudInsumos(){
 }
 
 const MANUAL_MT_SECS = [
-  { id:'depto', title:'Departamento de Operaciones' }, { id:'marco-principios', title:'Marco de Principios' },
-  { id:'intro', title:'Roles e Introducción' }, { id:'prep-seguridad', title:'Preparación y Seguridad' },
-  { id:'organizacion', title:'Organización de la Propiedad' }, { id:'agua', title:'Sistemas de Agua' },
-  { id:'registro', title:'Registro y Reporte de Anomalías' },
+  { id:'depto',          title:'Departamento de Operaciones' },
+  { id:'marco-principios', title:'Marco de Principios' },
+  { id:'prep-seg-rep',   title:'Preparación, Seguridad y Reportes' },
+  { divider:'Áreas Comunes' },
+  { id:'organizacion-mt', title:'Organización de la Propiedad' },
+  { id:'oficina-mt',     title:'Oficina' },
+  { id:'juicebar-mt',    title:'Juice Bar' },
+  { id:'cocina-mt',      title:'Cocina' },
+  { id:'estudio-mt',     title:'Estudio de Movimiento' },
+  { id:'storage-mt',     title:'Storage / Bodega' },
+  { id:'terralab-mt',    title:'Terralab' },
+  { id:'bridge-mt',      title:'Hanging Bridge' },
+  { id:'lounge-mt',      title:'Lounge' },
+  { id:'duchas-mt',      title:'Duchas Principales' },
+  { id:'banos-mt',       title:'Baños Principales' },
+  { id:'agua',           title:'Sistemas de Agua' },
+  { divider:'Habitaciones' },
+  { id:'casitas-madera-mt', title:'Casitas de Madera' },
+  { id:'casitas-bah-mt',    title:'Casitas de Bahareque' },
 ];
 function renderManualManto(){
-  return `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Estándares, procedimientos e inspecciones · Versión 2.0 · 2025</div>
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;">${MANUAL_MT_SECS.map(s=>`<div class="gcard" onclick="openManualSection('manto','${s.id}','${s.title}')"><div class="ct">${s.title}</div></div>`).join('')}</div>`;
+  let html = `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Estándares, procedimientos e inspecciones · Versión 2.0 · 2025</div>`;
+  MANUAL_MT_SECS.forEach(s => {
+    if (s.divider) {
+      html += `<div class="sec-band">${s.divider}</div>`;
+    } else {
+      html += `<div class="gcard" onclick="openManualSection('manto','${s.id}','${s.title}')" style="margin-bottom:.6rem;"><div class="ct">${s.title}</div></div>`;
+    }
+  });
+  return html;
 }
 
 // ── SHARED_CONTENT ──
@@ -1418,7 +1459,27 @@ const MANUAL_LMP_CONTENT = {
         </div>`).join('')}
       </div>`;
   })(),
-  'casitas-bah': (function(){
+  'duchas-limp': `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Duchas Principales</div>
+    <div class="doc-note" style="margin-bottom:.9rem;">⚠️ Confirmar sin personas antes de limpiar.</div>
+    ${mkStepsMT([['Revisión Inicial','Confirmar sin personas. Verificar que haya agua caliente y buena presión.'],['Limpieza de ducha','Limpiar paredes, grifos y desagüe. Retirar residuos de jabón y cabello.'],['Suelo y drenaje','Barrer y trapear el área completa. Verificar que el drenaje no esté tapado.'],['Aserrín e inodoro','Verificar capa de aserrín — cubrir contenido. Limpiar área del inodoro y tablilla.'],['Reposición','Reponer papel higiénico, jabón y toallas.'],['Revisión Final','Espejos limpios, accesorios en su lugar, área seca y con buen olor.']])}
+    <div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Criterios de limpieza esperada</div>
+      <div class="crit-row">✓ Ducha limpia y sin residuos</div>
+      <div class="crit-row">✓ Piso seco y sin agua estancada</div>
+      <div class="crit-row">✓ Aserrín suficiente, área sin olores</div>
+      <div class="crit-row">✓ Papel, jabón y toallas abastecidos</div>
+    </div>`,
+
+  'banos-limp': `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Baños Principales</div>
+    <div class="doc-note" style="margin-bottom:.9rem;">⚠️ Confirmar sin personas antes de limpiar.</div>
+    ${mkStepsMT([['Revisión Inicial','Confirmar sin personas. Identificar zonas que requieren atención especial.'],['Lavamanos y superficies','Limpiar lavamanos, grifos, espejos y repisas. Desinfectar manijas y superficies de alto contacto.'],['Aserrín e inodoro','Verificar capa de aserrín — cubrir contenido. Limpiar área del inodoro y tablilla. Mantener seco.'],['Piso','Barrer completamente. Trapear con agua y desinfectante. Revisar drenajes.'],['Reposición','Reponer papel higiénico, jabón y toallas.'],['Revisión Final','Espejos limpios, accesorios en su lugar, puertas y cerraduras funcionando. Área seca y sin olores.']])}
+    <div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Criterios de limpieza esperada</div>
+      <div class="crit-row">✓ Aserrín suficiente, área sin olores</div>
+      <div class="crit-row">✓ Lavamanos y espejos limpios</div>
+      <div class="crit-row">✓ Piso seco y sin residuos</div>
+      <div class="crit-row">✓ Papel, jabón y toallas abastecidos</div>
+    </div>`,
+
+    'casitas-bah': (function(){
     const casitas = [
       { id:'starhawk',   nombre:'Starhawk',   m2:50, cama:'Queen', cap:2 },
       { id:'crawford',   nombre:'Crawford',   m2:50, cama:'Queen', cap:2 },
@@ -1453,14 +1514,113 @@ const MANUAL_MT_CONTENT = {
       </div>
     </div>
     <div class="doc-note">El departamento opera con dos roles: Responsable de Piscina y Responsable de Sistemas de Agua. Los miércoles ambos roles se dedican a proyectos.</div>`,
-  'prep-seguridad': `
+  'prep-seg-rep': `
     <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-bottom:.6rem;">Criterios Generales</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.2rem;">${[['PREVENTIVO','Identificar problemas antes de que se conviertan en fallas.'],['DOCUMENTADO','Toda anomalía se registra. Lo que no se escribe no existe.'],['OPORTUNO','Una intervención a tiempo evita daños mayores.'],['SEGURO','No intervenir en sistemas mayores sin autorización.']].map(([t,d])=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:.85rem .8rem;"><div style="font-size:.72rem;font-weight:600;font-family:sans-serif;color:var(--clay);letter-spacing:.06em;margin-bottom:.25rem;">${t}</div><div style="font-size:.75rem;font-family:sans-serif;color:var(--brown);line-height:1.4;">${d}</div></div>`).join('')}</div>
     <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-bottom:.6rem;">Preparación del Día</div>
     ${mkStepsMT([['Revisión del Rol','Revisar la asignación del día: cluster asignado, tareas especiales y prioridades.'],['Preparación Personal','Uniforme limpio, calzado cerrado y equipo de protección disponible.'],['Revisión del Equipo','Kit de herramientas: llaves, destornilladores, linterna, cinta métrica, cinta aislante.'],['Inspección Visual Inicial','Al llegar a cada área: observar antes de tocar. Detectar anomalías evidentes.'],['Registro y Comunicación','Toda anomalía debe registrarse. Clasificar: URGENTE / PRIORIDAD / PROGRAMAR.']])}
     <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-top:1.1rem;margin-bottom:.6rem;">Aspectos de Seguridad</div>
     <div class="doc-note" style="margin-bottom:.75rem;">⚠️ El cumplimiento de estas normas es obligatorio.</div>
+    ${mkStepsMT([['EPP','Guantes, calzado cerrado antideslizante, mascarilla con químicos, protector solar en exteriores.'],['Electricidad','⚠️ NO intervenir en tableros ni cableado interno. Reportar: cables expuestos, quemaduras en outlets.'],['Sistemas de Agua','Cerrar la válvula correspondiente antes de intervenir en tuberías. Reportar fugas de inmediato.'],['Trabajo en Altura','Usar escalera estable. No trabajar en altura con lluvia o piso mojado.'],['Herramientas y Químicos','Guardar herramientas en bodega. Leer instrucciones de dilución.'],['Emergencias','Falla eléctrica: reportar de inmediato. Fuga significativa: cerrar válvula y reportar.']])}
+    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-top:1.1rem;margin-bottom:.6rem;">Registro y Reporte de Anomalías</div>
+    <div class="crit-box" style="margin-bottom:1rem;"><div class="crit-lbl">Clasificación de Anomalías</div>
+      <div class="crit-row">🔴 URGENTE — Riesgo para personas o falla crítica. Reportar de inmediato.</div>
+      <div class="crit-row">🟡 PRIORIDAD — Falla sin riesgo inmediato. Resolver en 24h.</div>
+      <div class="crit-row">🟢 PROGRAMAR — Deterioro menor. Incluir en lista de proyectos semanales.</div>
+    </div>
+    <div class="doc-note">Canal: Urgentes → llamada al Gerente + WhatsApp. Prioridad → WhatsApp con foto. Programar → bitácora semanal.</div>`,
+
+
+  'prep-seg-rep': `    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-bottom:.6rem;">Criterios Generales</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.2rem;">${[['PREVENTIVO','Identificar problemas antes de que se conviertan en fallas.'],['DOCUMENTADO','Toda anomalía se registra. Lo que no se escribe no existe.'],['OPORTUNO','Una intervención a tiempo evita daños mayores.'],['SEGURO','No intervenir en sistemas mayores sin autorización.']].map(([t,d])=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:.85rem .8rem;"><div style="font-size:.72rem;font-weight:600;font-family:sans-serif;color:var(--clay);letter-spacing:.06em;margin-bottom:.25rem;">${t}</div><div style="font-size:.75rem;font-family:sans-serif;color:var(--brown);line-height:1.4;">${d}</div></div>`).join('')}</div>
+    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-bottom:.6rem;">Preparación del Día</div>
+    ${mkStepsMT([['Revisión del Rol','Revisar la asignación del día: cluster asignado, tareas especiales y prioridades.'],['Preparación Personal','Uniforme limpio, calzado cerrado y equipo de protección disponible.'],['Revisión del Equipo','Kit de herramientas: llaves, destornilladores, linterna, cinta métrica, cinta aislante.'],['Inspección Visual Inicial','Al llegar a cada área: observar antes de tocar. Detectar anomalías evidentes.'],['Registro y Comunicación','Toda anomalía debe registrarse. Clasificar: URGENTE / PRIORIDAD / PROGRAMAR.']])}
+    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-top:1.1rem;margin-bottom:.6rem;">Aspectos de Seguridad</div>
+    <div class="doc-note" style="margin-bottom:.75rem;">⚠️ El cumplimiento de estas normas es obligatorio.</div>
     ${mkStepsMT([['EPP','Guantes, calzado cerrado antideslizante, mascarilla con químicos, protector solar en exteriores.'],['Electricidad','⚠️ NO intervenir en tableros ni cableado interno. Reportar: cables expuestos, quemaduras en outlets.'],['Sistemas de Agua','Cerrar la válvula correspondiente antes de intervenir en tuberías. Reportar fugas de inmediato.'],['Trabajo en Altura','Usar escalera estable. No trabajar en altura con lluvia o piso mojado.'],['Herramientas y Químicos','Guardar herramientas en bodega. Leer instrucciones de dilución.'],['Emergencias','Falla eléctrica: reportar de inmediato. Fuga significativa: cerrar válvula y reportar.']])}`,
+  'organizacion-mt': `${['Tránsito Constante — Oficina · Juice Bar · Cocina','Cluster 1 — Storage · Terralab · Hanging Bridge · Estudio de Movimiento · Lounge · Duchas Principales · Baños Principales','Cluster 2 — Toensmeier · Baños 7600 · Baños de la Teca · Lancaster · Götsch · Holzer · Cocina de Residentes · Ingham · Carson','Cluster 3 — Baño de Madera · Hememway · Primavesi · Salatin · Shiva · Savory · Yeomans · Fukuoka · Mollison','Cluster 4 — Starhawk · Crawford · Eisenstein · Doherty · Macy · Baños Bahareque · Wex Camp · Maloca','Atención Diaria — Piscina · Sistemas de Agua · Casita Azul'].map(c=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:8px;padding:.75rem;margin-bottom:.5rem;font-size:.8rem;font-family:sans-serif;color:var(--brown);">${c}</div>`).join('')}
+    <div class="gcard" onclick="openMapaTierramor()" style="margin-top:.75rem;display:flex;align-items:center;gap:.75rem;padding:.9rem 1rem;">
+      <div style="font-size:1.4rem;">🗺️</div>
+      <div><div class="ct" style="font-size:.88rem;">Mapa de la Propiedad</div><div class="cd">Vista aérea · Clusters y zonas</div></div>
+      <span style="margin-left:auto;color:var(--tm);font-size:.75rem;">→</span>
+    </div>`,
+
+  'oficina-mt':  `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Inspección General',...iBasico.map(i=>i)].slice(0,1).map(i=>[i,'']).concat([['Estructura y eléctrico','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Detectar humedad, plagas o daños estructurales.'],['Equipos','Funcionamiento de equipos de cómputo, router/conectividad, aire acondicionado, impresora y periféricos.'],['Organización','Cables organizados sin riesgos de tropiezo. Basureros limpios con bolsa.']])].slice(1))}
+    <div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
+
+  'juicebar-mt': `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas, basureros.'],['Equipos','Funcionamiento de licuadora/extractor, refrigeradora o nevera de bebidas, grifo/toma de agua.'],['Estado general','Estado de barra exterior. Stock visible de insumos — reportar faltantes.']])}
+    <div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
+
+  'cocina-mt':   `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas, basureros.'],['Equipos de cocina','Funcionamiento de quemadores, extractor de olores, refrigeradora, lavaplatos y grifo.'],['Estado general','Estado de mostrador y mobiliario. Estado de filtro de agua. Presencia de fugas bajo el fregadero.']])}
+    <div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
+
+  'estudio-mt':  `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas, basureros.'],['Equipos y mobiliario','Estado del piso, espejos, equipo de sonido, colchonetas y props.'],['Espacio','Libre de obstáculos. Ventilación adecuada.']])}
+    <div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
+
+  'storage-mt':  `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas, basureros.'],['Almacenamiento','Organización visible, estado de estantes y anclajes. Presencia de plagas en productos.'],['Stock','Insumos críticos en nivel adecuado.']])}
+    <div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
+
+  'terralab-mt': `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas, basureros.'],['Equipos','Estado de equipos y herramientas de laboratorio, refrigeración, organización y etiquetado de insumos.'],['Ventilación','Ventilación adecuada del espacio.']])}
+    <div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
+
+  'bridge-mt':   `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección · Cluster 1 · ⚠️ Estructura de seguridad crítica</div>
+    <div class="doc-note" style="margin-bottom:.75rem;">⚠️ Inspeccionar con atención. Cualquier anomalía estructural es URGENTE.</div>
+    ${mkStepsMT([['Estructura de soporte','Estado de cables o estructura de soporte. Barandas firmes y sin daños.'],['Superficie de paso','Estado de tablones o superficie de paso. Sin deterioro, astillas o piezas sueltas.'],['Condiciones','Sin presencia de humedad excesiva. Iluminación del puente funcionando (si aplica).']])}
+    <div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
+
+  'lounge-mt':   `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas, basureros.'],['Mobiliario','Estado de muebles y tapizado, hamacas o mobiliario exterior.'],['Deck','Estado del deck: sin tablas sueltas, astillas ni daños. Iluminación exterior funcionando.']])}
+    <div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
+
+  'duchas-mt':   `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas, basureros.'],['Ducha y agua','Funcionamiento de ducha (presión y temperatura), grifo del lavatorio. Presencia de fugas o taponamientos.'],['Baño seco','Estado de la caja de aserrín, funcionamiento del inodoro/compostaje. Espejos y accesorios de baño.']])}
+    <div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
+
+  'banos-mt':    `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas, basureros.'],['Ducha y agua','Funcionamiento de ducha (presión y temperatura), grifo del lavatorio. Presencia de fugas o taponamientos.'],['Baño seco','Estado de la caja de aserrín, funcionamiento del inodoro/compostaje. Espejos y accesorios de baño.']])}
+    <div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
+
+  'casitas-madera-mt': (function(){
+    const casitas = [
+      { id:'toensmeier-mt', nombre:'Toensmeier', m2:60, cama:'King',  cap:2 },
+      { id:'hemenway-mt',   nombre:'Hemenway',   m2:60, cama:'King',  cap:2 },
+      { id:'primavesi-mt',  nombre:'Primavesi',  m2:60, cama:'King',  cap:4 },
+      { id:'salatin-mt',    nombre:'Salatin',    m2:60, cama:'King',  cap:4 },
+      { id:'shiva-mt',      nombre:'Shiva',      m2:60, cama:'King',  cap:2 },
+      { id:'savory-mt',     nombre:'Savory',     m2:50, cama:'Twin',  cap:2 },
+      { id:'yeomans-mt',    nombre:'Yeomans',    m2:50, cama:'Twin',  cap:2 },
+      { id:'fukuoka-mt',    nombre:'Fukuoka',    m2:50, cama:'Twin',  cap:2 },
+      { id:'mollison-mt',   nombre:'Mollison',   m2:50, cama:'Twin',  cap:2 },
+      { id:'lancaster-mt',  nombre:'Lancaster',  m2:50, cama:'Dorm',  cap:2 },
+      { id:'gotsch-mt',     nombre:'Götsch',     m2:50, cama:'Twin',  cap:2 },
+      { id:'holzer-mt',     nombre:'Holzer',     m2:50, cama:'Twin',  cap:2 },
+      { id:'ingham-mt',     nombre:'Ingham',     m2:50, cama:'Twin',  cap:2 },
+      { id:'carson-mt',     nombre:'Carson',     m2:50, cama:'Twin',  cap:2 },
+    ];
+    window._casitasMaderaMT = casitas;
+    return `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1rem;">Selecciona la casita a inspeccionar</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
+        ${casitas.map(c=>`<div class="gcard" onclick="openCasitaDetalleMT('madera','${c.id}')" style="padding:.85rem .8rem;">
+          <div class="ct" style="font-size:.9rem;">${c.nombre}</div>
+          <div class="cd">${c.cama} · ${c.m2}m² · ${c.cap} huéspedes</div>
+        </div>`).join('')}
+      </div>`;
+  })(),
+
+  'casitas-bah-mt': (function(){
+    const casitas = [
+      { id:'starhawk-mt',   nombre:'Starhawk',   m2:50, cama:'Queen', cap:2 },
+      { id:'crawford-mt',   nombre:'Crawford',   m2:50, cama:'Queen', cap:2 },
+      { id:'einsestein-mt', nombre:'Einsestein', m2:50, cama:'Queen', cap:2 },
+      { id:'doherty-mt',    nombre:'Doherty',    m2:50, cama:'Queen', cap:2 },
+      { id:'macy-mt',       nombre:'Macy',       m2:50, cama:'Queen', cap:2 },
+    ];
+    window._casitasBahMT = casitas;
+    return `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1rem;">Selecciona la casita a inspeccionar</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
+        ${casitas.map(c=>`<div class="gcard" onclick="openCasitaDetalleMT('bah','${c.id}')" style="padding:.85rem .8rem;">
+          <div class="ct" style="font-size:.9rem;">${c.nombre}</div>
+          <div class="cd">${c.cama} · ${c.m2}m² · ${c.cap} huéspedes</div>
+        </div>`).join('')}
+      </div>`;
+  })(),
   organizacion: `${['Tránsito Constante — Oficina · Juice Bar · Salón de Cocina y Recepción','Cluster 1 — Storage · Terralab · Hanging Bridge · Movement Studio · Lounge · Main Shower · Main Bathrooms','Cluster 2 — Toensmeier · Baños 7600 · Baño del Templo · Lancaster · Götsch · Holzer · Cocina de Residentes · Ingham · Carson','Cluster 3 — Wooden Bathroom · Hememway · Primavesi · Salatin · Shiva · Savory · Yeomans · Fukuoka · Mollison','Cluster 4 — Starhawk · Crawford · Eisenstein · Doherty · Macy · Baños Bahareque · Wex Camp · Maloca','Atención Diaria — Piscina · Sistemas de Agua · Casita Azul'].map(c=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:8px;padding:.75rem;margin-bottom:.5rem;font-size:.8rem;font-family:sans-serif;color:var(--brown);">${c}</div>`).join('')}
     <div class="gcard" onclick="openMapaTierramor()" style="margin-top:.75rem;display:flex;align-items:center;gap:.75rem;padding:.9rem 1rem;">
       <div style="font-size:1.4rem;">🗺️</div>
@@ -1480,6 +1640,42 @@ const MANUAL_MT_CONTENT = {
   </div>
   <div class="doc-note">Canal: Urgentes → llamada al Gerente + WhatsApp. Prioridad → WhatsApp con foto. Programar → bitácora semanal.</div>`,
 };
+
+function openCasitaDetalleMT(tipo, casitaId) {
+  const allCasitas = tipo === 'madera' ? window._casitasMaderaMT : window._casitasBahMT;
+  const casita = allCasitas.find(c => c.id === casitaId);
+  if (!casita) return;
+  const backTitle = tipo === 'madera' ? 'Casitas de Madera' : 'Casitas de Bahareque';
+  const backKey   = tipo === 'madera' ? 'casitas-madera-mt' : 'casitas-bah-mt';
+  const items = [...iBasico,
+    'Funcionamiento de ducha (presión y temperatura de agua)',
+    'Estado del mosquitero (sin roturas ni separaciones)',
+    'Estado del colchón y textiles (sin manchas, sin humedad)',
+    'Funcionamiento de cerrojo interior de privacidad',
+    'Estado de repisas, mesa y mobiliario',
+    'Visibilidad desde exterior (privacidad del huésped)'
+  ];
+  const html = `
+    <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:1rem;">
+      <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);font-family:sans-serif;margin-bottom:.75rem;">Características</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;">
+        ${[['Tipo de cama',casita.cama],['Metros cuadrados',casita.m2+' m²'],['Capacidad',casita.cap+' huéspedes']].map(([lbl,val])=>`
+          <div style="background:#faf8f4;border-radius:8px;padding:.65rem .7rem;text-align:center;">
+            <div style="font-size:.62rem;font-family:sans-serif;color:var(--tm);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.3rem;">${lbl}</div>
+            <div style="font-size:.88rem;font-family:sans-serif;font-weight:600;color:var(--brown);">${val}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);font-family:sans-serif;margin-bottom:.75rem;">Checklist de inspección</div>
+    ${items.map((item,i)=>`<div class="cl-item" style="border-bottom:1px solid rgba(84,66,54,.06);padding:.5rem 0;">
+      <div style="width:20px;height:20px;border:1.5px solid rgba(153,92,68,.3);border-radius:5px;flex-shrink:0;margin-top:.1rem;"></div>
+      <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);line-height:1.4;margin-left:.75rem;">${item}</div>
+    </div>`).join('')}
+    <div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`;
+  setConScreen(casita.nombre,
+    () => openManualSection('manto', backKey, backTitle),
+    `<div class="doc-viewer">${html}</div>`);
+}
 
 function openCasitaDetalle(tipo, casitaId) {
   const data   = tipo === 'madera' ? window._casitasMadera : window._casitasBah;
