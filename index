@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tierramor Ops</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital@1&display=swap" rel="stylesheet">
+<style>
+:root{--cream:#E8E2D1;--blue:#717F7E;--green:#76724E;--clay:#995C44;--plum:#735145;--brown:#544236;--tm:#a08070;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Cormorant',Georgia,serif;background:var(--cream);color:var(--brown);min-height:100vh;}
+.screen{display:none;min-height:100vh;flex-direction:column;}
+.screen.active{display:flex;}
+#ls{background:var(--brown);align-items:center;justify-content:center;padding:2rem;}
+.lt{color:var(--cream);font-size:1.5rem;letter-spacing:.1em;text-align:center;margin-bottom:.25rem;font-style:italic;}
+.ls2{color:var(--tm);font-size:.75rem;letter-spacing:.15em;text-align:center;margin-bottom:2rem;font-family:sans-serif;text-transform:uppercase;}
+.lc{background:rgba(255,255,255,.06);border:1px solid rgba(232,226,209,.15);border-radius:14px;padding:1.8rem;width:100%;max-width:320px;}
+.lc label{display:block;color:var(--tm);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;font-family:sans-serif;margin-bottom:.4rem;}
+.lc input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(232,226,209,.2);border-radius:8px;padding:.75rem 1rem;color:var(--cream);font-size:.95rem;font-family:sans-serif;margin-bottom:1.2rem;outline:none;}
+.lc input::placeholder{color:rgba(232,226,209,.3);}
+.btn-login{width:100%;background:var(--clay);border:none;border-radius:8px;padding:.85rem;color:var(--cream);font-size:.95rem;font-family:sans-serif;cursor:pointer;}
+.lerr{color:#e88;font-size:.75rem;font-family:sans-serif;text-align:center;margin-top:.75rem;min-height:1.2em;}
+.hdr{background:var(--brown);padding:.9rem 1.1rem;display:flex;align-items:center;gap:.7rem;position:sticky;top:0;z-index:100;}
+.hdr-t{color:var(--cream);font-size:1rem;letter-spacing:.07em;flex:1;font-style:italic;}
+.btn-bk{background:none;border:none;color:var(--cream);cursor:pointer;font-size:1.3rem;padding:0 .2rem;}
+.btn-out{background:none;border:1px solid rgba(232,226,209,.25);border-radius:6px;color:var(--tm);font-size:.68rem;font-family:sans-serif;padding:.28rem .55rem;cursor:pointer;}
+.dept-sec{padding:1.4rem 1.1rem;}
+.sec-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;color:var(--tm);font-family:sans-serif;margin-bottom:.9rem;}
+.dept-btn{width:100%;background:white;border:1px solid rgba(84,66,54,.08);border-radius:12px;padding:1rem 1.1rem;display:flex;align-items:center;gap:.9rem;margin-bottom:.8rem;cursor:pointer;text-align:left;transition:all .18s;box-shadow:0 2px 8px rgba(84,66,54,.10),0 1px 2px rgba(84,66,54,.06);}
+.dept-btn:active{transform:scale(.98);box-shadow:0 1px 3px rgba(84,66,54,.08);}
+.dico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:600;font-family:sans-serif;flex-shrink:0;}
+.dico.a{background:rgba(113,127,126,.15);color:var(--blue);}
+.dico.b{background:rgba(118,114,78,.15);color:var(--green);}
+.dico.c{background:rgba(153,92,68,.12);color:var(--clay);}
+.dico.d{background:rgba(115,81,69,.15);color:var(--plum);}
+.dinf h3{font-size:1rem;color:var(--brown);font-weight:normal;font-style:italic;}
+.dinf p{font-size:.72rem;color:var(--tm);font-family:sans-serif;margin-top:.12rem;}
+.dbadge{margin-left:auto;font-size:.62rem;font-family:sans-serif;padding:.18rem .48rem;border-radius:20px;white-space:nowrap;}
+.dbadge.on{background:rgba(153,92,68,.12);color:var(--clay);}
+.dbadge.off{background:rgba(136,136,136,.1);color:var(--tm);}
+.dbadge.adm{background:rgba(115,81,69,.15);color:var(--plum);}
+.sbar{padding:.9rem 1.1rem;background:var(--cream);position:sticky;top:57px;z-index:90;}
+.swrap{position:relative;}
+.swrap input{width:100%;background:white;border:1px solid rgba(84,66,54,.15);border-radius:10px;padding:.65rem 1rem .65rem 2.3rem;font-size:.9rem;font-family:sans-serif;color:var(--brown);outline:none;}
+.swrap input::placeholder{color:var(--tm);}
+.sico{position:absolute;left:.75rem;top:50%;transform:translateY(-50%);font-size:.85rem;}
+.gsec{padding:.4rem 1.1rem 2rem;}
+.glbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;color:var(--tm);font-family:sans-serif;margin-bottom:.8rem;margin-top:.4rem;}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.7rem;}
+.gcard{background:white;border:1px solid rgba(84,66,54,.07);border-radius:12px;padding:1rem .85rem;cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:.45rem;box-shadow:0 2px 8px rgba(84,66,54,.10),0 1px 2px rgba(84,66,54,.06);}
+.gcard:active{transform:scale(.97);box-shadow:0 1px 3px rgba(84,66,54,.08);}
+.gcard .ct{font-size:.9rem;color:var(--brown);font-family:sans-serif;font-weight:500;line-height:1.3;font-style:italic;}
+.gcard .cd{font-size:.68rem;color:var(--tm);font-family:sans-serif;line-height:1.35;}
+.divider{height:1px;background:rgba(84,66,54,.1);margin:.4rem 0 1.1rem;}
+.rbtn{width:100%;background:white;border:1px solid rgba(153,92,68,.18);border-radius:10px;padding:.85rem .95rem;display:flex;align-items:center;gap:.7rem;margin-bottom:.65rem;cursor:pointer;text-align:left;transition:all .18s;box-shadow:0 2px 6px rgba(84,66,54,.09),0 1px 2px rgba(84,66,54,.05);}
+.rbtn:active{background:#faf8f4;box-shadow:0 1px 2px rgba(84,66,54,.06);}
+.rdot{width:7px;height:7px;border-radius:50%;background:var(--clay);flex-shrink:0;}
+.rbtn span{font-size:.85rem;font-family:sans-serif;color:var(--brown);flex:1;}
+.rbtn .arr{color:var(--tm);font-size:.75rem;}
+.rbtn.averia .rdot{background:#c0392b;}
+.rbtn.materiales .rdot{background:var(--green);}
+#fs{background:var(--cream);}
+.fbody{padding:1.1rem;flex:1;}
+.fg{margin-bottom:1.1rem;}
+.fg label{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--tm);font-family:sans-serif;margin-bottom:.38rem;}
+.fg input,.fg select,.fg textarea{width:100%;background:white;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.7rem .85rem;font-size:.9rem;font-family:sans-serif;color:var(--brown);outline:none;}
+.fg textarea{resize:none;height:75px;line-height:1.5;}
+.fg select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .85rem center;padding-right:1.8rem;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;}
+.btn-sub{width:100%;background:var(--clay);border:none;border-radius:10px;padding:.95rem;color:var(--cream);font-size:.92rem;font-family:sans-serif;cursor:pointer;margin-top:.4rem;}
+.btn-sub:disabled{opacity:.5;}
+.btn-sub.green{background:var(--green);}
+.btn-sub.red{background:#c0392b;}
+.fnote{font-size:.7rem;font-family:sans-serif;color:var(--tm);text-align:center;margin-top:.7rem;}
+.ok-msg{display:none;background:rgba(118,114,78,.1);border:1px solid rgba(118,114,78,.3);border-radius:10px;padding:1.1rem;text-align:center;margin-top:.9rem;}
+.ok-msg p{font-size:.82rem;font-family:sans-serif;color:var(--green);}
+.err-msg{display:none;background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.25);border-radius:10px;padding:1.1rem;text-align:center;margin-top:.9rem;}
+.err-msg p{font-size:.82rem;font-family:sans-serif;color:#c0392b;}
+.aw{background:white;border:1px solid rgba(84,66,54,.2);border-radius:8px;overflow:hidden;}
+.aw textarea{width:100%;border:none;border-bottom:1px solid rgba(84,66,54,.1);border-radius:0;padding:.7rem .85rem;font-size:.88rem;font-family:sans-serif;color:var(--brown);outline:none;resize:none;height:72px;line-height:1.5;display:block;background:white;}
+.actl{display:flex;align-items:center;gap:.55rem;padding:.45rem .7rem;background:#faf8f4;}
+.bmk{background:none;border:1.5px solid rgba(153,92,68,.4);border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;font-size:.95rem;}
+.bmk.rec{background:var(--clay);border-color:var(--clay);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.mst{font-size:.68rem;font-family:sans-serif;color:var(--tm);flex:1;}
+.mst.on{color:var(--clay);}
+.bclr{background:none;border:none;color:var(--tm);font-size:.7rem;font-family:sans-serif;cursor:pointer;}
+.photo-upload-box{background:white;border:1.5px dashed rgba(153,92,68,.35);border-radius:10px;padding:1rem;text-align:center;cursor:pointer;transition:all .2s;margin-top:.3rem;}
+.photo-upload-box input[type=file]{display:none;}
+.pub-icon{font-size:1.5rem;margin-bottom:.3rem;}
+.pub-label{font-size:.78rem;font-family:sans-serif;color:var(--tm);}
+.pub-label strong{color:var(--clay);}
+.photo-preview{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.7rem;}
+.photo-thumb{position:relative;width:72px;height:72px;}
+.photo-thumb img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid rgba(84,66,54,.15);}
+.photo-thumb button{position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:var(--clay);border:none;color:white;font-size:.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+#cl-screen{background:var(--cream);}
+.cl-body{padding:1.1rem;flex:1;}
+.area-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;margin-bottom:1rem;}
+.area-card{background:white;border:1px solid rgba(84,66,54,.07);border-radius:10px;padding:.85rem .7rem;cursor:pointer;text-align:center;transition:all .18s;box-shadow:0 2px 6px rgba(84,66,54,.09),0 1px 2px rgba(84,66,54,.05);}
+.area-card:active{transform:scale(.97);box-shadow:0 1px 2px rgba(84,66,54,.06);}
+.area-card .acn{font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:500;line-height:1.3;}
+.area-card .acs{font-size:.62rem;font-family:sans-serif;color:var(--tm);margin-top:.1rem;}
+.cluster-card{background:white;border:1px solid rgba(84,66,54,.07);border-radius:10px;padding:1rem;cursor:pointer;margin-bottom:.65rem;transition:all .18s;box-shadow:0 2px 6px rgba(84,66,54,.09),0 1px 2px rgba(84,66,54,.05);}
+.cluster-card:active{transform:scale(.99);box-shadow:0 1px 2px rgba(84,66,54,.06);}
+.cluster-card .cc-title{font-size:.95rem;font-family:sans-serif;font-weight:600;color:var(--brown);font-style:italic;margin-bottom:.3rem;}
+.cluster-card .cc-sub{font-size:.72rem;font-family:sans-serif;color:var(--tm);line-height:1.4;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(58,45,36,.6);z-index:200;align-items:center;justify-content:center;padding:1.5rem;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:var(--cream);border-radius:16px;padding:1.8rem 1.5rem;max-width:300px;width:100%;text-align:center;}
+.modal-icon{font-size:2rem;margin-bottom:.75rem;}
+.modal-title{font-size:1.3rem;font-style:italic;color:var(--brown);margin-bottom:.5rem;}
+.modal-sub{font-size:.78rem;font-family:sans-serif;color:var(--tm);line-height:1.5;margin-bottom:1.4rem;}
+.modal-btns{display:flex;gap:.7rem;}
+.modal-btns button{flex:1;padding:.75rem;border:none;border-radius:9px;font-family:sans-serif;font-size:.85rem;cursor:pointer;}
+.mbtn-ok{background:var(--clay);color:var(--cream);}
+.mbtn-bk{background:rgba(84,66,54,.1);color:var(--brown);}
+.cl-header-info{background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:1rem;}
+.cl-area-name{font-size:1.1rem;font-style:italic;color:var(--brown);margin-bottom:.6rem;}
+.cl-section{margin-bottom:1.2rem;}
+.cl-sec-title{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);font-family:sans-serif;padding:.5rem 0;border-bottom:1px solid rgba(84,66,54,.1);margin-bottom:.6rem;}
+.cl-item{display:flex;align-items:flex-start;gap:.75rem;padding:.55rem 0;border-bottom:1px solid rgba(84,66,54,.05);}
+.cl-item:last-child{border-bottom:none;}
+.cl-cb{width:20px;height:20px;border:1.5px solid rgba(153,92,68,.4);border-radius:5px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:.1rem;transition:all .18s;}
+.cl-cb.checked{background:var(--clay);border-color:var(--clay);}
+.cl-cb.checked::after{content:'✓';color:white;font-size:.7rem;font-weight:bold;}
+.cl-txt{font-size:.82rem;font-family:sans-serif;color:var(--brown);line-height:1.4;flex:1;}
+.cl-note input{width:100%;background:#faf8f4;border:1px solid rgba(84,66,54,.12);border-radius:6px;padding:.4rem .65rem;font-size:.75rem;font-family:sans-serif;color:var(--brown);outline:none;margin-top:.3rem;}
+.cl-progress{background:rgba(84,66,54,.08);border-radius:20px;height:6px;margin-bottom:1rem;overflow:hidden;}
+.cl-prog-bar{height:100%;background:var(--clay);border-radius:20px;transition:width .3s;}
+.cl-prog-txt{font-size:.68rem;font-family:sans-serif;color:var(--tm);text-align:right;margin-bottom:.3rem;}
+.inv-item{background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:.85rem 1rem;margin-bottom:.6rem;display:flex;align-items:center;gap:.9rem;}
+.inv-name{font-size:.88rem;font-family:sans-serif;color:var(--brown);flex:1;}
+.inv-qty{display:flex;align-items:center;gap:.5rem;}
+.inv-qty button{width:30px;height:30px;border-radius:50%;border:1.5px solid rgba(153,92,68,.3);background:none;color:var(--clay);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:sans-serif;}
+.inv-qty input{width:42px;height:30px;text-align:center;border:1px solid rgba(84,66,54,.2);border-radius:6px;font-size:.9rem;font-family:sans-serif;color:var(--brown);outline:none;background:white;}
+#rep-screen{background:var(--cream);}
+.rep-body{padding:1.1rem;}
+.rg{margin-bottom:1.4rem;}
+.rg h2{font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;color:var(--tm);font-family:sans-serif;margin-bottom:.8rem;padding-bottom:.45rem;border-bottom:1px solid rgba(84,66,54,.1);}
+.acc{background:white;border:1px solid rgba(84,66,54,.12);border-radius:10px;margin-bottom:.55rem;overflow:hidden;}
+.acc-hdr{padding:.85rem .95rem;display:flex;align-items:center;gap:.7rem;cursor:pointer;}
+.pav{width:32px;height:32px;border-radius:50%;background:rgba(153,92,68,.12);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-family:sans-serif;font-weight:500;color:var(--clay);flex-shrink:0;}
+.pnm{font-size:.83rem;font-family:sans-serif;color:var(--brown);flex:1;}
+.parr{color:var(--tm);font-size:.75rem;transition:transform .2s;}
+.parr.open{transform:rotate(90deg);}
+.acc-body{display:none;border-top:1px solid rgba(84,66,54,.08);}
+.acc-body.open{display:block;}
+.ritem{padding:.7rem .95rem .7rem 3.2rem;border-bottom:1px solid rgba(84,66,54,.06);cursor:pointer;}
+.ritem:last-child{border-bottom:none;}
+.ritem:active{background:#faf8f4;}
+.ri-lbl{font-size:.8rem;font-family:sans-serif;color:var(--brown);}
+.ri-dt{font-size:.66rem;font-family:sans-serif;color:var(--tm);margin-top:.12rem;}
+.no-rep{padding:.7rem .95rem .7rem 3.2rem;font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;}
+#con-screen{background:var(--cream);}
+.conbody{padding:1.4rem 1.1rem;}
+.cs{text-align:center;padding:2.5rem 1rem;}
+.cs .csi{font-size:2.2rem;margin-bottom:.9rem;}
+.cs h3{color:var(--brown);font-size:1.05rem;font-weight:normal;font-style:italic;margin-bottom:.45rem;}
+.cs p{color:var(--tm);font-size:.8rem;font-family:sans-serif;line-height:1.6;}
+.doc-viewer{background:white;border:1px solid rgba(84,66,54,.1);border-radius:12px;padding:1.2rem;font-family:sans-serif;}
+.doc-note{background:rgba(153,92,68,.07);border-left:3px solid var(--clay);padding:.5rem .75rem;border-radius:0 6px 6px 0;font-size:.73rem;color:var(--plum);font-family:sans-serif;line-height:1.4;margin:.5rem 0;}
+.crit-box{background:rgba(118,114,78,.08);border:1px solid rgba(118,114,78,.2);border-radius:10px;padding:.9rem;margin-top:.5rem;}
+.crit-box .crit-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--green);font-family:sans-serif;margin-bottom:.6rem;}
+.crit-row{font-size:.76rem;font-family:sans-serif;color:var(--brown);padding:.25rem 0;border-bottom:1px solid rgba(118,114,78,.15);}
+.crit-row:last-child{border-bottom:none;}
+.sec-band{font-size:.65rem;text-transform:uppercase;letter-spacing:.12em;font-family:sans-serif;color:white;background:var(--brown);border-radius:6px;padding:.35rem .75rem;margin:.9rem 0 .6rem;display:block;}
+.loading-overlay{position:fixed;inset:0;background:var(--brown);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;}
+.loading-overlay.hidden{display:none;}
+.loading-spinner{width:36px;height:36px;border:3px solid rgba(232,226,209,.2);border-top-color:var(--cream);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:1rem;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{color:var(--tm);font-size:.75rem;font-family:sans-serif;letter-spacing:.1em;}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading-overlay">
+  <div style="color:var(--cream);font-size:1.3rem;font-style:italic;margin-bottom:.5rem;">Tierramor</div>
+  <div class="loading-spinner"></div>
+  <div class="loading-txt" id="loading-txt">Cargando...</div>
+</div>
+
+<!-- LOGIN -->
+<div id="ls" class="screen">
+  <div style="background:var(--brown);flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;">
+    <div class="lt">Tierramor</div>
+    <div class="ls2">Portal Operativo</div>
+    <div class="lc">
+      <label>Usuario</label>
+      <input type="text" id="lu" placeholder="tu.nombre" autocomplete="username">
+      <label>Contraseña</label>
+      <input type="password" id="lp" placeholder="••••••••" autocomplete="current-password">
+      <button class="btn-login" id="btn-login">Ingresar</button>
+      <div class="lerr" id="lerr"></div>
+    </div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="home" class="screen">
+  <div id="home-profile"></div>
+  <div class="dept-sec" id="home-depts"></div>
+</div>
+
+<!-- DEPT -->
+<div id="dept" class="screen">
+  <div class="hdr">
+    <button class="btn-bk" id="dept-back">←</button>
+    <span class="hdr-t" id="dept-title"></span>
+    <button class="btn-out" id="dept-out">Salir</button>
+  </div>
+  <div class="sbar"><div class="swrap"><span class="sico">🔍</span><input type="text" id="si" placeholder="Buscar..." oninput="filterCards()"></div></div>
+  <div class="gsec">
+    <div class="glbl">Recursos</div>
+    <div class="grid" id="rgrid"></div>
+    <div class="divider"></div>
+    <div class="glbl" id="rlist-lbl">Reportes</div>
+    <div id="rlist"></div>
+  </div>
+</div>
+
+<!-- FORM -->
+<div id="fs" class="screen">
+  <div class="hdr">
+    <button class="btn-bk" id="fs-back">←</button>
+    <span class="hdr-t" id="ft">Reporte</span>
+    <button class="btn-out" id="fs-out">Salir</button>
+  </div>
+  <div class="fbody" id="fbody"></div>
+</div>
+
+<!-- CHECKLIST -->
+<div id="cl-screen" class="screen">
+  <div class="hdr">
+    <button class="btn-bk" id="cl-back">←</button>
+    <span class="hdr-t" id="cl-title">Checklist</span>
+    <button class="btn-out" id="cl-out">Salir</button>
+  </div>
+  <div class="cl-body" id="cl-body"></div>
+</div>
+
+<!-- CONTENT -->
+<div id="con-screen" class="screen">
+  <div class="hdr">
+    <button class="btn-bk" id="con-back">←</button>
+    <span class="hdr-t" id="con-title">Recurso</span>
+    <button class="btn-out" id="con-out">Salir</button>
+  </div>
+  <div class="conbody" id="conbody"></div>
+</div>
+
+<!-- REPORTS -->
+<div id="rep-screen" class="screen">
+  <div class="hdr">
+    <button class="btn-bk" id="rep-back">←</button>
+    <span class="hdr-t">Reportes</span>
+    <button class="btn-out" id="rep-out">Salir</button>
+  </div>
+  <div class="rep-body" id="rep-body"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-icon">📋</div>
+    <div class="modal-title">Listo para comenzar</div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div class="modal-btns">
+      <button class="mbtn-bk" id="modal-cancel">← Atrás</button>
+      <button class="mbtn-ok" id="modal-confirm">Aceptar ✓</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──
+const WEBHOOK = 'https://script.google.com/macros/s/AKfycbzGws5rH9g8si9f6efuqIBVrLE6TMQY6D1g8VlMXod43aWMxarDCd1JaxvDA5sOFn1T/exec';
+
+// ── STATE ──
+let USERS = [];
+let CU = null, CD = null, pendingCL = null, activeRec = null, checkedMap = {};
+
+let COLABS_LIMP  = [];
+let COLABS_MANTO = [];
+let ALL_COLABS   = [];
+
+async function sha256(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function loadUsers() {
+  try {
+    setLoading('Cargando usuarios...');
+    const res  = await fetch(`${WEBHOOK}?action=get_usuarios`);
+    const data = await res.json();
+    if (data.ok && data.usuarios.length) {
+      USERS = data.usuarios;
+      COLABS_LIMP  = USERS.filter(u => u.departamento === 'limpieza').map(u => u.nombre);
+      COLABS_MANTO = USERS.filter(u => u.departamento === 'mantenimiento').map(u => u.nombre);
+      ALL_COLABS   = USERS.filter(u => u.rol === 'colaborador').map(u => u.nombre);
+    }
+  } catch(e) {
+    console.warn('No se pudo cargar usuarios desde Sheets, usando fallback.');
+  } finally {
+    hideLoading();
+    show('ls');
+  }
+}
+
+async function sendToSheets(payload) {
+  try {
+    await fetch(WEBHOOK, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return true;
+  } catch(e) {
+    console.error('Error enviando a Sheets:', e);
+    return false;
+  }
+}
+
+function setLoading(txt) {
+  document.getElementById('loading-txt').textContent = txt || 'Cargando...';
+  document.getElementById('loading-overlay').classList.remove('hidden');
+}
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.add('hidden');
+}
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function nav(to) {
+  stopRec();
+  if (to === 'home') {
+    if (CU && CU.rol !== 'admin') { renderDeptHome(); show('home'); }
+    else { renderHome(); show('home'); }
+  }
+  else if (to === 'dept') openDept(CD);
+}
+
+async function doLogin() {
+  const u = document.getElementById('lu').value.trim().toLowerCase();
+  const p = document.getElementById('lp').value;
+  const btn = document.getElementById('btn-login');
+  if (!u || !p) { document.getElementById('lerr').textContent = 'Ingresa usuario y contraseña.'; return; }
+  btn.textContent = 'Verificando...';
+  btn.disabled = true;
+  const hash = await sha256(p);
+  const match = USERS.find(x => x.usuario === u && x.password_hash === hash);
+  btn.textContent = 'Ingresar';
+  btn.disabled = false;
+  if (match) {
+    CU = match;
+    document.getElementById('lerr').textContent = '';
+    if (CU.rol === 'admin') {
+      renderHome();
+      show('home');
+    } else {
+      renderDeptHome();
+      show('home');
+    }
+  } else {
+    document.getElementById('lerr').textContent = 'Usuario o contraseña incorrectos.';
+  }
+}
+
+function logout() { CU = null; stopRec(); show('ls'); }
+
+function renderHome() {
+  const isAdmin = CU.rol === 'admin';
+  const deptLabel = { limpieza:'Limpieza', mantenimiento:'Mantenimiento', proveeduria:'Proveduría y Transportes', seguridad:'Seguridad', all:'Todos los Departamentos' };
+
+  document.getElementById('home-profile').innerHTML = `
+    <div style="background:var(--brown);padding:1.5rem 1.1rem 2rem;">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.4rem;">
+        <div style="width:48px;height:48px;border-radius:50%;background:rgba(232,226,209,.15);border:2px solid rgba(232,226,209,.3);display:flex;align-items:center;justify-content:center;font-size:.95rem;font-family:sans-serif;font-weight:600;color:var(--cream);flex-shrink:0;">${CU.iniciales}</div>
+        <div>
+          <div style="color:var(--cream);font-size:1.05rem;font-style:italic;">${CU.nombre}</div>
+          <div style="color:var(--tm);font-size:.7rem;font-family:sans-serif;text-transform:uppercase;letter-spacing:.1em;margin-top:.15rem;">${deptLabel[CU.departamento]} · ${isAdmin?'Admin':'Colaborador'}</div>
+        </div>
+        <button onclick="logout()" style="margin-left:auto;background:none;border:1px solid rgba(232,226,209,.25);border-radius:6px;color:var(--tm);font-size:.68rem;font-family:sans-serif;padding:.28rem .55rem;cursor:pointer;">Salir</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem;">
+        <div style="background:rgba(255,255,255,.07);border:1px solid rgba(232,226,209,.12);border-radius:10px;padding:.85rem .9rem;">
+          <div style="font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);font-family:sans-serif;margin-bottom:.5rem;">Esta semana</div>
+          <div style="font-size:1.6rem;font-family:sans-serif;font-weight:700;color:var(--cream);line-height:1;">—</div>
+          <div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);margin-top:.25rem;">% cumplimiento</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border:1px solid rgba(232,226,209,.12);border-radius:10px;padding:.85rem .9rem;">
+          <div style="font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);font-family:sans-serif;margin-bottom:.5rem;">Este mes</div>
+          <div style="font-size:1.6rem;font-family:sans-serif;font-weight:700;color:var(--cream);line-height:1;">—</div>
+          <div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);margin-top:.25rem;">% cumplimiento</div>
+        </div>
+      </div>
+    </div>`;
+
+  const deptCfg = {
+    limpieza:      { lbl:'Limpieza',                 sub:'Manuales, checklists e inventarios',   ico:'HK', cls:'a' },
+    mantenimiento: { lbl:'Mantenimiento',             sub:'Manuales preventivos y reportes',      ico:'MT', cls:'b' },
+    proveeduria:   { lbl:'Proveduría y Transportes', sub:'Calendario y recursos operativos',      ico:'PT', cls:'c' },
+    seguridad:     { lbl:'Seguridad',                sub:'Protocolos y reportes de incidencias',  ico:'SG', cls:'d' },
+  };
+
+  const showDepts = isAdmin ? ['limpieza','mantenimiento','proveeduria','seguridad'] : [CU.departamento];
+  let btns = `<div class="sec-lbl">${isAdmin ? 'Departamentos' : 'Tu área de trabajo'}</div>`;
+
+  showDepts.forEach(d => {
+    const c = deptCfg[d];
+    if (!c) return;
+    btns += `<button class="dept-btn" onclick="openDept('${d}')">
+      <div class="dico ${c.cls}">${c.ico}</div>
+      <div class="dinf"><h3>${c.lbl}</h3><p>${c.sub}</p></div>
+      <span class="dbadge on">Activo</span>
+    </button>`;
+  });
+
+  if (isAdmin) {
+    btns += `<button class="dept-btn" onclick="openTeamPerformance()">
+      <div class="dico d">DE</div>
+      <div class="dinf"><h3>Desempeño del Equipo</h3><p>Cumplimiento por colaborador</p></div>
+      <span class="dbadge adm">Admin</span>
+    </button>
+    <button class="dept-btn" onclick="openReports()">
+      <div class="dico d">RP</div>
+      <div class="dinf"><h3>Reportes</h3><p>Revisión de reportes enviados</p></div>
+      <span class="dbadge adm">Admin</span>
+    </button>`;
+  } else {
+    btns += `<button class="dept-btn" onclick="openMyPerformance()">
+      <div class="dico d" style="background:rgba(115,81,69,.15);">DE</div>
+      <div class="dinf"><h3>Mi Desempeño</h3><p>KPIs, cumplimiento y reportes</p></div>
+      <span class="dbadge adm">Personal</span>
+    </button>`;
+  }
+
+  document.getElementById('home-depts').innerHTML = btns;
+}
+
+// ── DEPT HOME (non-admin) ──
+function renderDeptHome() {
+  const deptCfg = {
+    limpieza:      { lbl:'Limpieza',                 sub:'Manuales, checklists e inventarios',  ico:'HK', cls:'a' },
+    mantenimiento: { lbl:'Mantenimiento',             sub:'Manuales preventivos y reportes',     ico:'MT', cls:'b' },
+    proveeduria:   { lbl:'Proveduría y Transportes', sub:'Calendario y recursos operativos',     ico:'PT', cls:'c' },
+    seguridad:     { lbl:'Seguridad',                sub:'Protocolos y reportes de incidencias', ico:'SG', cls:'d' },
+  };
+  const deptLabel = { limpieza:'Limpieza', mantenimiento:'Mantenimiento', proveeduria:'Proveduría y Transportes', seguridad:'Seguridad' };
+  const d = CU.departamento;
+  const cfg = deptCfg[d] || { lbl:d, sub:'', ico:'OP', cls:'a' };
+
+  document.getElementById('home-profile').innerHTML = `
+    <div style="background:var(--brown);padding:1.5rem 1.1rem 1.8rem;">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.4rem;">
+        <div style="width:48px;height:48px;border-radius:50%;background:rgba(232,226,209,.15);border:2px solid rgba(232,226,209,.3);display:flex;align-items:center;justify-content:center;font-size:.95rem;font-family:sans-serif;font-weight:600;color:var(--cream);flex-shrink:0;">${CU.iniciales}</div>
+        <div>
+          <div style="color:var(--cream);font-size:1.05rem;font-style:italic;">Bienvenido, ${CU.nombre.split(' ')[0]}</div>
+          <div style="color:var(--tm);font-size:.7rem;font-family:sans-serif;text-transform:uppercase;letter-spacing:.1em;margin-top:.15rem;">${deptLabel[d]||d} · Colaborador</div>
+        </div>
+        <button onclick="logout()" style="margin-left:auto;background:none;border:1px solid rgba(232,226,209,.25);border-radius:6px;color:var(--tm);font-size:.68rem;font-family:sans-serif;padding:.28rem .55rem;cursor:pointer;">Salir</button>
+      </div>
+      <button class="dept-btn" onclick="openMyPerformance()" style="background:rgba(255,255,255,.08);border:1px solid rgba(232,226,209,.15);margin-bottom:0;">
+        <div class="dico ${cfg.cls}" style="background:rgba(232,226,209,.12);color:var(--cream);">DE</div>
+        <div class="dinf">
+          <h3 style="color:var(--cream);">Mi Desempeño</h3>
+          <p style="color:var(--tm);">KPIs, cumplimiento y evaluación de pares</p>
+        </div>
+        <span style="color:var(--tm);font-size:.75rem;">→</span>
+      </button>
+    </div>`;
+
+  const dept = DEPTS[d];
+  let btns = `<div class="sec-lbl" style="margin-top:1.4rem;">Tu área de trabajo</div>`;
+
+  if (dept) {
+    dept.resources.forEach(r => {
+      btns += `<button class="dept-btn" onclick="openResource('${r.id}','${r.title}','${r.type||'doc'}')">
+        <div class="dico ${cfg.cls}">${cfg.ico}</div>
+        <div class="dinf"><h3>${r.title}</h3><p>${r.desc||''}</p></div>
+        <span style="color:var(--tm);font-size:.75rem;">→</span>
+      </button>`;
+    });
+    if (dept.reports.length) {
+      btns += `<div class="sec-lbl" style="margin-top:.6rem;">Reportes</div>`;
+      dept.reports.forEach(r => {
+        btns += `<button class="rbtn ${r.cls}" onclick="openForm('${r.form}')">
+          <div class="rdot"></div><span>${r.label}</span><span class="arr">→</span>
+        </button>`;
+      });
+    }
+  }
+  document.getElementById('home-depts').innerHTML = btns;
+}
+
+const DEPTS = {
+  limpieza: {
+    label: 'Limpieza',
+    resources: [
+      { id:'manual-limp',   title:'Manual de Limpieza General', desc:'Procedimientos y estándares', type:'doc' },
+      { id:'checklist-limp',title:'Checklist por Área',          desc:'Verificación de tareas',       type:'checklist' },
+      { id:'inventarios',   title:'Inventarios',                 desc:'Control de insumos',           type:'inventarios' },
+      { id:'frases-en',     title:'Frases Comunes en Inglés',    desc:'Próximamente disponible' },
+      { id:'cal-limpieza',  title:'Calendario',                  desc:'Turnos y eventos del equipo',  type:'cal' },
+    ],
+    reports: [
+      { label:'Reporte de Labores',     form:'labores', cls:'' },
+      { label:'Limpieza de Áreas',      form:'areas',   cls:'' },
+      { label:'Reunión de Operaciones', form:'reunion', cls:'' },
+    ]
+  },
+  mantenimiento: {
+    label: 'Mantenimiento',
+    resources: [
+      { id:'manual-prev',       title:'Manual de Mantenimiento', desc:'Estándares y procedimientos',   type:'doc' },
+      { id:'operacion-piscina', title:'Operación de Piscina',    desc:'Checklist y parámetros',        type:'piscina' },
+      { id:'checklist-manto',   title:'Checklist por Cluster',   desc:'Inspección por zona',           type:'checklist' },
+      { id:'cal-manto',         title:'Calendario',              desc:'Tareas programadas y eventos',  type:'cal' },
+    ],
+    reports: [
+      { label:'Reporte de Trabajo',      form:'trabajo',    cls:'' },
+      { label:'Reporte de Agua',         form:'agua',       cls:'' },
+      { label:'Reporte de Avería',       form:'averia',     cls:'averia' },
+      { label:'Solicitud de Materiales', form:'materiales', cls:'materiales' },
+      { label:'Reunión de Operaciones',  form:'reunion',    cls:'' },
+    ]
+  },
+  proveeduria: {
+    label: 'Proveduría y Transportes',
+    resources: [
+      { id:'cal-transporte', title:'Calendario de Transportes', desc:'Viajes y logística',             type:'cal' },
+      { id:'proveedores',    title:'Catálogo de Proveedores',   desc:'Contactos, productos y crédito', type:'proveedores' },
+    ],
+    reports: [
+      { label:'Reunión de Operaciones', form:'reunion', cls:'' },
+    ]
+  },
+  seguridad: {
+    label: 'Seguridad',
+    resources: [
+      { id:'manual-seg',    title:'Manual de Seguridad',    desc:'Próximamente disponible' },
+      { id:'checklist-seg', title:'Checklist de Seguridad', desc:'Próximamente disponible' },
+    ],
+    reports: [
+      { label:'Reporte de Incidencia', form:'incidencia', cls:'averia' },
+    ]
+  },
+};
+
+function openDept(dept) {
+  CD = dept;
+  const d = DEPTS[dept];
+  if (!d) return;
+  document.getElementById('dept-title').textContent = d.label;
+  document.getElementById('rgrid').innerHTML = d.resources.map(r =>
+    `<div class="gcard" onclick="openResource('${r.id}','${r.title}','${r.type||'doc'}')">
+      <div class="ct">${r.title}</div><div class="cd">${r.desc||''}</div>
+    </div>`).join('');
+  const rl   = document.getElementById('rlist');
+  const rlbl = document.getElementById('rlist-lbl');
+  if (d.reports.length) {
+    rlbl.style.display = '';
+    rl.innerHTML = d.reports.map(r =>
+      `<button class="rbtn ${r.cls}" onclick="openForm('${r.form}')">
+        <div class="rdot"></div><span>${r.label}</span><span class="arr">→</span>
+      </button>`).join('');
+  } else {
+    rlbl.style.display = 'none';
+    rl.innerHTML = '';
+  }
+  document.getElementById('si').value = '';
+  show('dept');
+}
+
+function filterCards() {
+  const q = document.getElementById('si').value.toLowerCase();
+  document.querySelectorAll('.gcard').forEach(c => {
+    c.style.display = c.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function openResource(id, title, type) {
+  if (type === 'checklist')   { openChecklistMenu(id); return; }
+  if (type === 'cal')         { openCalendar(id); return; }
+  if (type === 'inventarios') { openInventarios(); return; }
+  if (type === 'proveedores') { openProveedores(); return; }
+  if (type === 'piscina')     { openOperacionPiscina(); return; }
+  if (id === 'frases-en') {
+    setConScreen('Frases Comunes en Inglés', () => nav('dept'),
+      `<div class="cs"><h3>Frases Comunes en Inglés</h3><p>Esta sección estará disponible próximamente.</p></div>`);
+    return;
+  }
+  setConScreen(title, () => nav('dept'), getDocContent(id, title));
+}
+
+function setConScreen(title, backFn, html) {
+  document.getElementById('con-title').textContent = title;
+  document.getElementById('con-back').onclick = backFn;
+  document.getElementById('conbody').innerHTML = html;
+  show('con-screen');
+}
+
+function getDocContent(id, title) {
+  if (id === 'manual-limp') return renderManualLimp();
+  if (id === 'manual-prev') return renderManualManto();
+  return `<div class="cs"><div class="csi">📄</div><h3>${title}</h3><p>El contenido estará disponible aquí próximamente.</p></div>`;
+}
+
+const CAL_IDS = {
+  'cal-limpieza':   'c_054c31b4e8e09f946d99b72bf667d10578fd7db7427906dd3604c39926371484@group.calendar.google.com',
+  'cal-manto':      'c_13962be80e3d98529a539831bf1b832b9f1839925686f69f57b2bf86dc06984e@group.calendar.google.com',
+  'cal-transporte': 'c_3d9aa6550f8f2406c869c3f26c6c5779ddbadcacae515f94bbd8b8818ae27d12@group.calendar.google.com',
+};
+const CAL_LABELS = { 'cal-limpieza':'Limpieza', 'cal-manto':'Mantenimiento', 'cal-transporte':'Proveduría y Transportes' };
+
+function openCalendar(id) {
+  const calId = CAL_IDS[id], label = CAL_LABELS[id];
+  const src = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(calId)}&ctz=America%2FCosta_Rica&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&mode=MONTH&bgcolor=%23E8E2D1&color=%23995C44`;
+  setConScreen(`Calendario — ${label}`, () => nav('dept'),
+    `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:.9rem;">Calendario de ${label} · Solo lectura</div>
+     <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:12px;overflow:hidden;">
+       <iframe src="${src}" style="border:none;width:100%;height:520px;display:block;" frameborder="0" scrolling="no"></iframe>
+     </div>
+     <div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);text-align:center;margin-top:.75rem;line-height:1.5;">Para agregar o editar eventos, hazlo directamente en Google Calendar.</div>`);
+}
+
+function openProveedores() {
+  setConScreen('Catálogo de Proveedores', () => nav('dept'),
+    `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1rem;">Directorio de proveedores activos de Tierramor</div>
+     <div class="cs"><h3>Próximamente disponible</h3><p>El catálogo de proveedores estará aquí.</p></div>`);
+}
+
+const ROPA_ITEMS = ['Topper Individual','Topper Matrimonial','Topper King','Forro de cama Individual','Forro de cama Queen','Forro de cama King','Sábana Individual','Sábana Queen','Sábana King','Cubre Duvet Individual','Cubre Duvet Queen','Cubre Duvet King','Duvet Individual','Duvet Queen','Duvet King','Pie de cama','Forro de almohada Standard','Forro de almohada King','Alfombra','Mosquitero Individual','Mosquitero King'];
+const PROPS_MALOCA   = ['Matts de yoga negros','Blocks de yoga','Correas de yoga','Almohadones (Bolsters)'];
+const PROPS_MOVEMENT = ['Matts de yoga verdes','Blocks de yoga','Correas de yoga','Silla de suelo','Almohadones (Bolsters)','Cojines redondos','Cojines grandes','Cojines medianos'];
+
+function openInventarios() {
+  setConScreen('Inventarios', () => nav('dept'),
+    `<div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Selecciona el inventario a registrar</div>
+     <div class="gcard" onclick="openRopaCama()" style="margin-bottom:.7rem;"><div class="ct">Inventario de Ropa de Cama</div><div class="cd">Sábanas, fundas, cobijas, duvets y más</div></div>
+     <div class="gcard" onclick="openPropsMenu()"><div class="ct">Inventario de Props de Wellness</div><div class="cd">Colchonetas, bloques, correas y accesorios</div></div>`);
+}
+
+function openRopaCama() {
+  document.getElementById('con-title').textContent = 'Ropa de Cama';
+  document.getElementById('con-back').onclick = () => openInventarios();
+  document.getElementById('conbody').innerHTML = `
+    <div class="fg"><label>Responsable</label>
+      <select id="inv-colab"><option value="">— Seleccionar —</option>${COLABS_LIMP.map(n=>`<option>${n}</option>`).join('')}</select></div>
+    <div class="fg"><label>Fecha</label><input type="date" id="inv-fecha" value="${new Date().toISOString().split('T')[0]}"></div>
+    ${ROPA_ITEMS.map((item,i) => `
+      <div class="inv-item">
+        <span class="inv-name">${item}</span>
+        <div class="inv-qty">
+          <button onclick="adjQty('rc-${i}',-1)">−</button>
+          <input type="number" id="rc-${i}" value="0" min="0">
+          <button onclick="adjQty('rc-${i}',1)">+</button>
+        </div>
+      </div>`).join('')}
+    <div class="fg" style="margin-top:1rem"><label>Observaciones</label><textarea id="inv-obs" placeholder="Artículos dañados, faltantes..."></textarea></div>
+    ${photoUploadWidget('inv-photos')}
+    <button class="btn-sub" id="inv-sub" onclick="submitInventario('ropa-cama')">Guardar Inventario</button>
+    <div class="ok-msg" id="inv-ok"><p>✅ Inventario guardado correctamente.</p></div>
+    <div class="err-msg" id="inv-err"><p>❌ Error al guardar. Intenta de nuevo.</p></div>`;
+  show('con-screen');
+}
+
+function openPropsMenu() {
+  document.getElementById('con-title').textContent = 'Props de Wellness';
+  document.getElementById('con-back').onclick = () => openInventarios();
+  document.getElementById('conbody').innerHTML = `
+    <div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Selecciona el espacio a inventariar</div>
+    <div class="gcard" onclick="openPropsForm('maloca')" style="margin-bottom:.7rem;"><div class="ct">Props Maloca</div><div class="cd">Matts, blocks, correas y bolsters</div></div>
+    <div class="gcard" onclick="openPropsForm('movement')"><div class="ct">Props Movement Studio</div><div class="cd">Matts, blocks, correas, cojines y sillas</div></div>`;
+  show('con-screen');
+}
+
+function openPropsForm(space) {
+  const items = space === 'maloca' ? PROPS_MALOCA : PROPS_MOVEMENT;
+  const title = space === 'maloca' ? 'Props Maloca' : 'Props Movement Studio';
+  document.getElementById('con-title').textContent = title;
+  document.getElementById('con-back').onclick = () => openPropsMenu();
+  document.getElementById('conbody').innerHTML = `
+    <div class="fg"><label>Responsable</label>
+      <select id="inv-colab"><option value="">— Seleccionar —</option>${COLABS_LIMP.map(n=>`<option>${n}</option>`).join('')}</select></div>
+    <div class="fg"><label>Fecha</label><input type="date" id="inv-fecha" value="${new Date().toISOString().split('T')[0]}"></div>
+    ${items.map((item,i) => `
+      <div class="inv-item">
+        <span class="inv-name">${item}</span>
+        <div class="inv-qty">
+          <button onclick="adjQty('pr-${i}',-1)">−</button>
+          <input type="number" id="pr-${i}" value="0" min="0">
+          <button onclick="adjQty('pr-${i}',1)">+</button>
+        </div>
+      </div>`).join('')}
+    <div class="fg" style="margin-top:1rem"><label>Observaciones</label><textarea id="inv-obs" placeholder="Artículos dañados, faltantes..."></textarea></div>
+    ${photoUploadWidget('inv-photos')}
+    <button class="btn-sub" id="inv-sub" onclick="submitInventario('props-${space}')">Guardar Inventario</button>
+    <div class="ok-msg" id="inv-ok"><p>✅ Inventario guardado correctamente.</p></div>
+    <div class="err-msg" id="inv-err"><p>❌ Error al guardar. Intenta de nuevo.</p></div>`;
+  show('con-screen');
+}
+
+function adjQty(id, delta) {
+  const el = document.getElementById(id);
+  if (el) el.value = Math.max(0, (parseInt(el.value)||0) + delta);
+}
+
+async function submitInventario(type) {
+  const colab = document.getElementById('inv-colab')?.value;
+  if (!colab) { alert('Por favor selecciona el responsable.'); return; }
+  const prefix = type.startsWith('props') ? 'pr' : 'rc';
+  const sourceItems = type === 'ropa-cama' ? ROPA_ITEMS : type === 'props-maloca' ? PROPS_MALOCA : PROPS_MOVEMENT;
+  const items = sourceItems.map((name, i) => ({
+    item: name,
+    cantidad: parseInt(document.getElementById(`${prefix}-${i}`)?.value) || 0
+  }));
+  const btn = document.getElementById('inv-sub');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  const ok = await sendToSheets({ type:'inventario', usuario:CU.usuario, tipo:type, fecha:document.getElementById('inv-fecha')?.value||'', items, observaciones:document.getElementById('inv-obs')?.value||'' });
+  if (ok) { document.getElementById('inv-ok').style.display = 'block'; }
+  else { document.getElementById('inv-err').style.display = 'block'; btn.disabled=false; btn.textContent='Guardar Inventario'; }
+}
+
+function photoUploadWidget(groupId) {
+  return `<div class="fg">
+    <label>Fotografías</label>
+    <div class="photo-upload-box" onclick="document.getElementById('file-${groupId}').click()">
+      <input type="file" id="file-${groupId}" accept="image/*" multiple capture="environment" onchange="handlePhotoUpload(event,'${groupId}')">
+      <div class="pub-icon">📷</div>
+      <div class="pub-label">Toca para <strong>tomar o adjuntar fotos</strong></div>
+      <div style="font-size:.65rem;font-family:sans-serif;color:var(--tm);margin-top:.2rem;">Se guardarán en Google Drive al enviar</div>
+    </div>
+    <div class="photo-preview" id="prev-${groupId}"></div>
+  </div>`;
+}
+
+function handlePhotoUpload(event, groupId) {
+  const files = Array.from(event.target.files);
+  const preview = document.getElementById('prev-' + groupId);
+  if (!window._photos) window._photos = {};
+  if (!window._photos[groupId]) window._photos[groupId] = [];
+  files.forEach((file, idx) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const id = `${groupId}-${Date.now()}-${idx}`;
+      const thumb = document.createElement('div');
+      thumb.className = 'photo-thumb'; thumb.id = 'thumb-' + id;
+      thumb.innerHTML = `<img src="${e.target.result}"><button onclick="removePhoto('${id}','${groupId}')">×</button>`;
+      preview.appendChild(thumb);
+      window._photos[groupId].push({ id, name:file.name, data:e.target.result });
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function removePhoto(id, groupId) {
+  document.getElementById('thumb-' + id)?.remove();
+  if (window._photos?.[groupId]) window._photos[groupId] = window._photos[groupId].filter(p => p.id !== id);
+}
+
+function openOperacionPiscina() {
+  setConScreen('Operación de Piscina', () => nav('dept'),
+    `<div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Selecciona la acción a realizar</div>
+     <div class="gcard" onclick="openChecklistPiscina()"><div class="ct">Checklist de Parámetros</div><div class="cd">pH · ORP · Sal PPM · Fotos</div></div>`);
+}
+
+function openChecklistPiscina() {
+  const today = new Date();
+  const day = today.getDay();
+  const scheduled = [1,2,4,5].includes(day);
+  const dayNames = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  document.getElementById('con-title').textContent = 'Parámetros de Piscina';
+  document.getElementById('con-back').onclick = () => openOperacionPiscina();
+  document.getElementById('conbody').innerHTML = `
+    ${!scheduled ? `<div class="doc-note">📅 Hoy es ${dayNames[day]}. El checklist de piscina se realiza Lunes, Martes, Jueves y Viernes.</div>` : ''}
+    <div class="cl-header-info">
+      <div class="cl-area-name">Parámetros de Piscina</div>
+      <div class="fg" style="margin-bottom:.6rem"><label>Encargado</label>
+        <select id="pisc-colab"><option value="">— Seleccionar —</option>${COLABS_MANTO.map(n=>`<option>${n}</option>`).join('')}</select></div>
+      <div class="fg" style="margin-bottom:0"><label>Fecha y hora</label>
+        <input type="datetime-local" id="pisc-fecha" value="${today.toISOString().slice(0,16)}"></div>
+    </div>
+    <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
+      <div class="cl-sec-title">Parámetros del Agua</div>
+      <div class="fg" style="margin-bottom:.9rem;"><label>pH</label><input type="number" id="pisc-ph" step="0.1" min="0" max="14" placeholder="Ej: 7.4" style="font-size:1.1rem;font-weight:600;"><div style="font-size:.65rem;font-family:sans-serif;color:var(--tm);margin-top:.25rem;">Rango ideal: 7.2 – 7.6</div></div>
+      <div class="fg" style="margin-bottom:.9rem;"><label>ORP (mV)</label><input type="number" id="pisc-orp" step="1" min="0" placeholder="Ej: 720" style="font-size:1.1rem;font-weight:600;"><div style="font-size:.65rem;font-family:sans-serif;color:var(--tm);margin-top:.25rem;">Rango ideal: 650 – 750 mV</div></div>
+      <div class="fg" style="margin-bottom:0"><label>Sal PPM</label><input type="number" id="pisc-sal" step="10" min="0" placeholder="Ej: 3200" style="font-size:1.1rem;font-weight:600;"><div style="font-size:.65rem;font-family:sans-serif;color:var(--tm);margin-top:.25rem;">Mínimo requerido: 3,000 PPM</div></div>
+    </div>
+    <div class="fg"><label>Observaciones</label>${aw('pisc-obs','Observaciones sobre el estado del agua, equipos o área...')}</div>
+    ${photoUploadWidget('pisc-photos')}
+    <button class="btn-sub" id="pisc-sub" onclick="submitPiscina()">Enviar Reporte de Piscina</button>
+    <div class="fnote">Los datos se guardarán en Google Sheets</div>
+    <div class="ok-msg" id="pisc-ok"><p>✅ Reporte enviado.</p></div>
+    <div class="err-msg" id="pisc-err"><p>❌ Error al enviar. Intenta de nuevo.</p></div>`;
+  show('con-screen');
+}
+
+async function submitPiscina() {
+  const colab = document.getElementById('pisc-colab')?.value;
+  if (!colab) { alert('Por favor selecciona el encargado.'); return; }
+  const ph=document.getElementById('pisc-ph')?.value, orp=document.getElementById('pisc-orp')?.value, sal=document.getElementById('pisc-sal')?.value;
+  if (!ph||!orp||!sal) { alert('Por favor completa los tres parámetros.'); return; }
+  const alertas=[];
+  if (parseFloat(ph)<7.2||parseFloat(ph)>7.6) alertas.push(`pH fuera de rango (${ph})`);
+  if (parseInt(orp)<650||parseInt(orp)>750) alertas.push(`ORP fuera de rango (${orp} mV)`);
+  if (parseInt(sal)<3000) alertas.push(`Sal por debajo del mínimo (${sal} PPM)`);
+  const btn=document.getElementById('pisc-sub'); btn.disabled=true; btn.textContent='Enviando...';
+  const ok=await sendToSheets({type:'reporte',usuario:CU.usuario,departamento:'mantenimiento',tipo:'piscina',datos:{colaborador:colab,fecha:document.getElementById('pisc-fecha')?.value||'',ph,orp,sal,alertas:alertas.join(' · '),obs:document.getElementById('ta-pisc-obs')?.value||''}});
+  const okEl=document.getElementById('pisc-ok'),errEl=document.getElementById('pisc-err');
+  if (ok) { okEl.style.display='block'; okEl.innerHTML=alertas.length?`<p>✅ Reporte enviado.<br><span style="color:var(--clay);font-size:.78rem;">⚠️ ${alertas.join('<br>')}</span></p>`:'<p>✅ Reporte de piscina enviado correctamente.</p>'; }
+  else { errEl.style.display='block'; btn.disabled=false; btn.textContent='Enviar Reporte de Piscina'; }
+}
+
+function aw(id, ph) {
+  return `<div class="aw">
+    <textarea id="ta-${id}" placeholder="${ph}" style="width:100%;border:none;border-bottom:1px solid rgba(84,66,54,.1);padding:.7rem .85rem;font-size:.88rem;font-family:sans-serif;color:var(--brown);outline:none;resize:none;height:72px;line-height:1.5;display:block;background:white;"></textarea>
+    <div class="actl">
+      <button class="bmk" id="mic-${id}" onclick="toggleMic('${id}')">🎙</button>
+      <span class="mst" id="ms-${id}">Toca para dictar</span>
+      <button class="bclr" onclick="document.getElementById('ta-${id}').value=''">Limpiar</button>
+    </div>
+  </div>`;
+}
+function toggleMic(wid) { if (activeRec&&activeRec.wid===wid){stopRec();return;} stopRec(); startRec(wid); }
+function startRec(wid) {
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if (!SR){setMs(wid,'❌ Navegador no soporta dictado',false);return;}
+  const rec=new SR(); rec.lang='es-CR'; rec.continuous=true; rec.interimResults=true;
+  const btn=document.getElementById('mic-'+wid),ta=document.getElementById('ta-'+wid);
+  if (!btn||!ta) return;
+  btn.classList.add('rec'); btn.innerHTML='Detener'; setMs(wid,'🔴 Grabando...',true);
+  let base=ta.value;
+  rec.onresult=e=>{let fi='',in2='';for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)fi+=e.results[i][0].transcript+' ';else in2+=e.results[i][0].transcript;}if(fi)base+=fi;ta.value=base+in2;};
+  rec.onerror=()=>{setMs(wid,'Error al grabar.',false);cleanMic(wid);activeRec=null;};
+  rec.onend=()=>{ta.value=base.trim();setMs(wid,'✅ Guardado.',false);cleanMic(wid);activeRec=null;};
+  rec.start(); activeRec={rec,wid}; btn.onclick=()=>stopRec();
+}
+function stopRec(){if(activeRec){try{activeRec.rec.stop();}catch(e){}cleanMic(activeRec.wid);activeRec=null;}}
+function setMs(wid,msg,on){const el=document.getElementById('ms-'+wid);if(!el)return;el.textContent=msg;on?el.classList.add('on'):el.classList.remove('on');}
+function cleanMic(wid){const b=document.getElementById('mic-'+wid);if(!b)return;b.classList.remove('rec');b.innerHTML='🎙';b.onclick=()=>toggleMic(wid);}
+
+function openForm(formId) {
+  stopRec();
+  if (!window._photos) window._photos = {};
+  window._photos['form-photos'] = [];
+  const today = new Date().toISOString().split('T')[0];
+  const limp  = `<select id="f-colab"><option value="">— Seleccionar —</option>${COLABS_LIMP.map(n=>`<option${CU&&n===CU.nombre?' selected':''}>${n}</option>`).join('')}</select>`;
+  const manto = `<select id="f-colab"><option value="">— Seleccionar —</option>${COLABS_MANTO.map(n=>`<option${CU&&n===CU.nombre?' selected':''}>${n}</option>`).join('')}</select>`;
+  const all   = `<select id="f-colab"><option value="">— Seleccionar —</option>${ALL_COLABS.map(n=>`<option${CU&&n===CU.nombre?' selected':''}>${n}</option>`).join('')}</select>`;
+
+  const FORMS = {
+    labores: { title:'Reporte de Labores', dept:'limpieza', btnCls:'', html:
+      `<div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
+       <div class="fg"><label>Turno</label><select id="f-turno"><option value="AM">AM (7am–12md)</option><option value="PM">PM (12:30–3pm)</option></select></div></div>
+       <div class="fg"><label>Rol</label><select id="f-rol"><option value="Rol 1">Rol 1</option><option value="Rol 2">Rol 2</option></select></div>
+       <div class="fg"><label>Colaboradora</label>${limp}</div>
+       <div class="fg"><label>Áreas trabajadas</label><textarea id="f-areas" placeholder="Lista las áreas..."></textarea></div>
+       <div class="fg"><label>Duración (h)</label><input type="number" id="f-dur" step="0.5" min="0" placeholder="0"></div>
+       <div class="fg"><label>Observaciones</label>${aw('obs','Observaciones o dicta nota de voz...')}</div>
+       ${photoUploadWidget('form-photos')}` },
+    areas: { title:'Limpieza de Áreas', dept:'limpieza', btnCls:'', html:
+      `<div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
+       <div class="fg"><label>Turno</label><select id="f-turno"><option value="AM">AM (7am–12md)</option><option value="PM">PM (12:30–3pm)</option></select></div></div>
+       <div class="fg"><label>Rol</label><select id="f-rol"><option value="Rol 1">Rol 1</option><option value="Rol 2">Rol 2</option></select></div>
+       <div class="fg"><label>Área</label><select id="f-area"><option>Recepción</option><option>Habitaciones</option><option>Áreas comunes</option><option>Cocina</option><option>Baños</option><option>Exteriores</option><option>Otra</option></select></div>
+       <div class="fg"><label>Colaboradora</label>${limp}</div>
+       <div class="fg"><label>Duración (min)</label><input type="number" id="f-dur" min="0" placeholder="0"></div>
+       <div class="fg"><label>Estado al terminar</label><select id="f-estado"><option>Excelente</option><option>Bueno</option><option>Regular — requiere seguimiento</option></select></div>
+       <div class="fg"><label>Observaciones</label>${aw('obs','Observaciones...')}</div>
+       ${photoUploadWidget('form-photos')}` },
+    trabajo: { title:'Reporte de Trabajo', dept:'mantenimiento', btnCls:'', html:
+      `<div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
+       <div class="fg"><label>Prioridad</label><select id="f-prior"><option>Normal</option><option>Urgente</option><option>Programado</option></select></div></div>
+       <div class="fg"><label>Encargado</label>${manto}</div>
+       <div class="fg"><label>Área / Ubicación</label><input type="text" id="f-ubic" placeholder="Ej: Habitación 3, Piscina..."></div>
+       <div class="fg"><label>Estado</label><select id="f-est"><option>Completado</option><option>En proceso</option><option>Pendiente de materiales</option><option>Requiere revisión</option></select></div>
+       <div class="fg"><label>Descripción del trabajo</label>${aw('desc','¿Qué se realizó?...')}</div>
+       <div class="fg"><label>Materiales utilizados</label>${aw('mat','Lista materiales...')}</div>
+       <div class="fg"><label>Observaciones</label>${aw('obs','¿Acción adicional?...')}</div>
+       ${photoUploadWidget('form-photos')}` },
+    agua: { title:'Reporte de Agua', dept:'mantenimiento', btnCls:'', html:
+      `<div class="doc-note" style="margin-bottom:1rem;">💧 Registrar antes de las 7:30 AM · Lunes a Viernes</div>
+       <div class="fg"><label>Encargado</label>${manto}</div>
+       <div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
+       <div class="fg"><label>Hora de registro</label><input type="time" id="f-hora"></div></div>
+       <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:1rem;">
+         <div class="cl-sec-title" style="margin-bottom:.8rem;">Lecturas de Medidores</div>
+         ${[['M1','Pozo Principal','Salida del tanque a la par del pozo — envía agua a las casitas'],
+            ['M2','Tanques Ojoche','Entrada de los tanques en la loma'],
+            ['M4','Tanque Potable','Entrada del tanque de almacenamiento a la par de la bodega'],
+            ['M5','Tanques Piscina Izq.','Tanques de la piscina — mano izquierda'],
+            ['M6','Tanques Piscina Der.','Tanques de la piscina — mano derecha'],
+            ['M7','Tubería Principal Piscina','Tubería de abastecimiento del pozo hacia los tanques de piscina'],
+           ].map(([m,n,desc]) => `
+             <div style="margin-bottom:.85rem;">
+               <div style="display:flex;align-items:baseline;gap:.5rem;margin-bottom:.3rem;">
+                 <span style="font-size:.78rem;font-family:sans-serif;font-weight:700;color:var(--clay);min-width:24px;">${m}</span>
+                 <span style="font-size:.75rem;font-family:sans-serif;font-weight:600;color:var(--brown);">${n}</span>
+               </div>
+               <div style="font-size:.7rem;font-family:sans-serif;color:var(--tm);margin-bottom:.3rem;padding-left:24px;">${desc}</div>
+               <input type="number" id="f-${m.toLowerCase()}" step="0.01" min="0" placeholder="Lectura"
+                 style="width:100%;background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.65rem .85rem;font-size:1rem;font-family:sans-serif;font-weight:600;color:var(--brown);outline:none;">
+             </div>`).join('')}
+         <div class="doc-note" style="margin-top:.5rem;">📌 Sistemas sin medidor activo: Tanques Pozo Principal · Tanques Bahareque · Pozo Maloca — registro visual solamente.</div>
+       </div>
+       <div class="fg"><label>Anomalías detectadas</label>${aw('obs','Describe cualquier anomalía en los sistemas de agua...')}</div>` },
+    averia: { title:'Reporte de Avería', dept:'mantenimiento', btnCls:'red', html:
+      `<div class="doc-note" style="margin-bottom:1rem;">🔴 Usa este reporte cuando detectes una avería que requiere atención.</div>
+       <div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
+       <div class="fg"><label>Urgencia</label><select id="f-prior">
+         <option value="URGENTE">🔴 Urgente — riesgo inmediato</option>
+         <option value="PRIORIDAD">🟡 Prioridad — resolver en 24h</option>
+         <option value="PROGRAMAR">🟢 Programar</option>
+       </select></div></div>
+       <div class="fg"><label>Encargado que reporta</label>${manto}</div>
+       <div class="fg"><label>Área / Ubicación exacta</label><input type="text" id="f-ubic" placeholder="Ej: Toensmeier, Puente colgante..."></div>
+       <div class="fg"><label>Descripción de la avería</label>${aw('desc','Describe la avería con detalle...')}</div>
+       <div class="fg"><label>Acciones tomadas de inmediato</label>${aw('obs','¿Se acordonó el área, se cerró una válvula?...')}</div>
+       ${photoUploadWidget('form-photos')}` },
+    materiales: { title:'Solicitud de Materiales', dept:'mantenimiento', btnCls:'green', html:
+      `<div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
+       <div class="fg"><label>Prioridad</label><select id="f-prior"><option>Normal</option><option>Urgente</option></select></div></div>
+       <div class="fg"><label>Solicitante</label>${manto}</div>
+       <div class="fg"><label>Área de uso</label><input type="text" id="f-ubic" placeholder="¿Para qué área o proyecto?"></div>
+       <div class="fg"><label>Materiales solicitados</label>${aw('mat','Lista los materiales con cantidad aproximada...')}</div>
+       <div class="fg"><label>Justificación / Notas</label>${aw('obs','¿Por qué se necesitan? ¿Hay algún plazo?...')}</div>
+       ${photoUploadWidget('form-photos')}` },
+    reunion: { title:'Reunión de Operaciones', dept: CD||'limpieza', btnCls:'', html:
+      `<div class="doc-note" style="margin-bottom:1rem;">📋 Confirmación de asistencia · Reunión semanal de operaciones</div>
+       <div class="fg"><label>Colaborador</label>${all}</div>
+       <div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
+       <div class="fg"><label>Hora</label><input type="time" id="f-hora" value="08:00"></div></div>
+       <div style="background:rgba(118,114,78,.08);border:1px solid rgba(118,114,78,.2);border-radius:10px;padding:1rem;text-align:center;margin:.5rem 0 .8rem;">
+         <div style="font-size:1rem;font-family:sans-serif;color:var(--green);font-weight:600;margin-bottom:.25rem;">Confirmar Asistencia</div>
+         <div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);">Al enviar quedará registrada tu asistencia</div>
+       </div>` },
+    incidencia: { title:'Reporte de Incidencia', dept:'seguridad', btnCls:'red', html:
+      `<div class="doc-note" style="margin-bottom:1rem;">🔴 Reporta cualquier incidencia de seguridad de inmediato</div>
+       <div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
+       <div class="fg"><label>Hora</label><input type="time" id="f-hora"></div></div>
+       <div class="fg"><label>Reportado por</label>
+         <select id="f-colab"><option value="">— Seleccionar —</option>${USERS.filter(u=>u.departamento==='seguridad').map(u=>`<option>${u.nombre}</option>`).join('')}</select></div>
+       <div class="fg"><label>Tipo de incidencia</label>
+         <select id="f-prior"><option>Accidente</option><option>Incidente de seguridad</option><option>Daño a propiedad</option><option>Situación de riesgo</option><option>Otro</option></select></div>
+       <div class="fg"><label>Ubicación</label><input type="text" id="f-ubic" placeholder="¿Dónde ocurrió?"></div>
+       <div class="fg"><label>Descripción</label>${aw('desc','Describe la incidencia con el mayor detalle posible...')}</div>
+       <div class="fg"><label>Acciones inmediatas tomadas</label>${aw('obs','¿Qué se hizo de inmediato?...')}</div>
+       ${photoUploadWidget('form-photos')}` },
+  };
+
+  const f = FORMS[formId];
+  if (!f) return;
+  document.getElementById('ft').textContent = f.title;
+  document.getElementById('fs-back').onclick = () => nav('dept');
+  document.getElementById('fbody').innerHTML = `
+    <h2 style="font-size:1.05rem;font-weight:normal;font-style:italic;color:var(--brown);margin-bottom:1.1rem;">${f.title}</h2>
+    ${f.html}
+    <button class="btn-sub ${f.btnCls}" id="btn-sub" onclick="submitForm('${formId}','${f.dept}')">Enviar</button>
+    <div class="fnote">Los datos se guardarán en Google Sheets</div>
+    <div class="ok-msg" id="ok-msg"><p>✅ Enviado correctamente.</p></div>
+    <div class="err-msg" id="err-msg"><p>❌ Error al enviar. Intenta de nuevo.</p></div>`;
+  show('fs');
+}
+
+async function submitForm(formId, dept) {
+  stopRec();
+  const colab = document.getElementById('f-colab')?.value;
+  if (!colab) { alert('Por favor selecciona el colaborador.'); return; }
+  const btn = document.getElementById('btn-sub');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  const datos = {
+    colaborador:colab, fecha:document.getElementById('f-fecha')?.value||'', turno:document.getElementById('f-turno')?.value||'',
+    rol:document.getElementById('f-rol')?.value||'', prior:document.getElementById('f-prior')?.value||'',
+    obs:document.getElementById('ta-obs')?.value||'', desc:document.getElementById('ta-desc')?.value||'',
+    mat:document.getElementById('ta-mat')?.value||'', area:document.getElementById('f-area')?.value||document.getElementById('f-ubic')?.value||'',
+    estado:document.getElementById('f-est')?.value||document.getElementById('f-estado')?.value||'', dur:document.getElementById('f-dur')?.value||'',
+  };
+  if (formId==='agua') {
+    ['m1','m2','m3','m4','m5','m6','m7'].forEach(m=>{datos[m]=document.getElementById(`f-${m}`)?.value||'';});
+    datos.hora=document.getElementById('f-hora')?.value||'';
+  }
+  const ok=await sendToSheets({type:'reporte',usuario:CU.usuario,departamento:dept,tipo:formId,datos});
+  if (ok){document.getElementById('ok-msg').style.display='block';}
+  else{document.getElementById('err-msg').style.display='block';btn.disabled=false;btn.textContent='Enviar';}
+}
+
+const iBasico = ['Conexión eléctrica principal funcionando','Funcionamiento de outlets eléctricos','Funcionamiento de luces (internas y externas)','Funcionamiento de abanico(s) / ventilador(es)','Funcionamiento de llavines y cerraduras','Funcionamiento de ventanas (abren, cierran, traban correctamente)','Daños visibles en estructura (paredes, cielo raso, piso, puertas)','Presencia de humedad, manchas de agua o filtraciones','Presencia de plagas o nidos de insectos','Estado de basureros (limpios, con bolsa, tapados)'];
+const iBano  = [...iBasico,'Funcionamiento de ducha (presión y temperatura)','Funcionamiento de grifo del lavatorio','Estado de la caja de aserrín (nivel adecuado, sin mal olor)','Funcionamiento del inodoro / sistema de compostaje','Presencia de fugas o taponamientos visibles','Reposición de papel higiénico, jabón y toallas','Estado de espejos y accesorios de baño'];
+const iCasita= [...iBasico,'Funcionamiento de ducha (presión y temperatura de agua)','Estado del mosquitero (sin roturas ni separaciones)','Estado del colchón y textiles (sin manchas, sin humedad)','Funcionamiento de cerrojo interior de privacidad','Estado de repisas, mesa y mobiliario','Visibilidad desde exterior (privacidad del huésped)'];
+
+const CL_LIMPIEZA = [
+  { id:'salon-recepcion', name:'Salón y Recepción', sub:'Áreas conjuntas', criterios:['Sin polvo ni residuos en superficies','Mobiliario alineado y seco','Cubertería y servilletas organizadas','Mostrador impecable y ordenado'],
+    sections:[
+      { title:'Limpieza de Salón', items:['Barrer y limpiar el piso del salón','Limpiar superficies de las mesas','Limpiar y ordenar sillas','Organizar cubertería y servilletas','Verificar que no haya basura ni objetos ajenos'] },
+      { title:'Limpieza de Recepción', items:['Limpiar mostrador de recepción','Barrer el área','Ordenar materiales y documentos visibles','Limpiar sillas y área de espera','Revisar filtro de agua — Recepción'] },
+    ]},
+  { id:'juicebar-cl', name:'Juice Bar', sub:'Área exterior de servicio', criterios:['Ningún residuo visible','Mobiliario alineado y seco','Basureros limpios y tapados','Área fresca y lista para el próximo servicio'],
+    sections:[
+      { title:'Limpieza de Juice Bar', items:['Confirmar sin huéspedes antes de iniciar','Retirar vasos, botellas, cáscaras y servilletas','Limpiar mesas, barra y repisas con paño húmedo. Secar completamente','Desinfectar manijas y zonas de alto contacto','Barrer toda el área: esquinas, debajo de mesas y accesos','Trapear con agua y desinfectante','Retirar hojas o tierra del exterior','Vaciar y reponer bolsa de basura','Alinear mesas, sillas y bancos'] },
+      { title:'Filtro de Agua — Juice Bar', items:['Revisar filtro de agua — Juice Bar','Reportar cualquier anomalía o filtro que requiera cambio'], note:'Agregar hielo del Juice Bar de estar disponible.' },
+    ]},
+  { id:'maloca', name:'Maloca', sub:'Área de eventos', criterios:['Piso limpio y seco','Columnas y paredes sin residuos','Baños limpios y abastecidos','Basureros colocados'],
+    sections:[
+      { title:'Preparación de Maloca', items:['Barrer y limpiar el piso (solo con agua)','Limpiar columnas, paredes y superficies','Retirar objetos de eventos anteriores','Verificar que el espacio esté libre y ordenado','Colocar basureros','Agregar accesorios de yoga si se requiere','Limpiar y desinfectar inodoros y lavamanos de baños','Limpiar pisos y paredes de baños','Reponer papel higiénico y jabón en baños','Vaciar y limpiar papeleras de baños'] },
+      { title:'Filtro de Agua — Maloca', items:['Revisar filtro de agua — Maloca','Reportar cualquier anomalía o filtro que requiera cambio'] },
+    ]},
+  { id:'banos-b1',    name:'Baños Principales B1', sub:'Baños secos', criterios:['Aserrín suficiente','Papel higiénico abastecido','Área limpia y sin olores'], sections:[{ title:'Inspección Baños B1',     paperField:true, items:['Revisar aserrín — cubrir contenido','Verificar stock de papel higiénico'], extraItems:['Limpiar lavamanos y superficies','Revisar puertas y cerraduras','Reportar anomalías a mantenimiento'] }] },
+  { id:'banos-b2',    name:'Baños Principales B2', sub:'Baños secos', criterios:['Aserrín suficiente','Papel higiénico abastecido','Área limpia y sin olores'], sections:[{ title:'Inspección Baños B2',     paperField:true, items:['Revisar aserrín — cubrir contenido','Verificar stock de papel higiénico'], extraItems:['Limpiar lavamanos y superficies','Revisar puertas y cerraduras','Reportar anomalías a mantenimiento'] }] },
+  { id:'banos-7600',  name:'Baños 7600',           sub:'Baños secos', criterios:['Aserrín suficiente','Papel higiénico abastecido','Área limpia y sin olores'], sections:[{ title:'Inspección Baños 7600',   paperField:true, items:['Revisar aserrín — cubrir contenido','Verificar stock de papel higiénico'], extraItems:['Limpiar lavamanos y superficies','Revisar puertas y cerraduras','Reportar anomalías a mantenimiento'] }] },
+  { id:'banos-madera',name:'Baños de Madera',      sub:'Baños secos', criterios:['Aserrín suficiente','Papel higiénico abastecido','Área limpia y sin olores'], sections:[{ title:'Inspección Baños de Madera',paperField:true, items:['Revisar aserrín — cubrir contenido','Verificar stock de papel higiénico'], extraItems:['Limpiar lavamanos y superficies','Revisar puertas y cerraduras','Reportar anomalías a mantenimiento'] }] },
+  { id:'banos-teca',  name:'Baños de Teca',        sub:'Baños secos', criterios:['Aserrín suficiente','Papel higiénico abastecido','Área limpia y sin olores'], sections:[{ title:'Inspección Baños de Teca',  paperField:true, items:['Revisar aserrín — cubrir contenido','Verificar stock de papel higiénico'], extraItems:['Limpiar lavamanos y superficies','Revisar puertas y cerraduras','Reportar anomalías a mantenimiento'] }] },
+  { id:'estudio-movimiento', name:'Estudio de Movimiento', sub:'Área de práctica', criterios:['Piso limpio y seco','Superficies sin polvo','Espacio libre y ordenado'],
+    sections:[{ title:'Preparación del Estudio de Movimiento', items:['Barrer y limpiar el piso (solo con agua)','Limpiar superficies, paredes y columnas','Retirar objetos de usos anteriores','Verificar que el espacio esté libre y ordenado','Colocar basureros'] }] },
+  { id:'lounge-cl', name:'Lounge', sub:'Espacio de descanso y socialización', criterios:['Superficies sin polvo ni manchas','Piso limpio y seco','Mobiliario alineado','Basureros vacíos'],
+    sections:[{ title:'Preparación del Lounge', items:['Barrer y limpiar el piso','Limpiar superficies y mobiliario','Retirar objetos ajenos','Verificar que el espacio esté libre y ordenado','Colocar basureros'] }] },
+  { id:'piscina-limp', name:'Piscina', sub:'Deck y área exterior', criterios:['Deck limpio y seco','Sillas y almohadones distribuidos correctamente','Sin almohadones dañados'],
+    sections:[{ title:'Preparación de Piscina', items:['Limpiar deck de la piscina','Distribuir sillas según la disposición acordada','Verificar que estén en buen estado','Sacar los almohadones de bodega','Distribuir almohadones según la disposición acordada','Retirar almohadones en mal estado y reportar'] }] },
+];
+
+const CL_MANTO_CLUSTERS = [
+  { id:'transito', name:'Tránsito Constante', sub:'Oficina · Juice Bar · Salón de Cocina y Recepción — Inspección mensual',
+    note:'⚠️ Las áreas de tránsito constante tienen inspecciones de mantenimiento mensuales.',
+    areas:[
+      { id:'oficina',   name:'Oficina',   items:[...iBasico,'Funcionamiento de equipos de cómputo','Estado de router / conectividad','Funcionamiento del aire acondicionado (si aplica)','Estado de impresora y periféricos','Cables organizados, sin riesgos de tropiezo'] },
+      { id:'juicebar',  name:'Juice Bar', items:[...iBasico,'Funcionamiento de licuadora / extractor','Estado de refrigeradora o nevera de bebidas','Funcionamiento del grifo / toma de agua','Estado de barra exterior','Stock visible de insumos (reportar faltantes)'] },
+      { id:'salon-rec', name:'Salón de Cocina y Recepción', items:[...iBasico,'Estado de mostrador y mobiliario','Estado de filtro de agua'] },
+    ]},
+  { id:'cluster1', name:'Cluster 1', sub:'Bodega · Terralab · Puente · Movement Studio · Lounge · Duchas · Baños Principales',
+    areas:[
+      { id:'storage',    name:'Storage / Bodega', items:[...iBasico,'Organización visible del almacenamiento','Estado de estantes y anclajes','Presencia de plagas en productos almacenados','Insumos críticos en stock adecuado'] },
+      { id:'terralab',   name:'Terralab', items:[...iBasico,'Estado de equipos y herramientas de laboratorio','Funcionamiento de equipos de refrigeración (si aplica)','Organización y etiquetado de insumos','Ventilación adecuada'] },
+      { id:'bridge',     name:'Hanging Bridge', note:'⚠️ Estructura de seguridad crítica.', items:['Estado de cables o estructura de soporte','Estado de tablones o superficie de paso','Barandas firmes y sin daños','Sin presencia de humedad excesiva','Iluminación del puente funcionando (si aplica)'] },
+      { id:'movement',   name:'Movement Studio', items:[...iBasico,'Estado del piso','Estado de espejos','Funcionamiento de equipo de sonido','Estado de colchonetas / props','Espacio libre de obstáculos'] },
+      { id:'lounge',     name:'Lounge / Deck', items:[...iBasico,'Estado de muebles y tapizado','Estado de hamacas o mobiliario exterior','Estado del deck (sin tablas sueltas, astillas o daños)','Iluminación exterior funcionando'] },
+      { id:'duchas-main',name:'Duchas Principales', items:iBano },
+      { id:'banos-main', name:'Baños Principales',  items:iBano },
+    ]},
+  { id:'cluster2', name:'Cluster 2', sub:'Toensmeier · Baños 7600 · Baños de la Teca · Lancaster · Götsch · Holzer · Cocina Residentes · Ingham · Carson',
+    areas:[
+      { id:'toensmeier', name:'Toensmeier', items:iCasita }, { id:'banos7600', name:'Baños 7600', items:iBano }, { id:'banos-teca', name:'Baños de la Teca', items:iBano },
+      { id:'lancaster', name:'Lancaster', items:iCasita }, { id:'gotsch', name:'Götsch', items:iCasita }, { id:'holzer', name:'Holzer', items:iCasita },
+      { id:'cocina-res', name:'Cocina de Residentes', items:[...iBasico,'Funcionamiento de quemadores / cocina','Funcionamiento de extractor de olores','Estado de refrigeradora','Funcionamiento de lavaplatos y grifo','Presencia de fugas bajo el fregadero','Estado de superficies de preparación','Almacenamiento correcto de alimentos e insumos'] },
+      { id:'ingham', name:'Ingham', items:iCasita }, { id:'carson', name:'Carson', items:iCasita },
+    ]},
+  { id:'cluster3', name:'Cluster 3', sub:'Baño de Madera · Hememway · Primavesi · Salatin · Shiva · Savory · Yeomans · Fukuoka · Mollison',
+    areas:[
+      { id:'bath-wood', name:'Baño de Madera', items:iBano }, { id:'hememway', name:'Hememway', items:iCasita }, { id:'primavesi', name:'Primavesi', items:iCasita },
+      { id:'salatin', name:'Salatin', items:iCasita }, { id:'shiva', name:'Shiva', items:iCasita }, { id:'savory', name:'Savory', items:iCasita },
+      { id:'yeomans', name:'Yeomans', items:iCasita }, { id:'fukuoka', name:'Fukuoka', items:iCasita }, { id:'mollison', name:'Mollison', items:iCasita },
+    ]},
+  { id:'cluster4', name:'Cluster 4', sub:'Starhawk · Crawford · Eisenstein · Doherty · Macy · Baños Bahareque · Wex Camp · Maloca',
+    areas:[
+      { id:'starhawk', name:'Starhawk', items:iCasita }, { id:'crawford', name:'Crawford', items:iCasita }, { id:'eisenstein', name:'Eisenstein', items:iCasita },
+      { id:'doherty', name:'Doherty', items:iCasita }, { id:'macy', name:'Macy', items:iCasita },
+      { id:'bah-bath', name:'Baños de Bahareque', note:'Únicos baños de habitaciones con ducha.', items:[...iBano,'Paredes de bahareque sin grietas ni humedad penetrante'] },
+      { id:'wex-camp', name:'Wex Camp', items:[...iBasico,'Estado de carpa o estructura temporal','Estado de tarima o base elevada','Ventilación e iluminación adecuadas','Funcionamiento del sistema sanitario asociado'] },
+      { id:'maloca-ev', name:'Maloca', note:'⚠️ Espacio de alta significancia cultural.', items:[...iBasico,'Estado de estructura de techo','Estado de bambú o madera estructural expuesta','Estado del piso','Funcionamiento de sistema de audio','Estado del baño y bodega asociados'] },
+      { id:'maloca-bath', name:'Maloca Bathroom', items:iBano },
+      { id:'maloca-st', name:'Maloca Storage', items:[...iBasico,'Organización visible del almacenamiento','Estado de estantes y anclajes','Presencia de plagas en productos almacenados','Insumos críticos en stock adecuado'] },
+    ]},
+  { id:'diario', name:'Atención Diaria', sub:'Piscina · Sistemas de Agua · Casita Azul',
+    areas:[
+      { id:'piscina-mt', name:'Piscina', note:'El sistema arranca a 20 PSI y cae a 10 PSI. Nunca debe superar los 25 PSI.', items:['Estado de estructura, deck, duchas y enchapado','Estado inicial del sistema de bombeo y filtración','Niveles químicos: Sal PPM (mín. 3000), pH, ORP','Revisión de canastillas','Revisión visual de canastilla de bomba','Aspirado y llenado de piscina','Niveles químicos finales: Sal PPM (mín. 3000), pH, ORP'] },
+      { id:'agua-sys', name:'Sistemas de Agua', items:['Nivel de agua visible o indicado en el sistema','Presencia de fugas, humedad inusual o manchas en tuberías','Estado físico del tanque o estructura','Lectura del medidor correspondiente','Presión del sistema (normal / baja / alta)','Estado de tapas y sellos','Funcionamiento de válvulas de corte','Presencia de vectores o contaminantes externos','Registro completado en formulario'] },
+      { id:'casita-azul', name:'Casita Azul', items:iBasico },
+    ]},
+];
+
+function openChecklistMenu(resourceId) {
+  document.getElementById('cl-title').textContent = 'Checklist';
+  document.getElementById('cl-back').onclick = () => nav('dept');
+  let html = '';
+  if (CD === 'limpieza') {
+    html = `<div class="glbl">Selecciona el área a inspeccionar</div><div class="area-grid">
+      ${CL_LIMPIEZA.map(a => `<div class="area-card" onclick="promptChecklist('${a.id}','limpieza')">
+        <div class="acn">${a.name}</div><div class="acs">${a.sub}</div></div>`).join('')}
+    </div>`;
+  } else {
+    html = `<div class="glbl">Selecciona el cluster a inspeccionar</div>`;
+    CL_MANTO_CLUSTERS.forEach(cl => {
+      html += `<div class="cluster-card" onclick="promptChecklist('${cl.id}','mantenimiento')">
+        <div class="cc-title">${cl.name}</div><div class="cc-sub">${cl.sub}</div>
+        ${cl.note ? `<div style="font-size:.67rem;font-family:sans-serif;color:var(--clay);margin-top:.3rem;">${cl.note}</div>` : ''}
+      </div>`;
+    });
+  }
+  document.getElementById('cl-body').innerHTML = html;
+  show('cl-screen');
+}
+
+function promptChecklist(id, dept) {
+  let name='', sub='';
+  if (dept==='limpieza'){const a=CL_LIMPIEZA.find(x=>x.id===id);name=a.name;sub=a.sub;}
+  else{const cl=CL_MANTO_CLUSTERS.find(x=>x.id===id);name=cl.name;sub=cl.sub;}
+  pendingCL={id,dept};
+  document.getElementById('modal-sub').innerHTML=`Vas a iniciar el checklist de inspección para:<br><strong style="color:var(--brown)">${name}</strong><br><span style="font-size:.75rem;color:var(--tm);">${sub}</span><br><br>Asegúrate de estar en el área indicada.`;
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal(){document.getElementById('modal').classList.remove('show');pendingCL=null;}
+function confirmChecklist(){document.getElementById('modal').classList.remove('show');if(pendingCL)startChecklist(pendingCL.id,pendingCL.dept);}
+
+function startChecklist(id, dept) {
+  checkedMap={};
+  const isLimp=dept==='limpieza';
+  const obj=isLimp?CL_LIMPIEZA.find(a=>a.id===id):CL_MANTO_CLUSTERS.find(cl=>cl.id===id);
+  const name=obj.name;
+  let total=0;
+  if(isLimp){obj.sections.forEach(sec=>{total+=sec.items.length+(sec.extraItems||[]).length;});}
+  else{obj.areas.forEach(area=>{total+=area.items.length;});}
+
+  let sectionsHtml='';
+  if(isLimp){
+    if(obj.criterios){sectionsHtml+=`<div class="crit-box" style="margin-bottom:1rem;"><div class="crit-lbl">Criterios de limpieza esperada</div>${obj.criterios.map(c=>`<div class="crit-row">✓ ${c}</div>`).join('')}</div>`;}
+    obj.sections.forEach((sec,si)=>{
+      sectionsHtml+=`<div class="cl-section">${sec.title?`<div class="cl-sec-title">${sec.title}</div>`:''}${sec.items.map((item,ii)=>clItem(si,ii,item)).join('')}`;
+      if(sec.paperField){sectionsHtml+=`<div style="background:#faf8f4;border:1px solid rgba(84,66,54,.12);border-radius:8px;padding:.65rem .85rem;margin:.4rem 0;"><div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--clay);font-family:sans-serif;margin-bottom:.4rem;">Cantidad de rollos rellenados</div><div style="display:flex;align-items:center;gap:.6rem;"><button onclick="adjQty('paper-${si}',-1)" style="width:30px;height:30px;border-radius:50%;border:1.5px solid rgba(153,92,68,.3);background:none;color:var(--clay);font-size:1.1rem;cursor:pointer;">−</button><input type="number" id="paper-${si}" value="0" min="0" style="width:50px;height:30px;text-align:center;border:1px solid rgba(84,66,54,.2);border-radius:6px;font-size:.9rem;font-family:sans-serif;color:var(--brown);outline:none;background:white;"><button onclick="adjQty('paper-${si}',1)" style="width:30px;height:30px;border-radius:50%;border:1.5px solid rgba(153,92,68,.3);background:none;color:var(--clay);font-size:1.1rem;cursor:pointer;">+</button><span style="font-size:.75rem;font-family:sans-serif;color:var(--tm);">rollos agregados</span></div></div>`;}
+      sectionsHtml+=(sec.extraItems||[]).map((item,ii)=>clItem(si,sec.items.length+ii,item)).join('');
+      if(sec.note)sectionsHtml+=`<div class="doc-note">📌 ${sec.note}</div>`;
+      sectionsHtml+=`</div>`;
+    });
+  } else {
+    if(obj.note)sectionsHtml+=`<div class="doc-note">${obj.note}</div>`;
+    obj.areas.forEach((area,ai)=>{
+      sectionsHtml+=`<div class="cl-section"><div class="cl-sec-title">${area.name}${area.note?` — <span style="color:var(--clay);font-size:.65rem;">${area.note}</span>`:''}</div>${area.items.map((item,ii)=>clItem(ai,ii,item)).join('')}</div>`;
+    });
+  }
+
+  const colabOpts=isLimp?COLABS_LIMP.map(n=>`<option>${n}</option>`).join(''):COLABS_MANTO.map(n=>`<option>${n}</option>`).join('');
+  document.getElementById('cl-title').textContent=name;
+  document.getElementById('cl-back').onclick=()=>openChecklistMenu(isLimp?'checklist-limp':'checklist-manto');
+  document.getElementById('cl-body').innerHTML=`
+    <div class="cl-header-info">
+      <div class="cl-area-name">${name}</div>
+      <div class="fg" style="margin-bottom:.6rem"><label>Encargado</label><select id="cl-colab"><option value="">— Seleccionar —</option>${colabOpts}</select></div>
+      ${isLimp?`<div class="fg" style="margin-bottom:.6rem"><label>Turno</label><select id="cl-turno"><option value="AM">AM — 7:00am a 12:00md</option><option value="PM">PM — 12:30pm a 3:00pm</option></select></div>`:''}
+      <div class="fg" style="margin-bottom:0"><label>Fecha</label><input type="date" id="cl-fecha" value="${new Date().toISOString().split('T')[0]}"></div>
+    </div>
+    <div class="cl-prog-txt" id="prog-txt">0 / ${total} ítems completados</div>
+    <div class="cl-progress"><div class="cl-prog-bar" id="prog-bar" style="width:0%"></div></div>
+    ${sectionsHtml}
+    <div class="fg" style="margin-top:.5rem"><label>Observaciones generales</label>${aw('cl-obs','Observaciones generales...')}</div>
+    ${photoUploadWidget('cl-photos')}
+    <button class="btn-sub" id="cl-submit" onclick="submitChecklist('${id}','${dept}')">Enviar Reporte de Inspección</button>
+    <div class="fnote">Los datos se guardarán en Google Sheets</div>
+    <div class="ok-msg" id="cl-ok"><p>✅ Reporte de inspección enviado correctamente.</p></div>
+    <div class="err-msg" id="cl-err"><p>❌ Error al enviar. Intenta de nuevo.</p></div>`;
+  show('cl-screen');
+}
+
+function clItem(si,ii,item){return `<div class="cl-item"><div class="cl-cb" id="cb-${si}-${ii}" onclick="toggleCB(${si},${ii})"></div><div style="flex:1"><div class="cl-txt">${item}</div><div class="cl-note"><input type="text" placeholder="Nota opcional..." id="cn-${si}-${ii}"></div></div></div>`;}
+
+function toggleCB(si,ii){
+  const k=`${si}-${ii}`;checkedMap[k]=!checkedMap[k];
+  const cb=document.getElementById(`cb-${si}-${ii}`);
+  checkedMap[k]?cb.classList.add('checked'):cb.classList.remove('checked');
+  const done=Object.values(checkedMap).filter(Boolean).length;
+  const total=parseInt(document.getElementById('prog-txt').textContent.split('/')[1]);
+  document.getElementById('prog-txt').textContent=`${done} / ${total} ítems completados`;
+  document.getElementById('prog-bar').style.width=`${(done/total)*100}%`;
+}
+
+async function submitChecklist(id,dept){
+  const colab=document.getElementById('cl-colab')?.value;
+  if(!colab){alert('Por favor selecciona el encargado.');return;}
+  const isLimp=dept==='limpieza';
+  const obj=isLimp?CL_LIMPIEZA.find(a=>a.id===id):CL_MANTO_CLUSTERS.find(cl=>cl.id===id);
+  const allItems=[];
+  if(isLimp){obj.sections.forEach((s,si)=>{[...s.items,...(s.extraItems||[])].forEach((item,ii)=>allItems.push({item,checked:!!checkedMap[`${si}-${ii}`],nota:document.getElementById(`cn-${si}-${ii}`)?.value||''}));});}
+  else{obj.areas.forEach((area,ai)=>{area.items.forEach((item,ii)=>allItems.push({item,checked:!!checkedMap[`${ai}-${ii}`],nota:document.getElementById(`cn-${ai}-${ii}`)?.value||''}));});}
+  const btn=document.getElementById('cl-submit');btn.disabled=true;btn.textContent='Enviando...';
+  const ok=await sendToSheets({type:'checklist',usuario:CU.usuario,departamento:dept,area:obj.name,turno:document.getElementById('cl-turno')?.value||'',fecha:document.getElementById('cl-fecha')?.value||'',total:allItems.length,completados:allItems.filter(i=>i.checked).length,observaciones:document.getElementById('ta-cl-obs')?.value||'',items:allItems});
+  checkedMap={};
+  if(ok){document.getElementById('cl-ok').style.display='block';}
+  else{document.getElementById('cl-err').style.display='block';btn.disabled=false;btn.textContent='Enviar Reporte de Inspección';}
+}
+
+const BLOB_COLORS=['#717F7E','#76724E','#995C44','#735145','#E8E2D1','#544236'];
+const BLOB_LIGHT=['rgba(113,127,126,.25)','rgba(118,114,78,.25)','rgba(153,92,68,.22)','rgba(115,81,69,.22)','rgba(232,226,209,.6)','rgba(84,66,54,.18)'];
+const DEPT_LABEL={limpieza:'Limpieza',mantenimiento:'Mantenimiento',proveeduria:'Proveduría y Transportes',seguridad:'Seguridad'};
+
+function dialSVG(score,pct,color,blobColors,w,r){
+  const cx=w/2,cy=w/2,circ=2*Math.PI*r,dash=circ*(pct/100),fs1=Math.round(r*.38),fs2=Math.round(r*.13),ty1=cy-4,ty2=cy+Math.round(r*.2),sw=Math.round(r*.1),bry=cy-r-8,brx=Math.round(r*.35),bry2=Math.round(r*.15);
+  const blobs=blobColors.map((c,i)=>'<ellipse cx="'+cx+'" cy="'+bry+'" rx="'+brx+'" ry="'+bry2+'" fill="'+c+'" transform="rotate('+(i*60)+' '+cx+' '+cy+')"/>').join('');
+  return '<svg width="'+w+'" height="'+w+'" viewBox="0 0 '+w+' '+w+'">'+blobs+'<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="rgba(84,66,54,.07)" stroke-width="'+sw+'"/><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="'+sw+'" stroke-dasharray="'+dash+' '+circ+'" stroke-dashoffset="'+(circ*.25)+'" stroke-linecap="round" transform="rotate(-90 '+cx+' '+cy+')"/><text x="'+cx+'" y="'+ty1+'" text-anchor="middle" font-family="Georgia,serif" font-size="'+fs1+'" font-weight="700" fill="#544236">'+score+'</text><text x="'+cx+'" y="'+ty2+'" text-anchor="middle" font-family="sans-serif" font-size="'+fs2+'" fill="#a08070">cumplimiento</text></svg>';
+}
+
+function openMyPerformance(){
+  const colabs=USERS.filter(u=>u.rol==='colaborador');
+  const idx=colabs.findIndex(u=>u.usuario===CU.usuario);
+  const color=BLOB_COLORS[idx%BLOB_COLORS.length];
+  const blobC=BLOB_LIGHT.map((_,j)=>BLOB_LIGHT[(idx+j)%BLOB_LIGHT.length]);
+  const backFn = () => { if(CU.rol==='admin'){renderHome();}else{renderDeptHome();} show('home'); };
+  setConScreen('Mi Desempeño', backFn,`
+    <div style="text-align:center;margin-bottom:1.2rem;">${dialSVG('—',0,color,blobC,210,80)}
+      <div style="font-size:1.15rem;font-style:italic;color:var(--brown);margin-top:.25rem;">${CU.nombre}</div>
+      <div style="font-size:.7rem;font-family:sans-serif;color:var(--tm);text-transform:uppercase;letter-spacing:.1em;margin-top:.2rem;">${DEPT_LABEL[CU.departamento]||CU.departamento}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1rem;">
+      <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:.9rem;text-align:center;"><div style="font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--blue);font-family:sans-serif;margin-bottom:.4rem;">Esta semana</div><div style="font-size:2rem;font-family:sans-serif;font-weight:700;color:var(--brown);">—</div><div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);">% cumplimiento</div></div>
+      <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:.9rem;text-align:center;"><div style="font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--clay);font-family:sans-serif;margin-bottom:.4rem;">Este mes</div><div style="font-size:2rem;font-family:sans-serif;font-weight:700;color:var(--brown);">—</div><div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);">% cumplimiento</div></div>
+    </div>
+    <button class="dept-btn" onclick="openPeerEval()" style="margin-bottom:.65rem;width:100%;"><div class="dico a" style="background:rgba(113,127,126,.15);color:var(--blue);">EP</div><div class="dinf"><h3>Evaluación de Pares</h3><p>Evalúa el desempeño de tus compañeros</p></div><span class="dbadge on" style="background:rgba(113,127,126,.15);color:var(--blue);">Mensual</span></button>
+    <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;"><div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);font-family:sans-serif;margin-bottom:.5rem;">KPIs pendientes de definición por administración</div></div>`);
+}
+
+function openTeamPerformance(){
+  const team=USERS.filter(u=>u.rol==='colaborador');
+  const grid=team.map((u,i)=>{const color=BLOB_COLORS[i%BLOB_COLORS.length];const blobC=BLOB_LIGHT.map((_,j)=>BLOB_LIGHT[(i+j)%BLOB_LIGHT.length]);return `<div onclick="openPersonDetail('${u.usuario}')" style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:16px;padding:1.1rem .7rem;text-align:center;cursor:pointer;">${dialSVG('—',0,color,blobC,140,54)}<div style="font-size:.82rem;font-family:'Cormorant',Georgia,serif;font-style:italic;color:var(--brown);line-height:1.3;margin-bottom:.25rem;">${u.nombre.split(' ').slice(0,2).join(' ')}</div><div style="font-size:.65rem;font-family:sans-serif;color:var(--tm);text-transform:uppercase;letter-spacing:.07em;">${DEPT_LABEL[u.departamento]||u.departamento}</div></div>`;}).join('');
+  setConScreen('Desempeño del Equipo',()=>{renderHome();show('home');},`
+    <div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Cumplimiento semanal · ${new Date().toLocaleDateString('es-CR',{month:'long',year:'numeric'})}</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.85rem;">${grid}</div>
+    <div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);text-align:center;margin-top:1.2rem;font-style:italic;">Los porcentajes se actualizarán cuando los KPIs estén definidos</div>`);
+}
+
+function openPersonDetail(username){
+  const u=USERS.find(x=>x.usuario===username);if(!u)return;
+  const colabs=USERS.filter(x=>x.rol==='colaborador');const idx=colabs.findIndex(x=>x.usuario===username);
+  const color=BLOB_COLORS[idx%BLOB_COLORS.length];const blobC=BLOB_LIGHT.map((_,j)=>BLOB_LIGHT[(idx+j)%BLOB_LIGHT.length]);
+  document.getElementById('con-title').textContent=u.nombre.split(' ').slice(0,2).join(' ');
+  document.getElementById('con-back').onclick=()=>openTeamPerformance();
+  document.getElementById('conbody').innerHTML=`<div style="text-align:center;padding:1rem 0;">${dialSVG('—',0,color,blobC,180,68)}<div style="font-size:1.1rem;font-style:italic;color:var(--brown);margin-top:.25rem;">${u.nombre}</div><div style="font-size:.7rem;font-family:sans-serif;color:var(--tm);text-transform:uppercase;letter-spacing:.1em;margin-top:.2rem;">${DEPT_LABEL[u.departamento]||u.departamento}</div></div><div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;"><div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);font-family:sans-serif;margin-bottom:.5rem;">KPIs pendientes de definición</div></div>`;
+  show('con-screen');
+}
+
+function openReports(){
+  document.getElementById('rep-body').innerHTML=`<div style="text-align:center;padding:2rem;font-family:sans-serif;color:var(--tm);font-style:italic;">Los reportes enviados aparecerán aquí una vez conectado el dashboard de lectura.</div>`;
+  show('rep-screen');
+}
+
+function mkStepsMT(steps){return steps.map(([t,d],i)=>`<div style="display:flex;gap:.75rem;margin-bottom:.85rem;align-items:flex-start;"><div style="width:26px;height:26px;background:var(--clay);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:.72rem;font-family:sans-serif;font-weight:600;flex-shrink:0;margin-top:.1rem;">${i+1}</div><div><div style="font-size:.82rem;font-family:sans-serif;font-weight:600;color:var(--brown);margin-bottom:.25rem;">${t}</div><div style="font-size:.78rem;font-family:sans-serif;color:var(--brown);line-height:1.5;">${d}</div></div></div>`).join('');}
+function mkAreaLimp(sub,steps,criterios){return `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">${sub}</div>`+mkStepsMT(steps)+`<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Criterios de limpieza esperada</div>${criterios.map(c=>`<div class="crit-row">✓ ${c}</div>`).join('')}</div>`;}
+function mkRolTable(rows){return `<div style="border-radius:8px;overflow:hidden;border:1px solid rgba(84,66,54,.1);">${rows.map(([day,t1,a1,t2,a2],i)=>`<div style="background:${i%2===0?'white':'#faf8f4'};padding:.65rem .8rem;border-bottom:1px solid rgba(84,66,54,.06);"><div style="font-size:.75rem;font-family:sans-serif;font-weight:600;color:var(--brown);margin-bottom:.35rem;">${day}</div><div style="display:flex;gap:.5rem;flex-wrap:wrap;"><span style="font-size:.65rem;font-family:sans-serif;background:rgba(113,127,126,.15);color:var(--blue);padding:.15rem .45rem;border-radius:20px;white-space:nowrap;">${t1}</span><span style="font-size:.7rem;font-family:sans-serif;color:var(--brown);flex:1;line-height:1.4;">${a1}</span></div><div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.3rem;"><span style="font-size:.65rem;font-family:sans-serif;background:rgba(153,92,68,.12);color:var(--clay);padding:.15rem .45rem;border-radius:20px;white-space:nowrap;">${t2}</span><span style="font-size:.7rem;font-family:sans-serif;color:var(--brown);flex:1;line-height:1.4;">${a2}</span></div></div>`).join('')}</div>`;}
+
+// ── MANUAL INDEX SECTIONS ──
+const MANUAL_LMP_SECS = [
+  { id:'depto', title:'Departamento de Operaciones' },
+  { id:'marco-principios', title:'Marco de Principios' },
+  { id:'criterios-todo', title:'Criterios, Preparación y Procedimientos Generales' },
+  { divider:'Áreas Comunes' },
+  { id:'oficina', title:'Oficina' }, { id:'juicebar', title:'Juice Bar' },
+  { id:'recepcion', title:'Recepción' }, { id:'comedor', title:'Cocina / Comedor' },
+  { id:'templo', title:'Estudio de Movimiento' }, { id:'lounge', title:'Lounge' },
+  { divider:'Habitaciones' },
+  { id:'casitas-madera', title:'Casitas de Madera' }, { id:'casitas-bah', title:'Casitas de Bahareque' },
+  { divider:'Insumos' },
+  { id:'catalogo-prod', title:'Catálogo de Productos', type:'catalogo' },
+  { id:'solicitud-ins', title:'Solicitud de Insumos', type:'solicitud' },
+];
+
+function renderManualLimp(){
+  let html=`<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Estándares, procedimientos y criterios de limpieza · Versión 2.0 · 2025</div>`;
+  MANUAL_LMP_SECS.forEach(s=>{
+    if(s.divider){html+=`<div class="sec-band">${s.divider}</div>`;}
+    else if(s.type==='catalogo'){html+=`<div class="gcard" onclick="openCatalogoProductos()" style="margin-bottom:.6rem;"><div class="ct">${s.title}</div><div class="cd">Insumos aprobados para uso en Tierramor</div></div>`;}
+    else if(s.type==='solicitud'){html+=`<div class="gcard" onclick="openSolicitudInsumos()" style="margin-bottom:.6rem;"><div class="ct">${s.title}</div><div class="cd">Solicita los insumos que necesitas</div></div>`;}
+    else{html+=`<div class="gcard" onclick="openManualSection('limp','${s.id}','${s.title}')" style="margin-bottom:.6rem;"><div class="ct">${s.title}</div></div>`;}
+  });
+  return html;
+}
+
+function openCatalogoProductos(){
+  setConScreen('Catálogo de Productos',()=>setConScreen('Manual de Housekeeping',()=>nav('dept'),renderManualLimp()),
+    `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:.75rem;">Productos aprobados por efectividad, seguridad y compatibilidad con materiales naturales. La dilución específica está en la ficha técnica disponible en bodega.</div>
+     <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;overflow:hidden;">
+       <div style="display:grid;grid-template-columns:1.4fr 1.5fr 1.3fr;background:var(--brown);padding:.55rem .75rem;gap:.5rem;">${['Producto','Uso principal','Precauciones'].map(h=>`<div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--cream);font-family:sans-serif;">${h}</div>`).join('')}</div>
+       ${[['Jabón líquido Florex','Higiene personal y lavado de superficies generales','Evitar contacto con ojos. Uso externo.'],['Detergente Lavaropa Florex','Lavado de ropa y textiles de cama','No mezclar con cloro. Enjuagar bien.'],['Gel de baño sábila','Higiene corporal en duchas de huéspedes','Uso externo. Evitar contacto con ojos.'],['Shampoo sábila','Higiene capilar en duchas de huéspedes','Uso externo. Evitar contacto con ojos.'],['Cera líquida antideslizante Blanca','Tratamiento y protección de pisos de madera y bahareque','Aplicar en capa delgada. Dejar secar antes de transitar.'],['Silicon abrillantador Florex','Lustre y protección de superficies de madera y plástico','No aplicar en pisos transitables. Evitar inhalación.'],['Cloro 4% Florex','Desinfección de baños y superficies de alto contacto','No mezclar con otros productos. Ventilar el área. Usar guantes.'],['Blanqueador para ropa Florex','Blanqueado de textiles blancos y de cama','Solo en ropa blanca. No mezclar con otros químicos.'],['Suavizante de ropa','Suavizado de textiles y sábanas en lavandería','No usar en microfibra. No sobredosificar.'],['Desinfectante Florex','Desinfección de superficies en baños, cocinas y áreas comunes','Respetar la dilución indicada. Usar guantes.'],['Bolsa jumbo transparente','Recolección y traslado de basura general','Cambiar cuando sea necesario, no por rutina fija.'],['Bolsas naranjas jumbo','Identificación de residuos orgánicos o especiales','Mantener separadas de otros residuos.'],['Bolsas blancas pequeñas','Basureros de habitaciones y baños','Reemplazar cuando el área lo requiera, no cuando estén llenas.'],].map(([p,u,pr],i)=>`<div style="display:grid;grid-template-columns:1.4fr 1.5fr 1.3fr;padding:.55rem .75rem;gap:.5rem;background:${i%2===0?'white':'#faf8f4'};border-bottom:1px solid rgba(84,66,54,.05);"><div style="font-size:.78rem;font-family:sans-serif;font-weight:600;color:var(--brown);">${p}</div><div style="font-size:.73rem;font-family:sans-serif;color:var(--brown);">${u}</div><div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);line-height:1.4;">${pr}</div></div>`).join('')}
+     </div>`);
+}
+
+function openSolicitudInsumos(){
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('con-title').textContent='Solicitud de Insumos';
+  document.getElementById('con-back').onclick=()=>setConScreen('Manual de Limpieza General',()=>nav('dept'),renderManualLimp());
+  document.getElementById('conbody').innerHTML=`
+    <div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1rem;">Agrega todos los insumos que necesitas en esta solicitud.</div>
+    <div class="fg"><label>Solicitante</label><select id="ins-colab"><option value="">— Seleccionar —</option>${COLABS_LIMP.map(n=>`<option${CU&&n===CU.nombre?' selected':''}>${n}</option>`).join('')}</select></div>
+    <div class="fg"><label>Fecha</label><input type="date" id="ins-fecha" value="${today}"></div>
+    <div class="fg"><label>Prioridad</label><select id="ins-prior"><option value="Normal">Normal</option><option value="Urgente">Urgente</option></select></div>
+    <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:1rem;">
+      <div class="cl-sec-title" style="margin-bottom:.8rem;">Insumos solicitados</div>
+      <div id="ins-list">${insRow(0)}</div>
+      <button onclick="addInsRow()" style="width:100%;margin-top:.75rem;background:none;border:1.5px dashed rgba(153,92,68,.3);border-radius:8px;padding:.65rem;color:var(--clay);font-size:.82rem;font-family:sans-serif;cursor:pointer;">+ Agregar otro insumo</button>
+    </div>
+    <div class="fg"><label>Observaciones</label><textarea id="ins-obs" placeholder="Urgencia, uso específico, notas adicionales..."></textarea></div>
+    <button class="btn-sub" id="ins-sub" onclick="submitSolicitudInsumos()">Enviar Solicitud</button>
+    <div class="fnote">La solicitud se enviará a administración</div>
+    <div class="ok-msg" id="ins-ok"><p>✅ Solicitud enviada correctamente.</p></div>
+    <div class="err-msg" id="ins-err"><p>❌ Error al enviar. Intenta de nuevo.</p></div>`;
+  show('con-screen');
+}
+
+let insCount=1;
+function insRow(idx){
+  const unidades=['Unidad','Paquete','Kilo (kg)','Gramo (g)','Litro (L)','Mililitro (mL)','Galón','Rollo','Caja','Bolsa','Par','Docena','Metro','Otro'];
+  return `<div id="ins-row-${idx}" style="display:grid;grid-template-columns:1.8fr .8fr 1fr auto;gap:.4rem;margin-bottom:.55rem;align-items:center;"><input type="text" id="ins-item-${idx}" placeholder="Insumo" style="background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .7rem;font-size:.85rem;font-family:sans-serif;color:var(--brown);outline:none;"><input type="number" id="ins-qty-${idx}" placeholder="Cant." min="1" style="background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .7rem;font-size:.85rem;font-family:sans-serif;color:var(--brown);outline:none;"><select id="ins-unit-${idx}" style="background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .5rem;font-size:.78rem;font-family:sans-serif;color:var(--brown);outline:none;appearance:none;">${unidades.map(u=>`<option value="${u}">${u}</option>`).join('')}</select>${idx>0?`<button onclick="removeInsRow(${idx})" style="width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(84,66,54,.2);background:none;color:var(--tm);font-size:1rem;cursor:pointer;line-height:1;">×</button>`:'<div style="width:28px;"></div>'}</div>`;
+}
+function addInsRow(){document.getElementById('ins-list').insertAdjacentHTML('beforeend',insRow(insCount));insCount++;}
+function removeInsRow(idx){document.getElementById('ins-row-'+idx)?.remove();}
+
+async function submitSolicitudInsumos(){
+  const colab=document.getElementById('ins-colab')?.value;
+  if(!colab){alert('Por favor selecciona el solicitante.');return;}
+  const items=[];
+  for(let i=0;i<insCount;i++){const el=document.getElementById('ins-row-'+i);if(!el)continue;const item=document.getElementById('ins-item-'+i)?.value?.trim();const qty=document.getElementById('ins-qty-'+i)?.value;const unit=document.getElementById('ins-unit-'+i)?.value||'Unidad';if(item)items.push({item,qty:qty||'1',unit});}
+  if(!items.length){alert('Por favor agrega al menos un insumo.');return;}
+  const btn=document.getElementById('ins-sub');btn.disabled=true;btn.textContent='Enviando...';
+  const ok=await sendToSheets({type:'reporte',usuario:CU.usuario,departamento:'limpieza',tipo:'solicitud-insumos',datos:{colaborador:colab,fecha:document.getElementById('ins-fecha')?.value||'',prior:document.getElementById('ins-prior')?.value||'',items,obs:document.getElementById('ins-obs')?.value||''}});
+  if(ok){document.getElementById('ins-ok').style.display='block';insCount=1;}
+  else{document.getElementById('ins-err').style.display='block';btn.disabled=false;btn.textContent='Enviar Solicitud';}
+}
+
+const MANUAL_MT_SECS = [
+  { id:'depto', title:'Departamento de Operaciones' }, { id:'marco-principios', title:'Marco de Principios' },
+  { id:'intro', title:'Roles e Introducción' }, { id:'prep-seguridad', title:'Preparación y Seguridad' },
+  { id:'organizacion', title:'Organización de la Propiedad' }, { id:'agua', title:'Sistemas de Agua' },
+  { id:'registro', title:'Registro y Reporte de Anomalías' },
+];
+function renderManualManto(){
+  return `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Estándares, procedimientos e inspecciones · Versión 2.0 · 2025</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;">${MANUAL_MT_SECS.map(s=>`<div class="gcard" onclick="openManualSection('manto','${s.id}','${s.title}')"><div class="ct">${s.title}</div></div>`).join('')}</div>`;
+}
+
+// ── SHARED_CONTENT ──
+const SHARED_CONTENT = {
+  depto: `
+    <p style="font-size:.82rem;font-family:sans-serif;color:var(--brown);line-height:1.6;margin-bottom:1rem;">El Departamento de Operaciones es el eje funcional que sostiene la experiencia en Tierramor.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
+      ${[['Housekeeping','Limpieza, higiene y presentación de todos los espacios de la propiedad. Primera línea de la experiencia del huésped.'],['Mantenimiento','Inspección, prevención y atención de fallas en infraestructura, sistemas de agua, electricidad y estructura.'],['Proveduría y Transportes','Gestión de insumos, compras, inventario y logística de movilización interna y externa.'],['Seguridad','Resguardo de la integridad de personas, espacios y bienes en toda la propiedad.'],].map(([t,d])=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:.85rem .8rem;"><div style="font-size:.75rem;font-weight:600;font-family:sans-serif;color:var(--clay);margin-bottom:.25rem;">${t}</div><div style="font-size:.73rem;font-family:sans-serif;color:var(--brown);line-height:1.4;">${d}</div></div>`).join('')}
+    </div>
+    <p style="font-size:.75rem;font-family:sans-serif;color:var(--tm);line-height:1.6;margin-top:.9rem;">Cada área opera con roles definidos semanalmente. Estos roles permiten el desarrollo de indicadores de desempeño (KPIs) por función, aseguran la cobertura completa de responsabilidades y facilitan la rotación organizada del equipo.</p>`,
+
+  'marco-principios': `
+    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);line-height:1.6;margin-bottom:1rem;font-weight:600;">Permacultura</div>
+    <p style="font-size:.78rem;font-family:sans-serif;color:var(--brown);line-height:1.6;margin-bottom:.9rem;">Tierramor opera bajo los 12 principios de permacultura formulados por David Holmgren. Estos principios son guías prácticas para diseñar sistemas que funcionan en armonía con los ciclos naturales.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin-bottom:1.2rem;">
+      ${[['1. Observar e interactuar','Tomarse el tiempo para relacionarse con la naturaleza nos ayuda a diseñar soluciones adecuadas.'],['2. Capturar y almacenar energía','Usando recursos en su momento de abundancia, podemos usarlos en épocas de necesidad.'],['3. Obtener un rendimiento','Asegúrate de que el trabajo que haces genere resultados útiles y satisfactorios.'],['4. Aplicar autorregulación','Necesitamos desalentar comportamientos inapropiados para que los sistemas continúen funcionando bien.'],['5. Usar recursos renovables','Haz el mejor uso posible de los recursos abundantes de la naturaleza.'],['6. No producir desperdicios','Valorando y aprovechando todos los recursos disponibles, no se produce desperdicio.'],['7. Diseñar desde los patrones','Observando los patrones de la naturaleza, podemos usarlos como base del diseño.'],['8. Integrar en vez de segregar','Colocando los elementos correctos en las relaciones correctas, se apoyan mutuamente.'],['9. Soluciones pequeñas y lentas','Los sistemas pequeños y lentos son más fáciles de mantener y usan mejor los recursos locales.'],['10. Usar y valorar la diversidad','La diversidad reduce la vulnerabilidad y aprovecha el carácter único del ambiente.'],['11. Usar los bordes','La interfaz entre las cosas es donde ocurren los eventos más interesantes y valiosos.'],['12. Responder creativamente al cambio','Podemos tener un impacto positivo interviniendo en el momento correcto.'],].map(([t,d])=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:9px;padding:.75rem .7rem;"><div style="font-size:.7rem;font-weight:600;font-family:sans-serif;color:var(--green);margin-bottom:.2rem;">${t}</div><div style="font-size:.68rem;font-family:sans-serif;color:var(--brown);line-height:1.4;">${d}</div></div>`).join('')}
+    </div>
+    <div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.4rem;">Fuente: Holmgren, D. Permaculture: Principles and Pathways Beyond Sustainability. 2002.</div>
+    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);line-height:1.6;margin-bottom:.6rem;font-weight:600;">Turismo Regenerativo</div>
+    <p style="font-size:.78rem;font-family:sans-serif;color:var(--brown);line-height:1.6;margin-bottom:.9rem;">El turismo regenerativo va más allá de la sostenibilidad: no solo apunta a no empeorar el lugar, sino a dejarlo mejor de como se encontró.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin-bottom:.9rem;">
+      ${[['1. El lugar como protagonista','Cada decisión operativa considera su impacto en el ecosistema local, la cuenca hídrica, el suelo y la biodiversidad.'],['2. El visitante como agente de cambio','El visitante es invitado a participar activamente en la salud del lugar y a irse transformado.'],['3. Economía que se queda','Los beneficios circulan dentro de la comunidad local mediante proveedores locales y empleo digno.'],['4. Cultura como recurso vivo','Las expresiones culturales locales se integran con respeto y consentimiento, no se folclorizan.'],['5. Regeneración activa de ecosistemas','Las operaciones contribuyen activamente a restaurar lo degradado: agua, suelo, vegetación y biodiversidad.'],['6. Medición de impacto real','Indicadores concretos: consumo de agua, residuos generados, compras locales. La transparencia es parte del producto.'],['7. El equipo como comunidad','Condiciones laborales dignas, desarrollo profesional y sentido de pertenencia son condición necesaria para el modelo.','full'],].map(([t,d,full])=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:9px;padding:.75rem .7rem;${full?'grid-column:1/-1':''}"><div style="font-size:.7rem;font-weight:600;font-family:sans-serif;color:var(--blue);margin-bottom:.2rem;">${t}</div><div style="font-size:.68rem;font-family:sans-serif;color:var(--brown);line-height:1.4;">${d}</div></div>`).join('')}
+    </div>
+    <div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);font-style:italic;">Marco desarrollado con base en: Pollock (2012, 2019, 2023), Wahl (2016), Regenerative Travel Network (2020), UNWTO (2020), GSTC (2022), Macy (2007).</div>`,
+};
+
+const MANUAL_LMP_CONTENT = {
+  roles: `<div style="font-size:.78rem;font-family:sans-serif;color:var(--brown);line-height:1.5;margin-bottom:1rem;">El equipo de housekeeping opera en dos roles con asignaciones semanales rotativas. Turno <strong>AM</strong> (7:00am–12:00md) y <strong>PM</strong> (12:30pm–3:00pm).</div>
+    <div style="background:rgba(113,127,126,.08);border:1px solid rgba(113,127,126,.2);border-radius:10px;padding:.9rem;margin-bottom:1rem;">
+      <div style="font-size:.85rem;font-weight:600;font-family:sans-serif;color:var(--blue);margin-bottom:.6rem;font-style:italic;">Rol 1</div>
+      ${mkRolTable([['Lunes','7:00 AM','Salón de Cocina y Recepción · Baños principales','12:30 PM','Casita Azul · Lavandería'],['Martes','7:00 AM','Salón de Cocina y Recepción · Baños 7600 / Baños de Madera · Oficina · Maloca y baños · Toensmeier · Hememway · Primavesi · Salatin','12:30 PM','Shiva · Savory · Yeomans · Fukuoka · Mollison'],['Miércoles','7:00 AM','Deck de Piscina · Juice Bar · Baños de Teca · Cocina de Residentes · Movement Studio · Salón de Cocina y Recepción','12:30 PM','Baños de Teca · Organización Bodega HK · Repaso Baños principales'],['Jueves','7:00 AM','Salón de Cocina y Recepción · Baños 7600 / Baños de Madera · Terralab y bodega · Maloca y baños · Baños de Bahareque · Duchas de Bahareque','12:30 PM','Lancaster · Götsch · Holzer · Ingham · Carson · Repaso Baño de Madera + Baños Principales'],['Viernes','7:00 AM','Salón de Cocina y Recepción · Duchas principales · Lavado tubos de baño','12:30 PM','Baños Principales · Lounge · Starhawk · Eisenstein · Macy'],])}
+    </div>
+    <div style="background:rgba(153,92,68,.06);border:1px solid rgba(153,92,68,.15);border-radius:10px;padding:.9rem;">
+      <div style="font-size:.85rem;font-weight:600;font-family:sans-serif;color:var(--clay);margin-bottom:.6rem;font-style:italic;">Rol 2</div>
+      ${mkRolTable([['Lunes','7:00 AM','Deck de Piscina · Baños 7600 / Baños de Madera · Reunión de Operaciones','12:30 PM','Baños de Teca · Bodega de HK'],['Martes','7:00 AM','Baños principales · Juice Bar · Terralab y bodega · Maloca y baños · Baños de Bahareque · Cocina de Residentes · Salón de Cocina y Recepción','12:30 PM','Lancaster · Götsch · Holzer · Ingham · Carson · Repaso Baño de Madera + Baños Principales'],['Miércoles','7:00 AM','Salón de Cocina y Recepción · Duchas principales · Baños principales · Baños 7600 / Baños de Madera · Cocina de Residentes · Lounge · Salón de Cocina y Recepción','12:30 PM','Limpieza de Vidrios General · Casita Azul'],['Jueves','7:00 AM','Baños principales · Juice Bar · Maloca y baños · Oficina · Toensmeier · Hememway · Primavesi · Salatin','12:30 PM','Shiva · Savory · Yeomans · Fukuoka · Mollison · Ingham'],['Viernes','7:00 AM','Baños principales · Baños 7600 / Baños de Madera · Lavado de salón','12:30 PM','Baños de Teca · Movement Studio · Sillas Juice Bar · Crawford · Doherty'],])}
+    </div>`,
+
+  'criterios-todo': `
+    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-bottom:.6rem;">Criterios de Housekeeping</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.2rem;">
+      ${[['OBSERVABLE','Cualquier persona puede verificar el resultado.'],['REPETIBLE','El resultado no depende de quién limpió.'],['SUFICIENTE','Limpieza efectiva sin obsesión por la perfección.'],['SOSTENIBLE','Se puede mantener sin agotar al equipo.']].map(([t,d])=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:.85rem .8rem;"><div style="font-size:.72rem;font-weight:600;font-family:sans-serif;color:var(--clay);letter-spacing:.06em;margin-bottom:.25rem;">${t}</div><div style="font-size:.75rem;font-family:sans-serif;color:var(--brown);line-height:1.4;">${d}</div></div>`).join('')}
+    </div>
+    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-bottom:.6rem;">Preparación del Turno</div>
+    ${mkStepsMT([['Revisión del Rol','Llegar puntualmente y revisar la asignación de áreas del día. Confirmar tareas especiales y cambios de última hora.'],['Preparación Personal','Uniforme limpio, zapatos cerrados, cabello recogido. Lavarse las manos antes de empezar. Evitar perfumes fuertes.'],['Revisión del Equipo','Trapos limpios, escoba, trapeador, guantes, desinfectante, limpiavidrios, bolsas de basura. Preparar soluciones según concentración indicada.'],['Inspección Visual','Pasar por las áreas asignadas: verificar ocupación, identificar zonas prioritarias y detectar peligros.'],['Coordinación','Comunicar si se necesita apoyo. Avisar a supervisión si falta algún insumo o herramienta.'],['Actitud','Buena disposición, discreción y comunicación con huéspedes y equipo.']])}
+    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-top:1rem;margin-bottom:.6rem;">Procedimientos Generales</div>
+    <div class="doc-note" style="margin-bottom:.9rem;">Si hay alguien en el espacio: esperar si está en uso. Nunca entrar a casitas o baños si hay alguien adentro.</div>
+    ${mkStepsMT([['Orden: de arriba hacia abajo','Comenzar sacudiendo superficies elevadas. Continuar con repisas y mobiliario intermedio. Finalizar siempre con el piso.'],['Superficies y Mobiliario','Quitar polvo de mesas, repisas, marcos, interruptores y ventiladores. Paño húmedo y secar de inmediato para evitar marcas.'],['Pisos','Barrer todo el espacio primero incluyendo debajo de muebles. Trapear con agua limpia y desinfectante, del fondo hacia la salida.'],['Ventanas y Vidrios','Paño seco primero, luego húmedo o limpiavidrios. Revisar marcos y rieles.'],['Baños con Sistema de Compostaje','Verificar capa de aserrín. El área del inodoro debe mantenerse seca. Limpiar paredes, espejos y grifos. Reponer papel, jabón y toallas.'],['Gestión de Residuos','Retirar la basura cuando el área lo requiera, no por frecuencia fija. Reponer bolsas y mantener tapa cerrada.'],['Presentación Final','Revisar olor, ventilar si necesario. Alinear muebles y cojines. Apagar luces innecesarias.']])}`,
+
+  detalles: `<div class="doc-note" style="margin-bottom:.9rem;">⚠️ Si hay alguien en el espacio: esperar si está en uso. Nunca entrar a casitas o baños si hay alguien adentro.</div>
+    ${mkStepsMT([['Preparación','Verificar que el área esté libre. Usar guantes. Reunir todos los materiales antes de empezar.'],['Superficies y Mobiliario','Quitar polvo de mesas, repisas, marcos e interruptores. Limpiar manchas. Secar de inmediato.'],['Pisos','Barrer primero. Trapear del fondo hacia la salida. Revisar drenajes.'],['Ventanas y Vidrios','Paño seco primero, luego húmedo o limpiavidrios. Revisar marcos y rieles.'],['Baños (Compostaje)','Verificar capa de aserrín. Lavar pisos, paredes, espejos y desagües. Reponer papel, jabón y toallas.'],['Presentación Final','Revisar olor, ventilar si necesario. Alinear muebles. Apagar luces innecesarias.']])}`,
+
+  oficina:   mkAreaLimp('Área administrativa',[['Revisión Previa','Confirmar sin reuniones en curso. Anunciarse al entrar.'],['Superficies','Retirar polvo de escritorios, repisas y lámparas. Limpiar pantallas con paño seco. Desinfectar teléfonos, manijas e interruptores.'],['Pisos','Barrer y trapear con desinfectante suave, evitando residuos cerca de tomas eléctricas.'],['Basureros','Vaciar cuando el área lo requiera. Limpiar el contenedor si hay restos.'],['Refrigeradora','Limpiar interno y externo. Eliminar alimentos en mal estado.'],['Organización','Alinear sillas, cerrar cajones, agrupar cables sueltos.'],['Revisión Final','Verificar que luces y aires estén apagados si no se usan.']],['Ninguna superficie con polvo ni manchas','Pisos secos y sin marcas','Escritorios libres de residuos','Basureros vacíos','Olor neutro']),
+  juicebar:  mkAreaLimp('Área exterior de servicio',[['Revisión Inicial','Confirmar sin huéspedes. Observar si hay insectos, frutas o líquidos pegajosos.'],['Superficies','Limpiar mesas, barra y repisas con paño húmedo. Secar completamente. Desinfectar manijas y zonas de alto contacto.'],['Pisos y Entorno','Barrer toda el área. Trapear con agua y desinfectante. Retirar hojas del exterior. Limpiar maceteros.'],['Basureros','Vaciar cuando el área lo requiera. Mantener tapa cerrada.'],['Presentación','Alinear mesas, sillas y bancos. Limpiar elementos decorativos y plantas.']],['Ningún residuo visible','Mobiliario alineado y seco','Basureros limpios','Área fresca y lista']),
+  recepcion: mkAreaLimp('Punto de bienvenida',[['Revisión Inicial','Confirmar sin check-in en proceso. Encender iluminación adecuada para trabajar.'],['Superficies y Mobiliario','Retirar polvo del mostrador, mesas, sillas y repisas. Desinfectar áreas de alto contacto. Alinear materiales visibles.'],['Pisos','Barrer con atención a esquinas y zona cercana a la entrada. Trapear con desinfectante neutro.'],['Basureros y Decoración','Vaciar cuando sea necesario. Revisar plantas: quitar polvo de hojas, retirar hojas secas.'],['Revisión Final','Alinear sillas, cerrar cajones, limpiar huellas visibles.']],['Ningún rastro de polvo ni basura','Mobiliario ordenado, limpio y seco','Olor agradable y fresco','Área lista para recibir huéspedes']),
+  comedor:   mkAreaLimp('Área de alimentación',[['Revisión Inicial','Verificar sin personas comiendo. Retirar platos y utensilios olvidados.'],['Superficies y Mobiliario','Limpiar mesas, bancas y sillas con paño húmedo y desinfectante. Secar completamente. Alinear en posición original.'],['Estaciones de Servicio','Limpiar dispensadores, termos y condimentos. Ordenar utensilios visibles.'],['Pisos','Barrer restos de comida. Trapear con desinfectante neutro. Atención a esquinas y debajo de mesas.'],['Basureros','Vaciar cuando el área lo requiera, especialmente después de servicios.'],['Revisión Final','Confirmar que mesas, pisos y basureros estén limpios y secos.']],['Mesas sin residuos, secas y desinfectadas','Sillas limpias y alineadas','Piso sin restos ni humedad','Basureros vacíos']),
+  templo:    `<div class="doc-note" style="margin-bottom:.9rem;">⚠️ Espacio de alta sensibilidad. Limpiar con discreción y sin alterar objetos sagrados sin autorización.</div>`+mkAreaLimp('Estudio de Movimiento',[['Revisión Inicial','Confirmar sin actividades en curso. Verificar velas encendidas y objetos frágiles antes de comenzar.'],['Superficies','Quitar polvo suavemente con paño seco. No mover objetos de altar sin autorización.'],['Piso','Barrer con escoba suave. Trapear con desinfectante neutro. Asegurar que quede completamente seco.'],['Textiles y Cojines','Sacudir o aspirar suavemente. Manchas: reportar para lavado, no intentar limpiar en sitio.'],['Ventilación','Abrir ventanas unos minutos. No usar ambientadores artificiales.'],['Revisión Final','Verificar que todo esté en su lugar y el ambiente se perciba ordenado y tranquilo.']],['Superficies libres de polvo','Piso limpio y seco','Cojines alineados, altares intactos','Olor natural y fresco']),
+  lounge:    mkAreaLimp('Lounge',[['Revisión Inicial','Verificar si hay personas en el espacio. Limpiar silenciosamente los sectores vacíos.'],['Superficies y Mobiliario','Quitar polvo con paño seco de mesas, escritorios, repisas, sillas y lámparas. Desinfectar superficies de alto contacto.'],['Equipos Electrónicos','Limpiar pantallas y teclados con paño seco — sin líquidos. Revisar enchufes y extensiones.'],['Pisos','Barrer incluyendo debajo de escritorios. Trapear con desinfectante neutro.'],['Ventanas y Ventilación','Limpiar cristales con limpiavidrios o paño húmedo. Asegurar que las ventanas puedan abrirse.'],['Basureros','Vaciar cuando el área lo requiera.'],['Revisión Final','No queden objetos ajenos. Apagar luces y ventiladores si el área no está en uso.']],['Superficies libres de polvo y manchas','Pisos secos sin residuos','Mobiliario alineado y ordenado','Basureros vacíos','Olor fresco y ambiente listo para uso']),
+  'casitas-madera': (function(){
+    const casitas = [
+      { id:'toensmeier', nombre:'Toensmeier', m2:60, cama:'King',  cap:2 },
+      { id:'hemenway',   nombre:'Hemenway',   m2:60, cama:'King',  cap:2 },
+      { id:'primavesi',  nombre:'Primavesi',  m2:60, cama:'King',  cap:4 },
+      { id:'salatin',    nombre:'Salatin',    m2:60, cama:'King',  cap:4 },
+      { id:'shiva',      nombre:'Shiva',      m2:60, cama:'King',  cap:2 },
+      { id:'savory',     nombre:'Savory',     m2:50, cama:'Twin',  cap:2 },
+      { id:'yeomans',    nombre:'Yeomans',    m2:50, cama:'Twin',  cap:2 },
+      { id:'fukuoka',    nombre:'Fukuoka',    m2:50, cama:'Twin',  cap:2 },
+      { id:'mollison',   nombre:'Mollison',   m2:50, cama:'Twin',  cap:2 },
+      { id:'lancaster',  nombre:'Lancaster',  m2:50, cama:'Dorm',  cap:2 },
+      { id:'gotsch',     nombre:'Götsch',     m2:50, cama:'Twin',  cap:2 },
+      { id:'holzer',     nombre:'Holzer',     m2:50, cama:'Twin',  cap:2 },
+      { id:'ingham',     nombre:'Ingham',     m2:50, cama:'Twin',  cap:2 },
+      { id:'carson',     nombre:'Carson',     m2:50, cama:'Twin',  cap:2 },
+    ];
+    const pasos = [['Ingreso y Protocolo','Consultar lista de habitaciones ocupadas. Tocar 3 veces y anunciarse. Nunca abrir puerta cerrada sin verificar ocupación.'],['Ventilación Inicial','Abrir puertas y ventanas. Revisar si hay humedad u olores inusuales.'],['Cama y Textiles','Retirar sábanas solo si checkout. Forro ajustado → sábana uniforme → duvet centrado → almohadas. ⚠️ NO colocar toallas ni adornos sobre la cama.'],['Superficies y Mobiliario','Quitar polvo. Desinfectante neutro. No usar cloro sobre madera.'],['Piso','Barrer completamente. Trapear sin exceso de humedad.'],['Revisión Final','Cama perfectamente hecha. Mobiliario alineado. Olor fresco y natural.']];
+    const criterios = ['Olor fresco y natural','Piso limpio y seco','Cama impecablemente presentada','Área lista para recibir huésped'];
+    window._casitasMadera = { casitas, pasos, criterios };
+    return `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1rem;">Selecciona la casita a preparar</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
+        ${casitas.map(c=>`<div class="gcard" onclick="openCasitaDetalle('madera','${c.id}')" style="padding:.85rem .8rem;">
+          <div class="ct" style="font-size:.9rem;">${c.nombre}</div>
+          <div class="cd">${c.cama} · ${c.m2}m² · ${c.cap} huéspedes</div>
+        </div>`).join('')}
+      </div>`;
+  })(),
+  'casitas-bah': (function(){
+    const casitas = [
+      { id:'starhawk',   nombre:'Starhawk',   m2:50, cama:'Queen', cap:2 },
+      { id:'crawford',   nombre:'Crawford',   m2:50, cama:'Queen', cap:2 },
+      { id:'einsestein', nombre:'Einsestein', m2:50, cama:'Queen', cap:2 },
+      { id:'doherty',    nombre:'Doherty',    m2:50, cama:'Queen', cap:2 },
+      { id:'macy',       nombre:'Macy',       m2:50, cama:'Queen', cap:2 },
+    ];
+    const pasos = [['Ingreso y Protocolo','Consultar lista de habitaciones ocupadas. Tocar 3 veces y anunciarse.'],['Ventilación Inicial','Abrir puertas y ventanas. Especial cuidado con humedad en materiales de bahareque.'],['Cama y Textiles','Retirar sábanas solo si checkout. ⚠️ NO colocar toallas ni adornos sobre la cama.'],['Superficies','No usar cloro. Cuidado en superficies de barro — evitar exceso de humedad.'],['Piso','Barrer completamente. Trapear sin exceso de humedad.'],['Revisión Final','Cama perfectamente hecha. Mobiliario alineado. Materiales naturales sin daños por humedad.']];
+    const criterios = ['Olor fresco y natural','Piso limpio y seco','Cama impecablemente presentada','Materiales naturales sin daños por humedad'];
+    window._casitasBah = { casitas, pasos, criterios };
+    return `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1rem;">Selecciona la casita a preparar</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
+        ${casitas.map(c=>`<div class="gcard" onclick="openCasitaDetalle('bah','${c.id}')" style="padding:.85rem .8rem;">
+          <div class="ct" style="font-size:.9rem;">${c.nombre}</div>
+          <div class="cd">${c.cama} · ${c.m2}m² · ${c.cap} huéspedes</div>
+        </div>`).join('')}
+      </div>`;
+  })(),
+};
+
+const MANUAL_MT_CONTENT = {
+  intro: `<p style="font-size:.82rem;font-family:sans-serif;color:var(--brown);line-height:1.6;margin-bottom:.8rem;">Este manual establece los estándares, procedimientos e inspecciones de mantenimiento para la totalidad de los espacios de Tierramor.</p>
+    <div style="background:rgba(84,66,54,.06);border:1px solid rgba(84,66,54,.15);border-radius:10px;padding:.9rem;margin-bottom:1rem;">
+      <div style="font-size:.72rem;font-weight:600;font-family:sans-serif;color:var(--brown);margin-bottom:.6rem;text-transform:uppercase;letter-spacing:.08em;">Roles semanales</div>
+      <div style="background:rgba(113,127,126,.08);border:1px solid rgba(113,127,126,.2);border-radius:8px;padding:.8rem;margin-bottom:.65rem;">
+        <div style="font-size:.82rem;font-weight:600;font-family:sans-serif;color:var(--blue);margin-bottom:.5rem;font-style:italic;">Responsable de Piscina</div>
+        ${mkRolTable([['Lunes','7:00 AM','Piscina','12:30 PM','Revisión general aserrín · Proyectos'],['Martes','7:00 AM','Piscina · Cluster 4','12:30 PM','Proyectos'],['Miércoles','7:00 AM','Proyectos','12:30 PM','Proyectos'],['Jueves','7:00 AM','Piscina · Cluster 2','12:30 PM','Proyectos'],['Viernes','7:00 AM','Piscina · Cluster 3 · Lavado tubos de baño','12:30 PM','Proyectos'],])}
+      </div>
+      <div style="background:rgba(153,92,68,.06);border:1px solid rgba(153,92,68,.15);border-radius:8px;padding:.8rem;">
+        <div style="font-size:.82rem;font-weight:600;font-family:sans-serif;color:var(--clay);margin-bottom:.5rem;font-style:italic;">Responsable de Sistemas de Agua</div>
+        ${mkRolTable([['Lunes','7:00 AM','Reporte de Agua · Cluster 3','12:30 PM','Proyectos'],['Martes','7:00 AM','Reporte de Agua · Cluster 3','12:30 PM','Proyectos'],['Miércoles','7:00 AM','Reporte de Agua · Proyectos','12:30 PM','Revisión general aserrín · Proyectos'],['Jueves','7:00 AM','Reporte de Agua · Cluster 1','12:30 PM','Proyectos'],['Viernes','7:00 AM','Reporte de Agua · Cluster 4','12:30 PM','Proyectos'],])}
+      </div>
+    </div>
+    <div class="doc-note">El departamento opera con dos roles: Responsable de Piscina y Responsable de Sistemas de Agua. Los miércoles ambos roles se dedican a proyectos.</div>`,
+  'prep-seguridad': `
+    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-bottom:.6rem;">Criterios Generales</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.2rem;">${[['PREVENTIVO','Identificar problemas antes de que se conviertan en fallas.'],['DOCUMENTADO','Toda anomalía se registra. Lo que no se escribe no existe.'],['OPORTUNO','Una intervención a tiempo evita daños mayores.'],['SEGURO','No intervenir en sistemas mayores sin autorización.']].map(([t,d])=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:.85rem .8rem;"><div style="font-size:.72rem;font-weight:600;font-family:sans-serif;color:var(--clay);letter-spacing:.06em;margin-bottom:.25rem;">${t}</div><div style="font-size:.75rem;font-family:sans-serif;color:var(--brown);line-height:1.4;">${d}</div></div>`).join('')}</div>
+    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-bottom:.6rem;">Preparación del Día</div>
+    ${mkStepsMT([['Revisión del Rol','Revisar la asignación del día: cluster asignado, tareas especiales y prioridades.'],['Preparación Personal','Uniforme limpio, calzado cerrado y equipo de protección disponible.'],['Revisión del Equipo','Kit de herramientas: llaves, destornilladores, linterna, cinta métrica, cinta aislante.'],['Inspección Visual Inicial','Al llegar a cada área: observar antes de tocar. Detectar anomalías evidentes.'],['Registro y Comunicación','Toda anomalía debe registrarse. Clasificar: URGENTE / PRIORIDAD / PROGRAMAR.']])}
+    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-top:1.1rem;margin-bottom:.6rem;">Aspectos de Seguridad</div>
+    <div class="doc-note" style="margin-bottom:.75rem;">⚠️ El cumplimiento de estas normas es obligatorio.</div>
+    ${mkStepsMT([['EPP','Guantes, calzado cerrado antideslizante, mascarilla con químicos, protector solar en exteriores.'],['Electricidad','⚠️ NO intervenir en tableros ni cableado interno. Reportar: cables expuestos, quemaduras en outlets.'],['Sistemas de Agua','Cerrar la válvula correspondiente antes de intervenir en tuberías. Reportar fugas de inmediato.'],['Trabajo en Altura','Usar escalera estable. No trabajar en altura con lluvia o piso mojado.'],['Herramientas y Químicos','Guardar herramientas en bodega. Leer instrucciones de dilución.'],['Emergencias','Falla eléctrica: reportar de inmediato. Fuga significativa: cerrar válvula y reportar.']])}`,
+  organizacion: `${['Tránsito Constante — Oficina · Juice Bar · Salón de Cocina y Recepción','Cluster 1 — Storage · Terralab · Hanging Bridge · Movement Studio · Lounge · Main Shower · Main Bathrooms','Cluster 2 — Toensmeier · Baños 7600 · Baño del Templo · Lancaster · Götsch · Holzer · Cocina de Residentes · Ingham · Carson','Cluster 3 — Wooden Bathroom · Hememway · Primavesi · Salatin · Shiva · Savory · Yeomans · Fukuoka · Mollison','Cluster 4 — Starhawk · Crawford · Eisenstein · Doherty · Macy · Baños Bahareque · Wex Camp · Maloca','Atención Diaria — Piscina · Sistemas de Agua · Casita Azul'].map(c=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:8px;padding:.75rem;margin-bottom:.5rem;font-size:.8rem;font-family:sans-serif;color:var(--brown);">${c}</div>`).join('')}
+    <div class="gcard" onclick="openMapaTierramor()" style="margin-top:.75rem;display:flex;align-items:center;gap:.75rem;padding:.9rem 1rem;">
+      <div style="font-size:1.4rem;">🗺️</div>
+      <div>
+        <div class="ct" style="font-size:.88rem;">Mapa de la Propiedad</div>
+        <div class="cd">Vista aérea · Clusters y zonas</div>
+      </div>
+      <span style="margin-left:auto;color:var(--tm);font-size:.75rem;">→</span>
+    </div>`,
+  agua: `<div class="doc-note" style="margin-bottom:.8rem;">⚠️ Ante cualquier anomalía en los sistemas de agua, reportar de inmediato.</div>
+    ${[['M1','Pozo Principal','Salida del tanque a la par del pozo — envía agua a las casitas'],['M2','Tanques Ojoche','Entrada de los tanques en la loma'],['M4','Tanque Potable','Entrada del tanque de almacenamiento a la par de la bodega'],['M5','Tanques Piscina Izq.','Tanques de la piscina, mano izquierda'],['M6','Tanques Piscina Der.','Tanques de la piscina, mano derecha'],['M7','Tubería Principal Piscina','Tubería de abastecimiento del pozo hacia los tanques de piscina'],].map(([m,n,d])=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:8px;padding:.7rem;margin-bottom:.45rem;display:flex;gap:.7rem;align-items:flex-start;"><span style="font-size:.68rem;font-family:sans-serif;font-weight:600;color:var(--clay);min-width:28px;">${m}</span><div><div style="font-size:.8rem;font-family:sans-serif;color:var(--brown);font-weight:500;">${n}</div><div style="font-size:.7rem;font-family:sans-serif;color:var(--tm);">${d}</div></div></div>`).join('')}
+    <div class="doc-note" style="margin-top:.5rem;">📌 Sin medidor activo: Tanques Pozo Principal · Tanques Bahareque · Pozo Maloca — registro visual solamente.</div>`,
+  registro: `<div class="crit-box" style="margin-bottom:1rem;"><div class="crit-lbl">Clasificación de Anomalías</div>
+    <div class="crit-row">🔴 URGENTE — Riesgo para personas o falla crítica. Reportar de inmediato.</div>
+    <div class="crit-row">🟡 PRIORIDAD — Falla sin riesgo inmediato. Resolver en 24h.</div>
+    <div class="crit-row">🟢 PROGRAMAR — Deterioro menor. Incluir en lista de proyectos semanales.</div>
+  </div>
+  <div class="doc-note">Canal: Urgentes → llamada al Gerente + WhatsApp. Prioridad → WhatsApp con foto. Programar → bitácora semanal.</div>`,
+};
+
+function openCasitaDetalle(tipo, casitaId) {
+  const data   = tipo === 'madera' ? window._casitasMadera : window._casitasBah;
+  const casita = data.casitas.find(c => c.id === casitaId);
+  if (!casita) return;
+  const backTitle = tipo === 'madera' ? 'Casitas de Madera' : 'Casitas de Bahareque';
+  const backKey   = tipo === 'madera' ? 'casitas-madera' : 'casitas-bah';
+  const html = `
+    <div class="doc-note" style="margin-bottom:.9rem;">⚠️ Privacidad del huésped: tocar 3 veces y anunciarse. Nunca entrar sin verificar ocupación.</div>
+    <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:1rem;">
+      <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);font-family:sans-serif;margin-bottom:.75rem;">Características</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;">
+        ${[['Tipo de cama', casita.cama],['Metros cuadrados', casita.m2 + ' m²'],['Capacidad', casita.cap + ' huéspedes']].map(([lbl,val])=>`
+          <div style="background:#faf8f4;border-radius:8px;padding:.65rem .7rem;text-align:center;">
+            <div style="font-size:.62rem;font-family:sans-serif;color:var(--tm);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.3rem;">${lbl}</div>
+            <div style="font-size:.88rem;font-family:sans-serif;font-weight:600;color:var(--brown);">${val}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div style="background:#faf8f4;border:1.5px dashed rgba(153,92,68,.25);border-radius:10px;padding:1.2rem;text-align:center;margin-bottom:1rem;">
+      <div style="font-size:1.4rem;margin-bottom:.3rem;">📷</div>
+      <div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);">Foto próximamente disponible</div>
+    </div>
+    <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);font-family:sans-serif;margin-bottom:.75rem;">Procedimiento de limpieza</div>
+    ${mkStepsMT(data.pasos)}
+    <div class="crit-box" style="margin-top:.5rem;">
+      <div class="crit-lbl">Criterios de limpieza esperada</div>
+      ${data.criterios.map(c=>`<div class="crit-row">✓ ${c}</div>`).join('')}
+    </div>`;
+  setConScreen(casita.nombre,
+    () => openManualSection('limp', backKey, backTitle),
+    `<div class="doc-viewer">${html}</div>`);
+}
+
+function openMapaTierramor() {
+  setConScreen('Mapa de la Propiedad',
+    () => openManualSection('manto', 'organizacion', 'Organización de la Propiedad'),
+    `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:.75rem;">Vista aérea · Tierramor, Santa Cruz, Guanacaste</div>
+     <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:12px;overflow:hidden;">
+       <img src="./mapa-tierramor.jpg" alt="Mapa de Tierramor"
+         style="width:100%;height:auto;display:block;"
+         onerror="this.parentElement.innerHTML='<div style=\'padding:2rem;text-align:center;font-family:sans-serif;color:var(--tm);\'><div style=\'font-size:2rem;margin-bottom:.75rem;\'>🗺️</div><div style=\'font-size:.82rem;\'>Imagen no encontrada.<br>Sube <strong>mapa-tierramor.jpg</strong> al repo de GitHub.</div></div>'">
+     </div>
+     <div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);text-align:center;margin-top:.75rem;">Toca la imagen para ampliarla</div>`);
+}
+
+function openManualSection(manual, sectionId, title) {
+  const content = SHARED_CONTENT[sectionId] || (manual==='limp' ? MANUAL_LMP_CONTENT[sectionId] : MANUAL_MT_CONTENT[sectionId]);
+  if (!content) return;
+  const backFn = manual==='limp'
+    ? () => setConScreen('Manual de Housekeeping', ()=>nav('dept'), renderManualLimp())
+    : () => setConScreen('Manual de Mantenimiento', ()=>nav('dept'), renderManualManto());
+  setConScreen(title, backFn, `<div class="doc-viewer">${content}</div>`);
+}
+
+function openPeerEval() {
+  const today = new Date().toISOString().split('T')[0];
+  const peers = ALL_COLABS.filter(n => n !== CU.nombre);
+  document.getElementById('con-title').textContent = 'Evaluación de Pares';
+  document.getElementById('con-back').onclick = () => openMyPerformance();
+  document.getElementById('conbody').innerHTML = `
+    <div class="doc-note" style="margin-bottom:1rem;">🔒 Respuestas confidenciales · Solo las consulta administración<br>
+    <span style="font-size:.68rem;">Incidencia: Mensual 20% · Trimestral 30%</span></div>
+    <div class="cl-header-info">
+      <div class="fg" style="margin-bottom:.6rem"><label>Compañero/a evaluado/a</label>
+        <select id="ep-evaluado"><option value="">— Seleccionar —</option>${peers.map(n=>`<option>${n}</option>`).join('')}</select></div>
+      <div class="fg" style="margin-bottom:.6rem"><label>Tipo de período</label>
+        <select id="ep-tipo"><option value="Mensual">Mensual</option><option value="Trimestral Q1">Trimestral Q1</option><option value="Trimestral Q2">Trimestral Q2</option><option value="Trimestral Q3">Trimestral Q3</option><option value="Trimestral Q4">Trimestral Q4</option></select></div>
+      <div class="fg" style="margin-bottom:0"><label>Fecha</label><input type="date" id="ep-fecha" value="${today}"></div>
+    </div>
+    <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
+      <div class="cl-sec-title">Valoración por Competencias</div>
+      <div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);margin-bottom:.9rem;">1 = Necesita mejorar · 2 = En desarrollo · 3 = Cumple · 4 = Bueno · 5 = Excelente</div>
+      ${[['ep-colab','Colaboración y trabajo en equipo','Apoya a los demás, comparte información, no crea fricciones'],['ep-resp','Responsabilidad y puntualidad','Cumple sus tareas a tiempo, respeta los acuerdos del equipo'],['ep-com','Comunicación efectiva','Se expresa con claridad, escucha bien, evita malentendidos'],['ep-actitud','Actitud y energía positiva','Contribuye a un buen ambiente, afronta retos con disposición'],['ep-calidad','Calidad del trabajo','Su desempeño diario cumple o supera el estándar de Tierramor'],].map(([id,label,desc])=>`
+        <div style="margin-bottom:1rem;">
+          <div style="font-size:.82rem;font-family:sans-serif;font-weight:600;color:var(--brown);margin-bottom:.15rem;">${label}</div>
+          <div style="font-size:.7rem;font-family:sans-serif;color:var(--tm);margin-bottom:.4rem;">${desc}</div>
+          <div style="display:flex;gap:.5rem;">${[1,2,3,4,5].map(n=>`<label style="flex:1;text-align:center;cursor:pointer;"><input type="radio" name="${id}" value="${n}" style="display:none;"><div class="ep-star" data-id="${id}" data-val="${n}" style="background:#faf8f4;border:1.5px solid rgba(84,66,54,.15);border-radius:8px;padding:.5rem .2rem;font-size:.75rem;font-family:sans-serif;color:var(--tm);text-align:center;cursor:pointer;transition:all .15s;">${n}<br><span style="font-size:.6rem;">★</span></div></label>`).join('')}</div>
+        </div>`).join('')}
+    </div>
+    <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
+      <div class="cl-sec-title">Comportamientos Observados</div>
+      ${[['ep-b1','Apoyó a un compañero/a sin que se lo pidieran'],['ep-b2','Comunicó un problema a tiempo antes de que escalara'],['ep-b3','Propuso alguna mejora o idea para el equipo'],['ep-b4','Mantuvo una actitud positiva incluso bajo presión'],['ep-b5','Generó algún conflicto innecesario con el equipo'],].map(([id,label])=>`
+        <div style="margin-bottom:.75rem;">
+          <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);margin-bottom:.35rem;">${label}</div>
+          <div style="display:flex;gap:.5rem;">${['Sí','No','A veces'].map(opt=>`<label style="flex:1;text-align:center;cursor:pointer;"><input type="radio" name="${id}" value="${opt}" style="display:none;"><div class="ep-opt" data-id="${id}" data-val="${opt}" style="background:#faf8f4;border:1.5px solid rgba(84,66,54,.15);border-radius:8px;padding:.45rem .2rem;font-size:.75rem;font-family:sans-serif;color:var(--tm);text-align:center;cursor:pointer;transition:all .15s;">${opt}</div></label>`).join('')}</div>
+        </div>`).join('')}
+    </div>
+    <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
+      <div class="cl-sec-title">Preguntas Abiertas</div>
+      <div class="fg" style="margin-bottom:.9rem;"><label>💡 ¿Qué hace especialmente bien esta persona en el equipo?</label>${aw('ep-bien','Sé específico/a — ayuda a reconocer fortalezas reales...')}</div>
+      <div class="fg" style="margin-bottom:0"><label>🔧 ¿En qué área podría mejorar?</label>${aw('ep-mejorar','Feedback constructivo — sin ataques personales...')}</div>
+    </div>
+    <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
+      <div class="cl-sec-title">Valoración Global</div>
+      <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);margin-bottom:.6rem;">¿Recomendarías a esta persona para un rol de mayor responsabilidad?</div>
+      <div style="display:flex;gap:.7rem;">
+        <label style="flex:1;cursor:pointer;"><input type="radio" name="ep-rec" value="Sí" style="display:none;"><div class="ep-opt" data-id="ep-rec" data-val="Sí" style="background:#faf8f4;border:1.5px solid rgba(84,66,54,.15);border-radius:8px;padding:.65rem;font-size:.82rem;font-family:sans-serif;color:var(--tm);text-align:center;cursor:pointer;">👍 Sí, la recomiendo</div></label>
+        <label style="flex:1;cursor:pointer;"><input type="radio" name="ep-rec" value="No" style="display:none;"><div class="ep-opt" data-id="ep-rec" data-val="No" style="background:#faf8f4;border:1.5px solid rgba(84,66,54,.15);border-radius:8px;padding:.65rem;font-size:.82rem;font-family:sans-serif;color:var(--tm);text-align:center;cursor:pointer;">👎 No por ahora</div></label>
+      </div>
+      <div class="fg" style="margin-top:.9rem;margin-bottom:0"><label>Comentario adicional (opcional)</label>
+        <textarea id="ep-comentario" placeholder="Comentario adicional..." style="width:100%;background:white;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.7rem .85rem;font-size:.9rem;font-family:sans-serif;color:var(--brown);outline:none;resize:none;height:75px;line-height:1.5;"></textarea>
+      </div>
+    </div>
+    <button class="btn-sub" id="ep-sub" onclick="submitPeerEval()">Enviar Evaluación</button>
+    <div class="fnote">🔒 Respuestas confidenciales — solo las consulta administración</div>
+    <div class="ok-msg" id="ep-ok"><p>✅ Evaluación enviada correctamente.</p></div>
+    <div class="err-msg" id="ep-err"><p>❌ Error al enviar. Intenta de nuevo.</p></div>`;
+
+  setTimeout(()=>{
+    document.querySelectorAll('.ep-star, .ep-opt').forEach(el=>{
+      el.addEventListener('click',()=>{
+        const id=el.dataset.id,val=el.dataset.val;
+        document.querySelectorAll(`[data-id="${id}"]`).forEach(e=>{e.style.background='#faf8f4';e.style.borderColor='rgba(84,66,54,.15)';e.style.color='var(--tm)';e.style.fontWeight='normal';});
+        el.style.background='var(--clay)';el.style.borderColor='var(--clay)';el.style.color='white';el.style.fontWeight='600';
+        const radio=document.querySelector(`input[name="${id}"][value="${val}"]`);if(radio)radio.checked=true;
+      });
+    });
+  },100);
+  show('con-screen');
+}
+
+async function submitPeerEval(){
+  const evaluado=document.getElementById('ep-evaluado')?.value;
+  if(!evaluado){alert('Por favor selecciona al compañero/a a evaluar.');return;}
+  const getRadio=name=>{const el=document.querySelector(`input[name="${name}"]:checked`);return el?el.value:'';};
+  const competencias={colaboracion:getRadio('ep-colab'),responsabilidad:getRadio('ep-resp'),comunicacion:getRadio('ep-com'),actitud:getRadio('ep-actitud'),calidad:getRadio('ep-calidad')};
+  const comportamientos={apoyo_sin_pedirlo:getRadio('ep-b1'),comunico_problemas:getRadio('ep-b2'),propuso_mejoras:getRadio('ep-b3'),actitud_bajo_presion:getRadio('ep-b4'),genero_conflictos:getRadio('ep-b5')};
+  const vals=Object.values(competencias).filter(Boolean);
+  const promedio=vals.length?(vals.reduce((a,b)=>a+parseInt(b),0)/vals.length).toFixed(1):'—';
+  const btn=document.getElementById('ep-sub');btn.disabled=true;btn.textContent='Enviando...';
+  const ok=await sendToSheets({type:'reporte',usuario:CU.usuario,departamento:CU.departamento,tipo:'evaluacion-pares',datos:{evaluador:CU.nombre,evaluado,periodo:document.getElementById('ep-tipo')?.value||'',fecha:document.getElementById('ep-fecha')?.value||'',competencias,promedio,comportamientos,fortalezas:document.getElementById('ta-ep-bien')?.value||'',mejoras:document.getElementById('ta-ep-mejorar')?.value||'',recomendacion:getRadio('ep-rec'),comentario:document.getElementById('ep-comentario')?.value||''}});
+  if(ok){document.getElementById('ep-ok').style.display='block';}
+  else{document.getElementById('ep-err').style.display='block';btn.disabled=false;btn.textContent='Enviar Evaluación';}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('btn-login').addEventListener('click', doLogin);
+  document.getElementById('lp').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  document.getElementById('dept-back').addEventListener('click', () => nav('home'));
+  document.getElementById('dept-out').addEventListener('click', logout);
+  document.getElementById('fs-back').addEventListener('click', () => nav('dept'));
+  document.getElementById('fs-out').addEventListener('click', logout);
+  document.getElementById('cl-out').addEventListener('click', logout);
+  document.getElementById('con-out').addEventListener('click', logout);
+  document.getElementById('rep-back').addEventListener('click', () => nav('home'));
+  document.getElementById('rep-out').addEventListener('click', logout);
+  document.getElementById('modal-cancel').addEventListener('click', closeModal);
+  document.getElementById('modal-confirm').addEventListener('click', confirmChecklist);
+  loadUsers();
+});
+</script>
+</body>
+</html>
