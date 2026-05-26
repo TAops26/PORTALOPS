@@ -345,6 +345,13 @@ function nav(to) {
   else if (to === 'dept') openDept(CD);
 }
 
+// goBack(): destino correcto según el rol
+// Admin → pantalla dept | Colaborador → home de su dept
+function goBack() {
+  if (CU && CU.rol !== 'admin') { renderDeptHome(); show('home'); }
+  else { nav('dept'); }
+}
+
 async function doLogin() {
   const u = document.getElementById('lu').value.trim().toLowerCase();
   const p = document.getElementById('lp').value;
@@ -481,7 +488,7 @@ function renderDeptHome() {
 
   if (dept) {
     dept.resources.forEach(r => {
-      btns += `<button class="dept-btn" onclick="openResourceFromHome('${r.id}','${r.title}','${r.type||'doc'}')">
+      btns += `<button class="dept-btn" onclick="openResource('${r.id}','${r.title}','${r.type||'doc'}')">
         <div class="dico ${cfg.cls}">${cfg.ico}</div>
         <div class="dinf"><h3>${r.title}</h3><p>${r.desc||''}</p></div>
         <span style="color:var(--tm);font-size:.75rem;">→</span>
@@ -490,7 +497,7 @@ function renderDeptHome() {
     if (dept.reports.length) {
       btns += `<div class="sec-lbl" style="margin-top:.6rem;">Reportes</div>`;
       dept.reports.forEach(r => {
-        btns += `<button class="rbtn ${r.cls}" onclick="openFormFromHome('${r.form}')">
+        btns += `<button class="rbtn ${r.cls}" onclick="openForm('${r.form}')">
           <div class="rdot"></div><span>${r.label}</span><span class="arr">→</span>
         </button>`;
       });
@@ -585,26 +592,6 @@ function filterCards() {
   });
 }
 
-// Versión de openResource para colaboradores — el atrás regresa al home del dept
-function openResourceFromHome(id, title, type) {
-  // Sobrescribir el back de con-screen para regresar a renderDeptHome
-  const origBack = () => { renderDeptHome(); show('home'); };
-  if (type === 'checklist')   { 
-    document.getElementById('cl-back').onclick = () => { renderDeptHome(); show('home'); };
-    openChecklistMenu(id); return; 
-  }
-  if (type === 'cal')         { openCalendar(id); document.getElementById('con-back').onclick = origBack; return; }
-  if (type === 'inventarios') { openInventarios(); document.getElementById('con-back').onclick = origBack; return; }
-  if (type === 'proveedores') { openProveedores(); document.getElementById('con-back').onclick = origBack; return; }
-  if (type === 'piscina')     { openOperacionPiscina(); document.getElementById('con-back').onclick = origBack; return; }
-  if (id === 'frases-en') {
-    setConScreen('Frases Comunes en Inglés', origBack,
-      `<div class="cs"><h3>Frases Comunes en Inglés</h3><p>Esta sección estará disponible próximamente.</p></div>`);
-    return;
-  }
-  setConScreen(title, origBack, getDocContent(id, title));
-}
-
 function openResource(id, title, type) {
   if (type === 'checklist')   { openChecklistMenu(id); return; }
   if (type === 'cal')         { openCalendar(id); return; }
@@ -612,11 +599,11 @@ function openResource(id, title, type) {
   if (type === 'proveedores') { openProveedores(); return; }
   if (type === 'piscina')     { openOperacionPiscina(); return; }
   if (id === 'frases-en') {
-    setConScreen('Frases Comunes en Inglés', () => nav('dept'),
+    setConScreen('Frases Comunes en Inglés', () => goBack(),
       `<div class="cs"><h3>Frases Comunes en Inglés</h3><p>Esta sección estará disponible próximamente.</p></div>`);
     return;
   }
-  setConScreen(title, () => nav('dept'), getDocContent(id, title));
+  setConScreen(title, () => goBack(), getDocContent(id, title));
 }
 
 function setConScreen(title, backFn, html) {
@@ -642,7 +629,7 @@ const CAL_LABELS = { 'cal-limpieza':'Limpieza', 'cal-manto':'Mantenimiento', 'ca
 function openCalendar(id) {
   const calId = CAL_IDS[id], label = CAL_LABELS[id];
   const src = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(calId)}&ctz=America%2FCosta_Rica&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&mode=MONTH&bgcolor=%23E8E2D1&color=%23995C44`;
-  setConScreen(`Calendario — ${label}`, () => nav('dept'),
+  setConScreen(`Calendario — ${label}`, () => goBack(),
     `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:.9rem;">Calendario de ${label} · Solo lectura</div>
      <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:12px;overflow:hidden;">
        <iframe src="${src}" style="border:none;width:100%;height:520px;display:block;" frameborder="0" scrolling="no"></iframe>
@@ -651,7 +638,7 @@ function openCalendar(id) {
 }
 
 function openProveedores() {
-  setConScreen('Catálogo de Proveedores', () => nav('dept'),
+  setConScreen('Catálogo de Proveedores', () => goBack(),
     `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1rem;">Directorio de proveedores activos de Tierramor</div>
      <div class="cs"><h3>Próximamente disponible</h3><p>El catálogo de proveedores estará aquí.</p></div>`);
 }
@@ -661,7 +648,7 @@ const PROPS_MALOCA   = ['Matts de yoga negros','Blocks de yoga','Correas de yoga
 const PROPS_MOVEMENT = ['Matts de yoga verdes','Blocks de yoga','Correas de yoga','Silla de suelo','Almohadones (Bolsters)','Cojines redondos','Cojines grandes','Cojines medianos'];
 
 function openInventarios() {
-  setConScreen('Inventarios', () => nav('dept'),
+  setConScreen('Inventarios', () => goBack(),
     `<div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Selecciona el inventario a registrar</div>
      <div class="gcard" onclick="openRopaCama()" style="margin-bottom:.7rem;"><div class="ct">Inventario de Ropa de Cama</div><div class="cd">Sábanas, fundas, cobijas, duvets y más</div></div>
      <div class="gcard" onclick="openPropsMenu()"><div class="ct">Inventario de Props de Wellness</div><div class="cd">Colchonetas, bloques, correas y accesorios</div></div>`);
@@ -786,7 +773,7 @@ function removePhoto(id, groupId) {
 }
 
 function openOperacionPiscina() {
-  setConScreen('Operación de Piscina', () => nav('dept'),
+  setConScreen('Operación de Piscina', () => goBack(),
     `<div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Selecciona la acción a realizar</div>
      <div class="gcard" onclick="openChecklistPiscina()"><div class="ct">Checklist de Parámetros</div><div class="cd">pH · ORP · Sal PPM · Fotos</div></div>`);
 }
@@ -865,12 +852,6 @@ function startRec(wid) {
 function stopRec(){if(activeRec){try{activeRec.rec.stop();}catch(e){}cleanMic(activeRec.wid);activeRec=null;}}
 function setMs(wid,msg,on){const el=document.getElementById('ms-'+wid);if(!el)return;el.textContent=msg;on?el.classList.add('on'):el.classList.remove('on');}
 function cleanMic(wid){const b=document.getElementById('mic-'+wid);if(!b)return;b.classList.remove('rec');b.innerHTML='🎙';b.onclick=()=>toggleMic(wid);}
-
-// Versión de openForm para colaboradores — el atrás regresa al home del dept
-function openFormFromHome(formId) {
-  openForm(formId);
-  document.getElementById('fs-back').onclick = () => { renderDeptHome(); show('home'); };
-}
 
 function openForm(formId) {
   stopRec();
@@ -984,7 +965,7 @@ function openForm(formId) {
   const f = FORMS[formId];
   if (!f) return;
   document.getElementById('ft').textContent = f.title;
-  document.getElementById('fs-back').onclick = () => nav('dept');
+  document.getElementById('fs-back').onclick = () => goBack();
   document.getElementById('fbody').innerHTML = `
     <h2 style="font-size:1.05rem;font-weight:normal;font-style:italic;color:var(--brown);margin-bottom:1.1rem;">${f.title}</h2>
     ${f.html}
@@ -1101,7 +1082,7 @@ const CL_MANTO_CLUSTERS = [
 
 function openChecklistMenu(resourceId) {
   document.getElementById('cl-title').textContent = 'Checklist';
-  document.getElementById('cl-back').onclick = () => nav('dept');
+  document.getElementById('cl-back').onclick = () => goBack();
   let html = '';
   if (CD === 'limpieza') {
     html = `<div class="glbl">Selecciona el área a inspeccionar</div><div class="area-grid">
@@ -1293,7 +1274,7 @@ function renderManualLimp(){
 }
 
 function openCatalogoProductos(){
-  setConScreen('Catálogo de Productos',()=>setConScreen('Manual de Housekeeping',()=>nav('dept'),renderManualLimp()),
+  setConScreen('Catálogo de Productos',()=>setConScreen('Manual de Housekeeping',()=>goBack(),renderManualLimp()),
     `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:.75rem;">Productos aprobados por efectividad, seguridad y compatibilidad con materiales naturales. La dilución específica está en la ficha técnica disponible en bodega.</div>
      <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;overflow:hidden;">
        <div style="display:grid;grid-template-columns:1.4fr 1.5fr 1.3fr;background:var(--brown);padding:.55rem .75rem;gap:.5rem;">${['Producto','Uso principal','Precauciones'].map(h=>`<div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--cream);font-family:sans-serif;">${h}</div>`).join('')}</div>
@@ -1304,7 +1285,7 @@ function openCatalogoProductos(){
 function openSolicitudInsumos(){
   const today=new Date().toISOString().split('T')[0];
   document.getElementById('con-title').textContent='Solicitud de Insumos';
-  document.getElementById('con-back').onclick=()=>setConScreen('Manual de Limpieza General',()=>nav('dept'),renderManualLimp());
+  document.getElementById('con-back').onclick=()=>setConScreen('Manual de Limpieza General',()=>goBack(),renderManualLimp());
   document.getElementById('conbody').innerHTML=`
     <div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1rem;">Agrega todos los insumos que necesitas en esta solicitud.</div>
     <div class="fg"><label>Solicitante</label><select id="ins-colab"><option value="">— Seleccionar —</option>${COLABS_LIMP.map(n=>`<option${CU&&n===CU.nombre?' selected':''}>${n}</option>`).join('')}</select></div>
@@ -1549,8 +1530,8 @@ function openManualSection(manual, sectionId, title) {
   const content = SHARED_CONTENT[sectionId] || (manual==='limp' ? MANUAL_LMP_CONTENT[sectionId] : MANUAL_MT_CONTENT[sectionId]);
   if (!content) return;
   const backFn = manual==='limp'
-    ? () => setConScreen('Manual de Housekeeping', ()=>nav('dept'), renderManualLimp())
-    : () => setConScreen('Manual de Mantenimiento', ()=>nav('dept'), renderManualManto());
+    ? () => setConScreen('Manual de Housekeeping', ()=>goBack(), renderManualLimp())
+    : () => setConScreen('Manual de Mantenimiento', ()=>goBack(), renderManualManto());
   setConScreen(title, backFn, `<div class="doc-viewer">${content}</div>`);
 }
 
@@ -1640,7 +1621,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('lp').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
   document.getElementById('dept-back').addEventListener('click', () => nav('home'));
   document.getElementById('dept-out').addEventListener('click', logout);
-  document.getElementById('fs-back').addEventListener('click', () => nav('dept'));
+  document.getElementById('fs-back').addEventListener('click', () => goBack());
   document.getElementById('fs-out').addEventListener('click', logout);
   document.getElementById('cl-out').addEventListener('click', logout);
   document.getElementById('con-out').addEventListener('click', logout);
