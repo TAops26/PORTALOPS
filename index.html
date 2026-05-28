@@ -513,8 +513,9 @@ const DEPTS = {
       { id:'manual-limp',   title:'Manual de Limpieza General', desc:'Procedimientos y estándares', type:'doc' },
       { id:'inventarios',   title:'Inventarios',                 desc:'Control de insumos',           type:'inventarios' },
       { id:'insumos-limp',  title:'Insumos',                     desc:'Catálogo y solicitud',          type:'insumos' },
-      { id:'frases-en',     title:'Frases Comunes en Inglés',    desc:'Próximamente disponible' },
-      { id:'cal-limpieza',  title:'Calendario',                  desc:'Turnos y eventos del equipo',  type:'cal' },
+      { id:'schedule-limp', title:'Schedule del Día',             desc:'Tareas por hora y rol',         type:'schedule' },
+      { id:'frases-en',     title:'Frases Comunes en Inglés',     desc:'Próximamente disponible' },
+      { id:'cal-limpieza',  title:'Calendario',                   desc:'Turnos y eventos del equipo',  type:'cal' },
     ],
     reports: [
       { label:'Reporte de Área',        form:'reporte-area', cls:'' },
@@ -599,6 +600,7 @@ function openResource(id, title, type) {
   if (type === 'proveedores') { openProveedores(); return; }
   if (type === 'piscina')     { openOperacionPiscina(); return; }
   if (type === 'insumos')     { openInsumosLimp(); return; }
+  if (type === 'schedule')    { openScheduleDelDia(); return; }
   if (id === 'frases-en') {
     setConScreen('Frases Comunes en Inglés', () => goBack(),
       `<div class="cs"><h3>Frases Comunes en Inglés</h3><p>Esta sección estará disponible próximamente.</p></div>`);
@@ -1718,6 +1720,254 @@ async function submitPeerEval(){
   const ok=await sendToSheets({type:'reporte',usuario:CU.usuario,departamento:CU.departamento,tipo:'evaluacion-pares',datos:{evaluador:CU.nombre,evaluado,periodo:document.getElementById('ep-tipo')?.value||'',fecha:document.getElementById('ep-fecha')?.value||'',competencias,promedio,comportamientos,fortalezas:document.getElementById('ta-ep-bien')?.value||'',mejoras:document.getElementById('ta-ep-mejorar')?.value||'',recomendacion:getRadio('ep-rec'),comentario:document.getElementById('ep-comentario')?.value||''}});
   if(ok){document.getElementById('ep-ok').style.display='block';}
   else{document.getElementById('ep-err').style.display='block';btn.disabled=false;btn.textContent='Enviar Evaluación';}
+}
+
+
+// ── SCHEDULES ──
+function getScheduleActivo() {
+  const hoy = new Date();
+  const inicioResidencies = new Date('2026-07-04');
+  return hoy >= inicioResidencies ? 'residencies' : 'general';
+}
+
+const SCHEDULE_GENERAL = {
+  rol1: {
+    lunes: [
+      { hora: '7:00 AM',  tarea: 'Salón de Cocina y Recepción' },
+      { hora: '7:30 AM',  tarea: 'Baños Principales' },
+      { hora: '8:00 AM',  tarea: 'DESAYUNO' },
+      { hora: '8:30 AM',  tarea: 'Duchas Principales' },
+      { hora: '9:00 AM',  tarea: 'Reunión de Operaciones' },
+      { hora: '9:30 AM',  tarea: 'Reunión de Operaciones' },
+      { hora: '10:00 AM', tarea: 'Lounge / Deck' },
+      { hora: '10:30 AM', tarea: 'Lounge / Deck' },
+      { hora: '11:00 AM', tarea: 'Cocina de Residentes' },
+      { hora: '11:30 AM', tarea: 'Salón de Cocina y Recepción' },
+      { hora: '12:00 PM', tarea: 'ALMUERZO' },
+      { hora: '12:30 PM', tarea: 'Casita Azul' },
+      { hora: '1:00 PM',  tarea: 'Casita Azul' },
+      { hora: '1:30 PM',  tarea: 'Lavandería' },
+      { hora: '2:00 PM',  tarea: 'Lavandería' },
+      { hora: '2:30 PM',  tarea: 'Mollison - Ingham' },
+    ],
+    martes: [
+      { hora: '7:00 AM',  tarea: 'Salón de Cocina y Recepción' },
+      { hora: '7:30 AM',  tarea: 'Baños 7600 / Baños de Madera' },
+      { hora: '8:00 AM',  tarea: 'DESAYUNO' },
+      { hora: '8:30 AM',  tarea: 'Oficina' },
+      { hora: '9:00 AM',  tarea: 'Maloca y Baños' },
+      { hora: '9:30 AM',  tarea: 'Maloca y Baños' },
+      { hora: '10:00 AM', tarea: 'Toensmeier' },
+      { hora: '10:30 AM', tarea: 'Hemenway' },
+      { hora: '11:00 AM', tarea: 'Primavesi' },
+      { hora: '11:30 AM', tarea: 'Salatin' },
+      { hora: '12:00 PM', tarea: 'ALMUERZO' },
+      { hora: '12:30 PM', tarea: 'Shiva' },
+      { hora: '1:00 PM',  tarea: 'Savory' },
+      { hora: '1:30 PM',  tarea: 'Yeomans' },
+      { hora: '2:00 PM',  tarea: 'Fukuoka' },
+      { hora: '2:30 PM',  tarea: 'Mollison - Ingham' },
+    ],
+    miercoles: null,
+    jueves: [
+      { hora: '7:00 AM',  tarea: 'Salón de Cocina y Recepción' },
+      { hora: '7:30 AM',  tarea: 'Baños 7600 / Baños de Madera' },
+      { hora: '8:00 AM',  tarea: 'DESAYUNO' },
+      { hora: '8:30 AM',  tarea: 'Terralab y Bodega' },
+      { hora: '9:00 AM',  tarea: 'Maloca y Baños' },
+      { hora: '9:30 AM',  tarea: 'Maloca y Baños' },
+      { hora: '10:00 AM', tarea: 'Baños de Bahareque' },
+      { hora: '10:30 AM', tarea: 'Baños de Bahareque' },
+      { hora: '11:00 AM', tarea: 'Duchas de Bahareque' },
+      { hora: '11:30 AM', tarea: 'Salón de Cocina y Recepción' },
+      { hora: '12:00 PM', tarea: 'ALMUERZO' },
+      { hora: '12:30 PM', tarea: 'Lancaster' },
+      { hora: '1:00 PM',  tarea: 'Götsch' },
+      { hora: '1:30 PM',  tarea: 'Holzer' },
+      { hora: '2:00 PM',  tarea: 'Ingham - Carson' },
+      { hora: '2:30 PM',  tarea: 'Repaso Baño de Madera + Baños Principales' },
+    ],
+    viernes: [
+      { hora: '7:00 AM',  tarea: 'Salón de Cocina y Recepción' },
+      { hora: '7:30 AM',  tarea: 'Duchas Principales' },
+      { hora: '8:00 AM',  tarea: 'DESAYUNO' },
+      { hora: '8:30 AM',  tarea: 'Lavado Tubos de Baño' },
+      { hora: '9:00 AM',  tarea: 'Maloca y Baños' },
+      { hora: '9:30 AM',  tarea: 'Maloca y Baños' },
+      { hora: '10:00 AM', tarea: 'Starhawk' },
+      { hora: '10:30 AM', tarea: 'Einsestein' },
+      { hora: '11:00 AM', tarea: 'Macy' },
+      { hora: '11:30 AM', tarea: 'Salón de Cocina y Recepción' },
+      { hora: '12:00 PM', tarea: 'ALMUERZO' },
+      { hora: '12:30 PM', tarea: 'Baños Principales' },
+      { hora: '1:00 PM',  tarea: 'Lounge / Deck' },
+      { hora: '1:30 PM',  tarea: 'Sillas Juice Bar' },
+      { hora: '2:00 PM',  tarea: 'Repaso Baños Principales' },
+      { hora: '2:30 PM',  tarea: 'Repaso Baños Principales' },
+    ],
+    sabado: null,
+    domingo: null,
+  },
+  rol2: {
+    lunes: [
+      { hora: '7:00 AM',  tarea: 'Deck de Piscina' },
+      { hora: '7:30 AM',  tarea: 'Deck de Piscina' },
+      { hora: '8:00 AM',  tarea: 'DESAYUNO' },
+      { hora: '8:30 AM',  tarea: 'Baños 7600 / Baños de Madera' },
+      { hora: '9:00 AM',  tarea: 'Reunión de Operaciones' },
+      { hora: '9:30 AM',  tarea: 'Reunión de Operaciones' },
+      { hora: '10:00 AM', tarea: 'Toensmeier' },
+      { hora: '10:30 AM', tarea: 'Movement Studio' },
+      { hora: '11:00 AM', tarea: 'Salón de Cocina y Recepción' },
+      { hora: '11:30 AM', tarea: 'Salón de Cocina y Recepción' },
+      { hora: '12:00 PM', tarea: 'ALMUERZO' },
+      { hora: '12:30 PM', tarea: 'Baños de Teca' },
+      { hora: '1:00 PM',  tarea: 'Bodega de HK' },
+      { hora: '1:30 PM',  tarea: 'Bodega de HK' },
+      { hora: '2:00 PM',  tarea: 'Repaso Baños Principales' },
+      { hora: '2:30 PM',  tarea: 'Repaso Baños Principales' },
+    ],
+    martes: [
+      { hora: '7:00 AM',  tarea: 'Baños Principales' },
+      { hora: '7:30 AM',  tarea: 'Juice Bar' },
+      { hora: '8:00 AM',  tarea: 'DESAYUNO' },
+      { hora: '8:30 AM',  tarea: 'Terralab y Bodega' },
+      { hora: '9:00 AM',  tarea: 'Maloca y Baños' },
+      { hora: '9:30 AM',  tarea: 'Maloca y Baños' },
+      { hora: '10:00 AM', tarea: 'Baños de Bahareque' },
+      { hora: '10:30 AM', tarea: 'Lancaster' },
+      { hora: '11:00 AM', tarea: 'Götsch' },
+      { hora: '11:30 AM', tarea: 'Salón de Cocina y Recepción' },
+      { hora: '12:00 PM', tarea: 'ALMUERZO' },
+      { hora: '12:30 PM', tarea: 'Holzer' },
+      { hora: '1:00 PM',  tarea: 'Ingham' },
+      { hora: '1:30 PM',  tarea: 'Carson' },
+      { hora: '2:00 PM',  tarea: 'Baños 7600 / Baños de Madera' },
+      { hora: '2:30 PM',  tarea: 'Repaso Baño de Madera + Baños Principales' },
+    ],
+    miercoles: [
+      { hora: '7:00 AM',  tarea: 'Salón de Cocina y Recepción' },
+      { hora: '7:30 AM',  tarea: 'Duchas Principales' },
+      { hora: '8:00 AM',  tarea: 'DESAYUNO' },
+      { hora: '8:30 AM',  tarea: 'Baños Principales' },
+      { hora: '9:00 AM',  tarea: 'Baños 7600 / Baños de Madera' },
+      { hora: '9:30 AM',  tarea: 'Cocina de Residentes' },
+      { hora: '10:00 AM', tarea: 'Lounge / Deck' },
+      { hora: '10:30 AM', tarea: 'Movement Studio' },
+      { hora: '11:00 AM', tarea: 'Salón de Cocina y Recepción' },
+      { hora: '11:30 AM', tarea: 'Salón de Cocina y Recepción' },
+      { hora: '12:00 PM', tarea: 'ALMUERZO' },
+      { hora: '12:30 PM', tarea: 'Limpieza de Vidrios General' },
+      { hora: '1:00 PM',  tarea: 'Limpieza de Vidrios General' },
+      { hora: '1:30 PM',  tarea: 'Limpieza de Vidrios General' },
+      { hora: '2:00 PM',  tarea: 'Casita Azul' },
+      { hora: '2:30 PM',  tarea: 'Mollison - Ingham' },
+    ],
+    jueves: null,
+    viernes: [
+      { hora: '7:00 AM',  tarea: 'Baños Principales' },
+      { hora: '7:30 AM',  tarea: 'Baños 7600 / Baños de Madera' },
+      { hora: '8:00 AM',  tarea: 'DESAYUNO' },
+      { hora: '8:30 AM',  tarea: 'Lavado de Salón' },
+      { hora: '9:00 AM',  tarea: 'Maloca y Baños' },
+      { hora: '9:30 AM',  tarea: 'Maloca y Baños' },
+      { hora: '10:00 AM', tarea: 'Crawford' },
+      { hora: '10:30 AM', tarea: 'Hemenway' },
+      { hora: '11:00 AM', tarea: 'Primavesi' },
+      { hora: '11:30 AM', tarea: 'Salatin' },
+      { hora: '12:00 PM', tarea: 'ALMUERZO' },
+      { hora: '12:30 PM', tarea: 'Baños de Teca' },
+      { hora: '1:00 PM',  tarea: 'Movement Studio' },
+      { hora: '1:30 PM',  tarea: 'Sillas Juice Bar' },
+      { hora: '2:00 PM',  tarea: 'Doherty' },
+      { hora: '2:30 PM',  tarea: 'Fukuoka' },
+    ],
+    sabado: null,
+    domingo: null,
+  }
+};
+
+const SCHEDULE_RESIDENCIES = {
+  rol1: {
+    lunes:    null,
+    martes:   null,
+    miercoles:null,
+    jueves:   null,
+    viernes:  null,
+    sabado:   null,
+    domingo:  null,
+  },
+  rol2: {
+    lunes:    null,
+    martes:   null,
+    miercoles:null,
+    jueves:   null,
+    viernes:  null,
+    sabado:   null,
+    domingo:  null,
+  }
+};
+
+function openScheduleDelDia() {
+  setConScreen('Schedule del Día', () => goBack(), renderScheduleDelDia());
+}
+
+function renderScheduleDelDia() {
+  const scheduleActivo = getScheduleActivo();
+  const schedule = scheduleActivo === 'general' ? SCHEDULE_GENERAL : SCHEDULE_RESIDENCIES;
+  const etiquetaHtml = scheduleActivo === 'general'
+    ? `<span class="dbadge off" style="font-size:.65rem;margin-left:.5rem;">Schedule General</span>`
+    : `<span class="dbadge on" style="font-size:.65rem;margin-left:.5rem;">Residencies</span>`;
+
+  const hoy = new Date();
+  const dayIdx = hoy.getDay(); // 0=domingo,1=lunes,...,6=sabado
+  const dayKeys = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
+  const dayNames = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const dayKey = dayKeys[dayIdx];
+  const dayName = dayNames[dayIdx];
+
+  const tareasR1 = schedule.rol1[dayKey];
+  const tareasR2 = schedule.rol2[dayKey];
+
+  // Weekend or no tasks in general mode
+  const esFinDeSemana = (dayIdx === 0 || dayIdx === 6);
+  if (scheduleActivo === 'general' && esFinDeSemana) {
+    return `
+      <div style="display:flex;align-items:center;margin-bottom:1rem;">
+        <div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;">Hoy es ${dayName}</div>
+        ${etiquetaHtml}
+      </div>
+      <div class="cs"><div class="csi">🌿</div><h3>No hay tareas programadas para hoy</h3><p>El schedule de limpieza corre de lunes a viernes.</p></div>`;
+  }
+
+  function renderCol(tareas, rolLabel, color) {
+    const header = `<div style="font-size:.72rem;font-weight:600;font-family:sans-serif;color:${color};text-transform:uppercase;letter-spacing:.08em;margin-bottom:.6rem;">${rolLabel}</div>`;
+    if (!tareas) {
+      return header + `<div style="background:rgba(118,114,78,.08);border:1px solid rgba(118,114,78,.2);border-radius:10px;padding:1rem;text-align:center;"><div style="font-size:.82rem;font-family:sans-serif;color:var(--green);font-weight:600;">Día libre</div></div>`;
+    }
+    const rows = tareas.map(({hora, tarea}) => {
+      const isBreak = tarea === 'DESAYUNO' || tarea === 'ALMUERZO';
+      const isReunion = tarea === 'Reunión de Operaciones';
+      let bg = 'white', textColor = 'var(--brown)', fontWeight = 'normal', borderStyle = '1px solid rgba(84,66,54,.08)';
+      if (isBreak) { bg = 'rgba(118,114,78,.08)'; textColor = 'var(--green)'; fontWeight = '600'; borderStyle = '1px solid rgba(118,114,78,.2)'; }
+      else if (isReunion) { bg = 'rgba(113,127,126,.08)'; textColor = 'var(--blue)'; borderStyle = '1px solid rgba(113,127,126,.2)'; }
+      return `<div style="background:${bg};border:${borderStyle};border-radius:8px;padding:.55rem .7rem;margin-bottom:.35rem;display:flex;align-items:center;gap:.6rem;">
+        <span style="font-size:.65rem;font-family:sans-serif;color:var(--tm);min-width:52px;flex-shrink:0;">${hora}</span>
+        <span style="font-size:.78rem;font-family:sans-serif;color:${textColor};font-weight:${fontWeight};line-height:1.3;">${tarea}</span>
+      </div>`;
+    }).join('');
+    return header + rows;
+  }
+
+  return `
+    <div style="display:flex;align-items:center;margin-bottom:1rem;">
+      <div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;">Hoy es ${dayName}</div>
+      ${etiquetaHtml}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+      <div>${renderCol(tareasR1, 'Rol 1', 'var(--blue)')}</div>
+      <div>${renderCol(tareasR2, 'Rol 2', 'var(--clay)')}</div>
+    </div>`;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
