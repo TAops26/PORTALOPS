@@ -275,7 +275,7 @@ body{font-family:'Cormorant',Georgia,serif;background:var(--cream);color:var(--b
 
 <script>
 // ── CONFIG ──
-const WEBHOOK = 'https://script.google.com/macros/s/AKfycbzGws5rH9g8si9f6efuqIBVrLE6TMQY6D1g8VlMXod43aWMxarDCd1JaxvDA5sOFn1T/exec';
+const WEBHOOK = 'https://script.google.com/macros/s/AKfycbydoJ3XAwjsSZ1rcU1g1l0vQyKF8p3RM0QmWpmSzQqqnGlE3VTDZieU7yCIrYr6iABPQg/exec';
 
 // ── STATE ──
 let USERS = [];
@@ -392,7 +392,11 @@ function renderHome() {
           <div style="color:var(--cream);font-size:1.05rem;font-style:italic;">${CU.nombre}</div>
           <div style="color:var(--tm);font-size:.7rem;font-family:sans-serif;text-transform:uppercase;letter-spacing:.1em;margin-top:.15rem;">${deptLabel[CU.departamento]} · ${isAdmin?'Admin':'Colaborador'}</div>
         </div>
-        <button onclick="logout()" style="margin-left:auto;background:none;border:1px solid rgba(232,226,209,.25);border-radius:6px;color:var(--tm);font-size:.68rem;font-family:sans-serif;padding:.28rem .55rem;cursor:pointer;">Salir</button>
+        <div style="display:flex;gap:.5rem;margin-left:auto;align-items:center;">
+          <a href="https://app.talentify.cr/" target="_blank" rel="noopener"
+            style="background:none;border:1px solid rgba(232,226,209,.25);border-radius:6px;color:var(--tm);font-size:.68rem;font-family:sans-serif;padding:.28rem .55rem;cursor:pointer;text-decoration:none;white-space:nowrap;">Talentify</a>
+          <button onclick="logout()" style="background:none;border:1px solid rgba(232,226,209,.25);border-radius:6px;color:var(--tm);font-size:.68rem;font-family:sans-serif;padding:.28rem .55rem;cursor:pointer;">Salir</button>
+        </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem;">
         <div style="background:rgba(255,255,255,.07);border:1px solid rgba(232,226,209,.12);border-radius:10px;padding:.85rem .9rem;">
@@ -471,7 +475,11 @@ function renderDeptHome() {
           <div style="color:var(--cream);font-size:1.05rem;font-style:italic;">Bienvenido, ${CU.nombre.split(' ')[0]}</div>
           <div style="color:var(--tm);font-size:.7rem;font-family:sans-serif;text-transform:uppercase;letter-spacing:.1em;margin-top:.15rem;">${deptLabel[d]||d} · Colaborador</div>
         </div>
-        <button onclick="logout()" style="margin-left:auto;background:none;border:1px solid rgba(232,226,209,.25);border-radius:6px;color:var(--tm);font-size:.68rem;font-family:sans-serif;padding:.28rem .55rem;cursor:pointer;">Salir</button>
+        <div style="display:flex;gap:.5rem;margin-left:auto;align-items:center;">
+          <a href="https://app.talentify.cr/" target="_blank" rel="noopener"
+            style="background:none;border:1px solid rgba(232,226,209,.25);border-radius:6px;color:var(--tm);font-size:.68rem;font-family:sans-serif;padding:.28rem .55rem;cursor:pointer;text-decoration:none;white-space:nowrap;">Talentify</a>
+          <button onclick="logout()" style="background:none;border:1px solid rgba(232,226,209,.25);border-radius:6px;color:var(--tm);font-size:.68rem;font-family:sans-serif;padding:.28rem .55rem;cursor:pointer;">Salir</button>
+        </div>
       </div>
       <button class="dept-btn" onclick="openMyPerformance()" style="background:rgba(255,255,255,.08);border:1px solid rgba(232,226,209,.15);margin-bottom:0;">
         <div class="dico ${cfg.cls}" style="background:rgba(232,226,209,.12);color:var(--cream);">DE</div>
@@ -1038,7 +1046,9 @@ async function submitForm(formId, dept) {
     }));
   }
 
-  const ok=await sendToSheets({type:'reporte',usuario:CU.usuario,departamento:dept,tipo:formId,datos});
+  // Route to correct sheet based on formId
+  const payloadType = (formId === 'materiales') ? 'solicitud-insumos' : 'reporte';
+  const ok=await sendToSheets({type:payloadType,usuario:CU.usuario,departamento:dept,tipo:formId,datos});
   if (ok){document.getElementById('ok-msg').style.display='block';}
   else{document.getElementById('err-msg').style.display='block';btn.disabled=false;btn.textContent='Enviar';}
 }
@@ -1313,7 +1323,7 @@ async function submitSolicitudInsumos(){
   for(let i=0;i<insCount;i++){const el=document.getElementById('ins-row-'+i);if(!el)continue;const item=document.getElementById('ins-item-'+i)?.value?.trim();const qty=document.getElementById('ins-qty-'+i)?.value;const unit=document.getElementById('ins-unit-'+i)?.value||'Unidad';if(item)items.push({item,qty:qty||'1',unit});}
   if(!items.length){alert('Por favor agrega al menos un insumo.');return;}
   const btn=document.getElementById('ins-sub');btn.disabled=true;btn.textContent='Enviando...';
-  const ok=await sendToSheets({type:'reporte',usuario:CU.usuario,departamento:'limpieza',tipo:'solicitud-insumos',datos:{colaborador:colab,fecha:document.getElementById('ins-fecha')?.value||'',prior:document.getElementById('ins-prior')?.value||'',items,obs:document.getElementById('ins-obs')?.value||''}});
+  const ok=await sendToSheets({type:'solicitud-insumos',usuario:CU.usuario,departamento:'limpieza',tipo:'solicitud-insumos',datos:{colaborador:colab,fecha:document.getElementById('ins-fecha')?.value||'',prior:document.getElementById('ins-prior')?.value||'',items,obs:document.getElementById('ins-obs')?.value||''}});
   if(ok){document.getElementById('ins-ok').style.display='block';insCount=1;}
   else{document.getElementById('ins-err').style.display='block';btn.disabled=false;btn.textContent='Enviar Solicitud';}
 }
@@ -1717,7 +1727,7 @@ async function submitPeerEval(){
   const vals=Object.values(competencias).filter(Boolean);
   const promedio=vals.length?(vals.reduce((a,b)=>a+parseInt(b),0)/vals.length).toFixed(1):'—';
   const btn=document.getElementById('ep-sub');btn.disabled=true;btn.textContent='Enviando...';
-  const ok=await sendToSheets({type:'reporte',usuario:CU.usuario,departamento:CU.departamento,tipo:'evaluacion-pares',datos:{evaluador:CU.nombre,evaluado,periodo:document.getElementById('ep-tipo')?.value||'',fecha:document.getElementById('ep-fecha')?.value||'',competencias,promedio,comportamientos,fortalezas:document.getElementById('ta-ep-bien')?.value||'',mejoras:document.getElementById('ta-ep-mejorar')?.value||'',recomendacion:getRadio('ep-rec'),comentario:document.getElementById('ep-comentario')?.value||''}});
+  const ok=await sendToSheets({type:'evaluacion',usuario:CU.usuario,departamento:CU.departamento,tipo:'evaluacion-pares',datos:{evaluador:CU.nombre,evaluado,periodo:document.getElementById('ep-tipo')?.value||'',fecha:document.getElementById('ep-fecha')?.value||'',competencias,promedio,comportamientos,fortalezas:document.getElementById('ta-ep-bien')?.value||'',mejoras:document.getElementById('ta-ep-mejorar')?.value||'',recomendacion:getRadio('ep-rec'),comentario:document.getElementById('ep-comentario')?.value||''}});
   if(ok){document.getElementById('ep-ok').style.display='block';}
   else{document.getElementById('ep-err').style.display='block';btn.disabled=false;btn.textContent='Enviar Evaluación';}
 }
