@@ -275,7 +275,7 @@ body{font-family:'Cormorant',Georgia,serif;background:var(--cream);color:var(--b
 
 <script>
 // ── CONFIG ──
-const WEBHOOK = 'https://script.google.com/macros/s/AKfycbydoJ3XAwjsSZ1rcU1g1l0vQyKF8p3RM0QmWpmSzQqqnGlE3VTDZieU7yCIrYr6iABPQg/exec';
+const WEBHOOK = 'NUEVO_WEBHOOK_URL'; // ← Reemplaza con la URL del nuevo Apps Script desplegado
 
 // ── STATE ──
 let USERS = [];
@@ -313,8 +313,9 @@ async function sendToSheets(payload) {
   try {
     await fetch(WEBHOOK, {
       method: 'POST',
+      mode: 'no-cors',
       body: JSON.stringify(payload),
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'text/plain' }
     });
     return true;
   } catch(e) {
@@ -394,7 +395,7 @@ function renderHome() {
         </div>
         <div style="display:flex;gap:.5rem;margin-left:auto;align-items:center;">
           <a href="https://app.talentify.cr/" target="_blank" rel="noopener"
-            style="background:none;border:1px solid rgba(232,226,209,.25);border-radius:6px;color:var(--tm);font-size:.68rem;font-family:sans-serif;padding:.28rem .55rem;cursor:pointer;text-decoration:none;white-space:nowrap;">Talentify</a>
+            style="background:rgba(153,92,68,.7);border:1px solid rgba(232,226,209,.3);border-radius:8px;color:var(--cream);font-size:.78rem;font-family:sans-serif;font-weight:600;padding:.45rem .9rem;cursor:pointer;text-decoration:none;white-space:nowrap;letter-spacing:.04em;">Talentify</a>
           <button onclick="logout()" style="background:none;border:1px solid rgba(232,226,209,.25);border-radius:6px;color:var(--tm);font-size:.68rem;font-family:sans-serif;padding:.28rem .55rem;cursor:pointer;">Salir</button>
         </div>
       </div>
@@ -477,7 +478,7 @@ function renderDeptHome() {
         </div>
         <div style="display:flex;gap:.5rem;margin-left:auto;align-items:center;">
           <a href="https://app.talentify.cr/" target="_blank" rel="noopener"
-            style="background:none;border:1px solid rgba(232,226,209,.25);border-radius:6px;color:var(--tm);font-size:.68rem;font-family:sans-serif;padding:.28rem .55rem;cursor:pointer;text-decoration:none;white-space:nowrap;">Talentify</a>
+            style="background:rgba(153,92,68,.7);border:1px solid rgba(232,226,209,.3);border-radius:8px;color:var(--cream);font-size:.78rem;font-family:sans-serif;font-weight:600;padding:.45rem .9rem;cursor:pointer;text-decoration:none;white-space:nowrap;letter-spacing:.04em;">Talentify</a>
           <button onclick="logout()" style="background:none;border:1px solid rgba(232,226,209,.25);border-radius:6px;color:var(--tm);font-size:.68rem;font-family:sans-serif;padding:.28rem .55rem;cursor:pointer;">Salir</button>
         </div>
       </div>
