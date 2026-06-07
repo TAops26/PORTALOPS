@@ -650,7 +650,7 @@ function openRepasoHab(habitacion) {
      <div class="fg"><label>Fecha</label>
        <input type="date" id="rh-fecha" value="${today}">
      </div>
-     <div class="fg"><label>Notas</label>
+     <div class="fg"><label>Observaciones</label>
        <textarea id="rh-notas" placeholder="Estado de la habitación, observaciones, incidencias..." style="min-height:90px;"></textarea>
      </div>
      ${photoUploadWidget('rh-photos')}
@@ -669,7 +669,7 @@ async function submitRepasoHab(habitacion) {
     colaborador: colab,
     fecha:       document.getElementById('rh-fecha')?.value || '',
     habitacion,
-    notas:       document.getElementById('rh-notas')?.value || '',
+    obs:         document.getElementById('rh-notas')?.value || '',
   };
   const ok = await sendToSheets({
     type: 'reporte', usuario: CU.usuario, departamento: 'limpieza',
