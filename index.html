@@ -2020,14 +2020,29 @@ const MANUAL_LMP_SECS = [
 ];
 
 function renderManualLimp(){
-  let html=`<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Estándares, procedimientos y criterios de limpieza · Versión 2.0 · 2025</div>`;
-  MANUAL_LMP_SECS.forEach(s=>{
-    if(s.divider){html+=`<div class="sec-band">${s.divider}</div>`;}
-    else{html+=`<div class="gcard" onclick="openManualSection('limp','${s.id}','${s.title}')" style="margin-bottom:.6rem;"><div class="ct">${s.title}</div></div>`;}
+  let html = `<div style="font-size:.72rem;font-family:var(--font-sans);color:rgba(232,226,209,0.35);font-style:italic;letter-spacing:.05em;margin-bottom:1.2rem;">Estándares, procedimientos y criterios de limpieza · Versión 2.0 · 2025</div>`;
+  let inGrid = false;
+
+  MANUAL_LMP_SECS.forEach(s => {
+    if (s.divider) {
+      if (inGrid) { html += `</div>`; inGrid = false; }
+      html += `<div class="sec-band">${s.divider}</div>`;
+      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem;">`;
+      inGrid = true;
+    } else {
+      if (!inGrid) {
+        html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem;">`;
+        inGrid = true;
+      }
+      html += `<div class="gcard" onclick="openManualSection('limp','${s.id}','${s.title}')" style="margin-bottom:0;">
+        <div class="ct" style="font-size:.9rem;">${s.title}</div>
+      </div>`;
+    }
   });
+
+  if (inGrid) html += `</div>`;
   return html;
 }
-
 function openCatalogoProductos(){
   setConScreen('Catálogo de Productos',()=>openInsumosLimp(),
     `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:.75rem;">Productos aprobados por efectividad, seguridad y compatibilidad con materiales naturales.</div>
@@ -2108,236 +2123,29 @@ const MANUAL_MT_SECS = [
 ];
 
 function renderManualManto(){
-  let html = `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Estándares, procedimientos e inspecciones · Versión 2.0 · 2025</div>`;
+  let html = `<div style="font-size:.72rem;font-family:var(--font-sans);color:rgba(232,226,209,0.35);font-style:italic;letter-spacing:.05em;margin-bottom:1.2rem;">Estándares, procedimientos e inspecciones · Versión 2.0 · 2025</div>`;
+  let inGrid = false;
+
   MANUAL_MT_SECS.forEach(s => {
     if (s.divider) {
+      if (inGrid) { html += `</div>`; inGrid = false; }
       html += `<div class="sec-band">${s.divider}</div>`;
+      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem;">`;
+      inGrid = true;
     } else {
-      html += `<div class="gcard" onclick="openManualSection('manto','${s.id}','${s.title}')" style="margin-bottom:.6rem;"><div class="ct">${s.title}</div></div>`;
+      if (!inGrid) {
+        html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem;">`;
+        inGrid = true;
+      }
+      html += `<div class="gcard" onclick="openManualSection('manto','${s.id}','${s.title}')" style="margin-bottom:0;">
+        <div class="ct" style="font-size:.9rem;">${s.title}</div>
+      </div>`;
     }
   });
+
+  if (inGrid) html += `</div>`;
   return html;
 }
-
-const SHARED_CONTENT = {
-  depto: `
-    <p style="font-size:.82rem;font-family:sans-serif;color:var(--brown);line-height:1.6;margin-bottom:1rem;">El Departamento de Operaciones es el eje funcional que sostiene la experiencia en Tierramor.</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
-      ${[['Housekeeping','Limpieza, higiene y presentación de todos los espacios de la propiedad. Primera línea de la experiencia del huésped.'],['Mantenimiento','Inspección, prevención y atención de fallas en infraestructura, sistemas de agua, electricidad y estructura.'],['Proveduría y Transportes','Gestión de insumos, compras, inventario y logística de movilización interna y externa.'],['Seguridad','Resguardo de la integridad de personas, espacios y bienes en toda la propiedad.'],].map(([t,d])=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:.85rem .8rem;"><div style="font-size:.75rem;font-weight:600;font-family:sans-serif;color:var(--clay);margin-bottom:.25rem;">${t}</div><div style="font-size:.73rem;font-family:sans-serif;color:var(--brown);line-height:1.4;">${d}</div></div>`).join('')}
-    </div>
-    <p style="font-size:.75rem;font-family:sans-serif;color:var(--tm);line-height:1.6;margin-top:.9rem;">Cada área opera con roles definidos semanalmente. Estos roles permiten el desarrollo de indicadores de desempeño (KPIs) por función, aseguran la cobertura completa de responsabilidades y facilitan la rotación organizada del equipo.</p>`,
-
-  'marco-principios': `
-    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);line-height:1.6;margin-bottom:1rem;font-weight:600;">Permacultura</div>
-    <p style="font-size:.78rem;font-family:sans-serif;color:var(--brown);line-height:1.6;margin-bottom:.9rem;">Tierramor opera bajo los 12 principios de permacultura formulados por David Holmgren. Estos principios son guías prácticas para diseñar sistemas que funcionan en armonía con los ciclos naturales.</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin-bottom:1.2rem;">
-      ${[['1. Observar e interactuar','Tomarse el tiempo para relacionarse con la naturaleza nos ayuda a diseñar soluciones adecuadas.'],['2. Capturar y almacenar energía','Usando recursos en su momento de abundancia, podemos usarlos en épocas de necesidad.'],['3. Obtener un rendimiento','Asegúrate de que el trabajo que haces genere resultados útiles y satisfactorios.'],['4. Aplicar autorregulación','Necesitamos desalentar comportamientos inapropiados para que los sistemas continúen funcionando bien.'],['5. Usar recursos renovables','Haz el mejor uso posible de los recursos abundantes de la naturaleza.'],['6. No producir desperdicios','Valorando y aprovechando todos los recursos disponibles, no se produce desperdicio.'],['7. Diseñar desde los patrones','Observando los patrones de la naturaleza, podemos usarlos como base del diseño.'],['8. Integrar en vez de segregar','Colocando los elementos correctos en las relaciones correctas, se apoyan mutuamente.'],['9. Soluciones pequeñas y lentas','Los sistemas pequeños y lentos son más fáciles de mantener y usan mejor los recursos locales.'],['10. Usar y valorar la diversidad','La diversidad reduce la vulnerabilidad y aprovecha el carácter único del ambiente.'],['11. Usar los bordes','La interfaz entre las cosas es donde ocurren los eventos más interesantes y valiosos.'],['12. Responder creativamente al cambio','Podemos tener un impacto positivo interviniendo en el momento correcto.'],].map(([t,d])=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:9px;padding:.75rem .7rem;"><div style="font-size:.7rem;font-weight:600;font-family:sans-serif;color:var(--green);margin-bottom:.2rem;">${t}</div><div style="font-size:.68rem;font-family:sans-serif;color:var(--brown);line-height:1.4;">${d}</div></div>`).join('')}
-    </div>
-    <div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.4rem;">Fuente: Holmgren, D. Permaculture: Principles and Pathways Beyond Sustainability. 2002.</div>
-    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);line-height:1.6;margin-bottom:.6rem;font-weight:600;">Turismo Regenerativo</div>
-    <p style="font-size:.78rem;font-family:sans-serif;color:var(--brown);line-height:1.6;margin-bottom:.9rem;">El turismo regenerativo va más allá de la sostenibilidad: no solo apunta a no empeorar el lugar, sino a dejarlo mejor de como se encontró.</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin-bottom:.9rem;">
-      ${[['1. El lugar como protagonista','Cada decisión operativa considera su impacto en el ecosistema local, la cuenca hídrica, el suelo y la biodiversidad.'],['2. El visitante como agente de cambio','El visitante es invitado a participar activamente en la salud del lugar y a irse transformado.'],['3. Economía que se queda','Los beneficios circulan dentro de la comunidad local mediante proveedores locales y empleo digno.'],['4. Cultura como recurso vivo','Las expresiones culturales locales se integran con respeto y consentimiento, no se folclorizan.'],['5. Regeneración activa de ecosistemas','Las operaciones contribuyen activamente a restaurar lo degradado: agua, suelo, vegetación y biodiversidad.'],['6. Medición de impacto real','Indicadores concretos: consumo de agua, residuos generados, compras locales. La transparencia es parte del producto.'],['7. El equipo como comunidad','Condiciones laborales dignas, desarrollo profesional y sentido de pertenencia son condición necesaria para el modelo.','full'],].map(([t,d,full])=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:9px;padding:.75rem .7rem;${full?'grid-column:1/-1':''}"><div style="font-size:.7rem;font-weight:600;font-family:sans-serif;color:var(--blue);margin-bottom:.2rem;">${t}</div><div style="font-size:.68rem;font-family:sans-serif;color:var(--brown);line-height:1.4;">${d}</div></div>`).join('')}
-    </div>
-    <div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);font-style:italic;">Marco desarrollado con base en: Pollock (2012, 2019, 2023), Wahl (2016), Regenerative Travel Network (2020), UNWTO (2020), GSTC (2022), Macy (2007).</div>`,
-};
-
-const MANUAL_LMP_CONTENT = {
-  roles: `<div style="font-size:.78rem;font-family:sans-serif;color:var(--brown);line-height:1.5;margin-bottom:1rem;">El equipo de housekeeping opera en dos roles con asignaciones semanales rotativas. Turno <strong>AM</strong> (7:00am–12:00md) y <strong>PM</strong> (12:30pm–3:00pm).</div>
-    <div style="background:rgba(113,127,126,.08);border:1px solid rgba(113,127,126,.2);border-radius:10px;padding:.9rem;margin-bottom:1rem;">
-      <div style="font-size:.85rem;font-weight:600;font-family:sans-serif;color:var(--blue);margin-bottom:.6rem;font-style:italic;">Rol 1</div>
-      ${mkRolTable([['Lunes','7:00 AM','Salón de Cocina y Recepción · Baños principales','12:30 PM','Casita Azul · Lavandería'],['Martes','7:00 AM','Salón de Cocina y Recepción · Baños 7600 / Baños de Madera · Oficina · Maloca y baños · Toensmeier · Hememway · Primavesi · Salatin','12:30 PM','Shiva · Savory · Yeomans · Fukuoka · Mollison'],['Miércoles','7:00 AM','Deck de Piscina · Juice Bar · Baños de Teca · Cocina de Residentes · Movement Studio · Salón de Cocina y Recepción','12:30 PM','Baños de Teca · Organización Bodega HK · Repaso Baños principales'],['Jueves','7:00 AM','Salón de Cocina y Recepción · Baños 7600 / Baños de Madera · Terralab y bodega · Maloca y baños · Baños de Bahareque · Duchas de Bahareque','12:30 PM','Lancaster · Götsch · Holzer · Ingham · Carson · Repaso Baño de Madera + Baños Principales'],['Viernes','7:00 AM','Salón de Cocina y Recepción · Duchas principales · Lavado tubos de baño','12:30 PM','Baños Principales · Lounge · Starhawk · Eisenstein · Macy'],])}
-    </div>
-    <div style="background:rgba(153,92,68,.06);border:1px solid rgba(153,92,68,.15);border-radius:10px;padding:.9rem;">
-      <div style="font-size:.85rem;font-weight:600;font-family:sans-serif;color:var(--clay);margin-bottom:.6rem;font-style:italic;">Rol 2</div>
-      ${mkRolTable([['Lunes','7:00 AM','Deck de Piscina · Baños 7600 / Baños de Madera · Reunión de Operaciones','12:30 PM','Baños de Teca · Bodega de HK'],['Martes','7:00 AM','Baños principales · Juice Bar · Terralab y bodega · Maloca y baños · Baños de Bahareque · Cocina de Residentes · Salón de Cocina y Recepción','12:30 PM','Lancaster · Götsch · Holzer · Ingham · Carson · Repaso Baño de Madera + Baños Principales'],['Miércoles','7:00 AM','Salón de Cocina y Recepción · Duchas principales · Baños principales · Baños 7600 / Baños de Madera · Cocina de Residentes · Lounge · Salón de Cocina y Recepción','12:30 PM','Limpieza de Vidrios General · Casita Azul'],['Jueves','7:00 AM','Baños principales · Juice Bar · Maloca y baños · Oficina · Toensmeier · Hememway · Primavesi · Salatin','12:30 PM','Shiva · Savory · Yeomans · Fukuoka · Mollison · Ingham'],['Viernes','7:00 AM','Baños principales · Baños 7600 / Baños de Madera · Lavado de salón','12:30 PM','Baños de Teca · Movement Studio · Sillas Juice Bar · Crawford · Doherty'],])}
-    </div>`,
-
-  'criterios-todo': `
-    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-bottom:.6rem;">Criterios de Housekeeping</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.2rem;">
-      ${[['OBSERVABLE','Cualquier persona puede verificar el resultado.'],['REPETIBLE','El resultado no depende de quién limpió.'],['SUFICIENTE','Limpieza efectiva sin obsesión por la perfección.'],['SOSTENIBLE','Se puede mantener sin agotar al equipo.']].map(([t,d])=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:.85rem .8rem;"><div style="font-size:.72rem;font-weight:600;font-family:sans-serif;color:var(--clay);letter-spacing:.06em;margin-bottom:.25rem;">${t}</div><div style="font-size:.75rem;font-family:sans-serif;color:var(--brown);line-height:1.4;">${d}</div></div>`).join('')}
-    </div>
-    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-bottom:.6rem;">Preparación del Turno</div>
-    ${mkStepsMT([['Revisión del Rol','Llegar puntualmente y revisar la asignación de áreas del día. Confirmar tareas especiales y cambios de última hora.'],['Preparación Personal','Uniforme limpio, zapatos cerrados, cabello recogido. Lavarse las manos antes de empezar. Evitar perfumes fuertes.'],['Revisión del Equipo','Trapos limpios, escoba, trapeador, guantes, desinfectante, limpiavidrios, bolsas de basura. Preparar soluciones según concentración indicada.'],['Inspección Visual','Pasar por las áreas asignadas: verificar ocupación, identificar zonas prioritarias y detectar peligros.'],['Coordinación','Comunicar si se necesita apoyo. Avisar a supervisión si falta algún insumo o herramienta.'],['Actitud','Buena disposición, discreción y comunicación con huéspedes y equipo.']])}
-    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-top:1rem;margin-bottom:.6rem;">Procedimientos Generales</div>
-    <div class="doc-note" style="margin-bottom:.9rem;">Si hay alguien en el espacio: esperar si está en uso. Nunca entrar a casitas o baños si hay alguien adentro.</div>
-    ${mkStepsMT([['Orden: de arriba hacia abajo','Comenzar sacudiendo superficies elevadas. Continuar con repisas y mobiliario intermedio. Finalizar siempre con el piso.'],['Superficies y Mobiliario','Quitar polvo de mesas, repisas, marcos, interruptores y ventiladores. Paño húmedo y secar de inmediato para evitar marcas.'],['Pisos','Barrer todo el espacio primero incluyendo debajo de muebles. Trapear con agua limpia y desinfectante, del fondo hacia la salida.'],['Ventanas y Vidrios','Paño seco primero, luego húmedo o limpiavidrios. Revisar marcos y rieles.'],['Baños con Sistema de Compostaje','Verificar capa de aserrín. El área del inodoro debe mantenerse seca. Limpiar paredes, espejos y grifos. Reponer papel, jabón y toallas.'],['Gestión de Residuos','Retirar la basura cuando el área lo requiera, no por frecuencia fija. Reponer bolsas y mantener tapa cerrada.'],['Presentación Final','Revisar olor, ventilar si necesario. Alinear muebles y cojines. Apagar luces innecesarias.']])}`,
-
-  detalles: `<div class="doc-note" style="margin-bottom:.9rem;">⚠️ Si hay alguien en el espacio: esperar si está en uso. Nunca entrar a casitas o baños si hay alguien adentro.</div>
-    ${mkStepsMT([['Preparación','Verificar que el área esté libre. Usar guantes. Reunir todos los materiales antes de empezar.'],['Superficies y Mobiliario','Quitar polvo de mesas, repisas, marcos e interruptores. Limpiar manchas. Secar de inmediato.'],['Pisos','Barrer primero. Trapear del fondo hacia la salida. Revisar drenajes.'],['Ventanas y Vidrios','Paño seco primero, luego húmedo o limpiavidrios. Revisar marcos y rieles.'],['Baños (Compostaje)','Verificar capa de aserrín. Lavar pisos, paredes, espejos y desagües. Reponer papel, jabón y toallas.'],['Presentación Final','Revisar olor, ventilar si necesario. Alinear muebles. Apagar luces innecesarias.']])}`,
-
-  oficina:   mkAreaLimp('Área administrativa',[['Revisión Previa','Confirmar sin reuniones en curso. Anunciarse al entrar.'],['Superficies','Retirar polvo de escritorios, repisas y lámparas. Limpiar pantallas con paño seco. Desinfectar teléfonos, manijas e interruptores.'],['Pisos','Barrer y trapear con desinfectante suave, evitando residuos cerca de tomas eléctricas.'],['Basureros','Vaciar cuando el área lo requiera. Limpiar el contenedor si hay restos.'],['Refrigeradora','Limpiar interno y externo. Eliminar alimentos en mal estado.'],['Organización','Alinear sillas, cerrar cajones, agrupar cables sueltos.'],['Revisión Final','Verificar que luces y aires estén apagados si no se usan.']],['Ninguna superficie con polvo ni manchas','Pisos secos y sin marcas','Escritorios libres de residuos','Basureros vacíos','Olor neutro'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Ninguna superficie con polvo ni manchas</div><div class="crit-row">✓ Pisos secos y sin marcas</div><div class="crit-row">✓ Escritorios libres de residuos</div><div class="crit-row">✓ Basureros vacíos</div><div class="crit-row">✓ Olor neutro</div></div>`,
-
-  juicebar:  mkAreaLimp('Área exterior de servicio',[['Revisión Inicial','Confirmar sin huéspedes. Observar si hay insectos, frutas o líquidos pegajosos.'],['Superficies','Limpiar mesas, barra y repisas con paño húmedo. Secar completamente. Desinfectar manijas y zonas de alto contacto.'],['Pisos y Entorno','Barrer toda el área. Trapear con agua y desinfectante. Retirar hojas del exterior. Limpiar maceteros.'],['Basureros','Vaciar cuando el área lo requiera. Mantener tapa cerrada.'],['Presentación','Alinear mesas, sillas y bancos. Limpiar elementos decorativos y plantas.']],['Ningún residuo visible','Mobiliario alineado y seco','Basureros limpios y tapados','Área fresca y lista para el próximo servicio'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Ningún residuo visible</div><div class="crit-row">✓ Mobiliario alineado y seco</div><div class="crit-row">✓ Basureros limpios y tapados</div><div class="crit-row">✓ Área fresca y lista para el próximo servicio</div></div>`,
-
-  recepcion: mkAreaLimp('Punto de bienvenida',[['Revisión Inicial','Confirmar sin check-in en proceso. Encender iluminación adecuada para trabajar.'],['Superficies y Mobiliario','Retirar polvo del mostrador, mesas, sillas y repisas. Desinfectar áreas de alto contacto. Alinear materiales visibles.'],['Pisos','Barrer con atención a esquinas y zona cercana a la entrada. Trapear con desinfectante neutro.'],['Basureros y Decoración','Vaciar cuando sea necesario. Revisar plantas: quitar polvo de hojas, retirar hojas secas.'],['Revisión Final','Alinear sillas, cerrar cajones, limpiar huellas visibles.']],['Ningún rastro de polvo ni basura','Mobiliario ordenado, limpio y seco','Olor agradable y fresco','Área lista para recibir huéspedes'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Ningún rastro de polvo ni basura</div><div class="crit-row">✓ Mobiliario ordenado, limpio y seco</div><div class="crit-row">✓ Olor agradable y fresco</div><div class="crit-row">✓ Área lista para recibir huéspedes</div></div>`,
-
-  comedor:   mkAreaLimp('Área de alimentación',[['Revisión Inicial','Verificar sin personas comiendo. Retirar platos y utensilios olvidados.'],['Superficies y Mobiliario','Limpiar mesas, bancas y sillas con paño húmedo y desinfectante. Secar completamente. Alinear en posición original.'],['Estaciones de Servicio','Limpiar dispensadores, termos y condimentos. Ordenar utensilios visibles.'],['Pisos','Barrer restos de comida. Trapear con desinfectante neutro. Atención a esquinas y debajo de mesas.'],['Basureros','Vaciar cuando el área lo requiera, especialmente después de servicios.'],['Revisión Final','Confirmar que mesas, pisos y basureros estén limpios y secos.']],['Mesas sin residuos, secas y desinfectadas','Sillas limpias y alineadas','Piso sin restos ni humedad','Basureros vacíos'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Mesas sin residuos, secas y desinfectadas</div><div class="crit-row">✓ Sillas limpias y alineadas</div><div class="crit-row">✓ Piso sin restos ni humedad</div><div class="crit-row">✓ Basureros vacíos</div></div>`,
-
-  templo:    `<div class="doc-note" style="margin-bottom:.9rem;">⚠️ Espacio de alta sensibilidad. Limpiar con discreción y sin alterar objetos sagrados sin autorización.</div>`+mkAreaLimp('Estudio de Movimiento',[['Revisión Inicial','Confirmar sin actividades en curso. Verificar velas encendidas y objetos frágiles antes de comenzar.'],['Superficies','Quitar polvo suavemente con paño seco. No mover objetos de altar sin autorización.'],['Piso','Barrer con escoba suave. Trapear con desinfectante neutro. Asegurar que quede completamente seco.'],['Textiles y Cojines','Sacudir o aspirar suavemente. Manchas: reportar para lavado, no intentar limpiar en sitio.'],['Ventilación','Abrir ventanas unos minutos. No usar ambientadores artificiales.'],['Revisión Final','Verificar que todo esté en su lugar y el ambiente se perciba ordenado y tranquilo.']],['Superficies libres de polvo','Piso limpio y seco','Cojines alineados, altares intactos','Olor natural y fresco'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Superficies libres de polvo</div><div class="crit-row">✓ Piso limpio y seco</div><div class="crit-row">✓ Cojines alineados, altares intactos</div><div class="crit-row">✓ Olor natural y fresco</div></div>`,
-
-  lounge:    mkAreaLimp('Lounge',[['Revisión Inicial','Verificar si hay personas en el espacio. Limpiar silenciosamente los sectores vacíos.'],['Superficies y Mobiliario','Quitar polvo con paño seco de mesas, escritorios, repisas, sillas y lámparas. Desinfectar superficies de alto contacto.'],['Equipos Electrónicos','Limpiar pantallas y teclados con paño seco — sin líquidos. Revisar enchufes y extensiones.'],['Pisos','Barrer incluyendo debajo de escritorios. Trapear con desinfectante neutro.'],['Ventanas y Ventilación','Limpiar cristales con limpiavidrios o paño húmedo. Asegurar que las ventanas puedan abrirse.'],['Basureros','Vaciar cuando el área lo requiera.'],['Revisión Final','No queden objetos ajenos. Apagar luces y ventiladores si el área no está en uso.']],['Superficies libres de polvo y manchas','Pisos secos sin residuos','Mobiliario alineado y ordenado','Basureros vacíos','Olor fresco y ambiente listo para uso'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Superficies libres de polvo y manchas</div><div class="crit-row">✓ Pisos secos sin residuos</div><div class="crit-row">✓ Mobiliario alineado y ordenado</div><div class="crit-row">✓ Basureros vacíos</div><div class="crit-row">✓ Olor fresco y ambiente listo para uso</div></div>`,
-
-  maloca:    mkAreaLimp('Espacio ceremonial y de eventos',[['Revisión Inicial','Confirmar sin actividades en curso. Verificar que no haya objetos ceremoniales o personales de huéspedes antes de limpiar.'],['Superficies y Estructura','Limpiar postes, vigas accesibles y superficies de madera con paño seco. Retirar telarañas. Revisar estado de la estructura.'],['Piso','Barrer completamente toda el área incluyendo bordes y esquinas. Si el piso es de tierra compactada, barrer suavemente sin levantar polvo. Si es madera, trapear con agua y jabón suave.'],['Área de Fogón o Centro','Retirar cenizas frías si aplica. Limpiar el área circundante. Reportar si hay daños en la estructura del fogón.'],['Alrededores','Recoger hojas, ramas u otros residuos del área exterior inmediata. Mantener el acceso despejado.'],['Basureros','Vaciar cuando el área lo requiera. Mantener el área libre de residuos orgánicos que atraigan fauna.'],['Revisión Final','Verificar que el espacio esté limpio, organizado y listo para uso. Reportar cualquier daño estructural.']],['Espacio libre de residuos y hojas','Piso barrido y en buen estado','Sin telarañas visibles','Área lista para uso o ceremonia'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Espacio libre de residuos y hojas</div><div class="crit-row">✓ Piso barrido y en buen estado</div><div class="crit-row">✓ Sin telarañas visibles</div><div class="crit-row">✓ Área lista para uso o ceremonia</div></div>`,
-
-  'duchas-limp': `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Duchas</div>
-    <div class="doc-note" style="margin-bottom:.9rem;">⚠️ Confirmar sin personas antes de limpiar.</div>
-    ${mkStepsMT([['Revisión Inicial','Confirmar sin personas. Verificar que haya agua caliente y buena presión.'],['Limpieza de ducha','Limpiar paredes, grifos y desagüe. Retirar residuos de jabón y cabello.'],['Suelo y drenaje','Barrer y trapear el área completa. Verificar que el drenaje no esté tapado.'],['Aserrín e inodoro','Verificar capa de aserrín — cubrir contenido. Limpiar área del inodoro y tablilla.'],['Reposición','Reponer papel higiénico, jabón y toallas.'],['Revisión Final','Espejos limpios, accesorios en su lugar, área seca y con buen olor.']])}
-    <div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Ducha limpia y sin residuos</div><div class="crit-row">✓ Piso seco y sin agua estancada</div><div class="crit-row">✓ Aserrín suficiente, área sin olores</div><div class="crit-row">✓ Papel, jabón y toallas abastecidos</div></div>`,
-
-  'banos-limp': `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Baños</div>
-    <div class="doc-note" style="margin-bottom:.9rem;">⚠️ Confirmar sin personas antes de limpiar.</div>
-    ${mkStepsMT([['Revisión Inicial','Confirmar sin personas. Identificar zonas que requieren atención especial.'],['Lavamanos y superficies','Limpiar lavamanos, grifos, espejos y repisas. Desinfectar manijas y superficies de alto contacto.'],['Aserrín e inodoro','Verificar capa de aserrín — cubrir contenido. Limpiar área del inodoro y tablilla. Mantener seco.'],['Piso','Barrer completamente. Trapear con agua y desinfectante. Revisar drenajes.'],['Reposición','Reponer papel higiénico, jabón y toallas.'],['Revisión Final','Espejos limpios, accesorios en su lugar, puertas y cerraduras funcionando. Área seca y sin olores.']])}
-    <div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Aserrín suficiente, área sin olores</div><div class="crit-row">✓ Lavamanos y espejos limpios</div><div class="crit-row">✓ Piso seco y sin residuos</div><div class="crit-row">✓ Papel, jabón y toallas abastecidos</div></div>`,
-
-  'casitas-madera': (function(){
-    const casitas = [
-      { id:'toensmeier', nombre:'Toensmeier', m2:60, cama:'King',  cap:2 },
-      { id:'hemenway',   nombre:'Hemenway',   m2:60, cama:'King',  cap:2 },
-      { id:'primavesi',  nombre:'Primavesi',  m2:60, cama:'King',  cap:4 },
-      { id:'salatin',    nombre:'Salatin',    m2:60, cama:'King',  cap:4 },
-      { id:'shiva',      nombre:'Shiva',      m2:60, cama:'King',  cap:2 },
-      { id:'savory',     nombre:'Savory',     m2:50, cama:'Twin',  cap:2 },
-      { id:'yeomans',    nombre:'Yeomans',    m2:50, cama:'Twin',  cap:2 },
-      { id:'fukuoka',    nombre:'Fukuoka',    m2:50, cama:'Twin',  cap:2 },
-      { id:'mollison',   nombre:'Mollison',   m2:50, cama:'Twin',  cap:2 },
-      { id:'lancaster',  nombre:'Lancaster',  m2:50, cama:'Dorm',  cap:4 },
-      { id:'gotsch',     nombre:'Götsch',     m2:50, cama:'Twin',  cap:2 },
-      { id:'holzer',     nombre:'Holzer',     m2:50, cama:'Twin',  cap:2 },
-      { id:'ingham',     nombre:'Ingham',     m2:50, cama:'Twin',  cap:2 },
-      { id:'carson',     nombre:'Carson',     m2:50, cama:'Twin',  cap:2 },
-    ];
-    const pasos = [['Ingreso y Protocolo','Consultar lista de habitaciones ocupadas. Tocar 3 veces y anunciarse. Nunca abrir puerta cerrada sin verificar ocupación.'],['Ventilación Inicial','Abrir puertas y ventanas. Revisar si hay humedad u olores inusuales.'],['Cama y Textiles','Retirar sábanas solo si checkout. Forro ajustado → sábana uniforme → duvet centrado → almohadas. ⚠️ NO colocar toallas ni adornos sobre la cama.'],['Superficies y Mobiliario','Quitar polvo. Desinfectante neutro. No usar cloro sobre madera.'],['Piso','Barrer completamente. Trapear sin exceso de humedad.'],['Revisión Final','Cama perfectamente hecha. Mobiliario alineado. Olor fresco y natural.']];
-    const criterios = ['Olor fresco y natural','Piso limpio y seco','Cama impecablemente presentada','Área lista para recibir huésped'];
-    window._casitasMadera = { casitas, pasos, criterios };
-    return `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1rem;">Selecciona la casita a preparar</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
-        ${casitas.map(c=>`<div class="gcard" onclick="openCasitaDetalle('madera','${c.id}')" style="padding:.85rem .8rem;">
-          <div class="ct" style="font-size:.9rem;">${c.nombre}</div>
-          <div class="cd">${c.cama} · ${c.m2}m² · ${c.cap} huéspedes</div>
-        </div>`).join('')}
-      </div>`;
-  })(),
-
-  'casitas-bah': (function(){
-    const casitas = [
-      { id:'starhawk',   nombre:'Starhawk',   m2:50, cama:'Queen', cap:2 },
-      { id:'crawford',   nombre:'Crawford',   m2:50, cama:'Queen', cap:2 },
-      { id:'einsestein', nombre:'Einsestein', m2:50, cama:'Queen', cap:2 },
-      { id:'doherty',    nombre:'Doherty',    m2:50, cama:'Queen', cap:2 },
-      { id:'macy',       nombre:'Macy',       m2:50, cama:'Queen', cap:2 },
-    ];
-    const pasos = [['Ingreso y Protocolo','Consultar lista de habitaciones ocupadas. Tocar 3 veces y anunciarse.'],['Ventilación Inicial','Abrir puertas y ventanas. Especial cuidado con humedad en materiales de bahareque.'],['Cama y Textiles','Retirar sábanas solo si checkout. ⚠️ NO colocar toallas ni adornos sobre la cama.'],['Superficies','No usar cloro. Cuidado en superficies de barro — evitar exceso de humedad.'],['Piso','Barrer completamente. Trapear sin exceso de humedad.'],['Revisión Final','Cama perfectamente hecha. Mobiliario alineado. Materiales naturales sin daños por humedad.']];
-    const criterios = ['Olor fresco y natural','Piso limpio y seco','Cama impecablemente presentada','Materiales naturales sin daños por humedad'];
-    window._casitasBah = { casitas, pasos, criterios };
-    return `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1rem;">Selecciona la casita a preparar</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
-        ${casitas.map(c=>`<div class="gcard" onclick="openCasitaDetalle('bah','${c.id}')" style="padding:.85rem .8rem;">
-          <div class="ct" style="font-size:.9rem;">${c.nombre}</div>
-          <div class="cd">${c.cama} · ${c.m2}m² · ${c.cap} huéspedes</div>
-        </div>`).join('')}
-      </div>`;
-  })(),
-};
-
-const MANUAL_MT_CONTENT = {
-  intro: `<p style="font-size:.82rem;font-family:sans-serif;color:var(--brown);line-height:1.6;margin-bottom:.8rem;">Este manual establece los estándares, procedimientos e inspecciones de mantenimiento para la totalidad de los espacios de Tierramor.</p>
-    <div style="background:rgba(84,66,54,.06);border:1px solid rgba(84,66,54,.15);border-radius:10px;padding:.9rem;margin-bottom:1rem;">
-      <div style="font-size:.72rem;font-weight:600;font-family:sans-serif;color:var(--brown);margin-bottom:.6rem;text-transform:uppercase;letter-spacing:.08em;">Roles semanales</div>
-      <div style="background:rgba(113,127,126,.08);border:1px solid rgba(113,127,126,.2);border-radius:8px;padding:.8rem;margin-bottom:.65rem;">
-        <div style="font-size:.82rem;font-weight:600;font-family:sans-serif;color:var(--blue);margin-bottom:.5rem;font-style:italic;">Responsable de Piscina</div>
-        ${mkRolTable([['Lunes','7:00 AM','Piscina','12:30 PM','Revisión general aserrín · Proyectos'],['Martes','7:00 AM','Piscina · Cluster 4','12:30 PM','Proyectos'],['Miércoles','7:00 AM','Proyectos','12:30 PM','Proyectos'],['Jueves','7:00 AM','Piscina · Cluster 2','12:30 PM','Proyectos'],['Viernes','7:00 AM','Piscina · Cluster 3 · Lavado tubos de baño','12:30 PM','Proyectos'],])}
-      </div>
-      <div style="background:rgba(153,92,68,.06);border:1px solid rgba(153,92,68,.15);border-radius:8px;padding:.8rem;">
-        <div style="font-size:.82rem;font-weight:600;font-family:sans-serif;color:var(--clay);margin-bottom:.5rem;font-style:italic;">Responsable de Sistemas de Agua</div>
-        ${mkRolTable([['Lunes','7:00 AM','Reporte de Agua · Cluster 3','12:30 PM','Proyectos'],['Martes','7:00 AM','Reporte de Agua · Cluster 3','12:30 PM','Proyectos'],['Miércoles','7:00 AM','Reporte de Agua · Proyectos','12:30 PM','Revisión general aserrín · Proyectos'],['Jueves','7:00 AM','Reporte de Agua · Cluster 1','12:30 PM','Proyectos'],['Viernes','7:00 AM','Reporte de Agua · Cluster 4','12:30 PM','Proyectos'],])}
-      </div>
-    </div>
-    <div class="doc-note">El departamento opera con dos roles: Responsable de Piscina y Responsable de Sistemas de Agua. Los miércoles ambos roles se dedican a proyectos.</div>`,
-
-  'prep-seg-rep': `
-    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-bottom:.6rem;">Criterios Generales</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.2rem;">${[['PREVENTIVO','Identificar problemas antes de que se conviertan en fallas.'],['DOCUMENTADO','Toda anomalía se registra. Lo que no se escribe no existe.'],['OPORTUNO','Una intervención a tiempo evita daños mayores.'],['SEGURO','No intervenir en sistemas mayores sin autorización.']].map(([t,d])=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:.85rem .8rem;"><div style="font-size:.72rem;font-weight:600;font-family:sans-serif;color:var(--clay);letter-spacing:.06em;margin-bottom:.25rem;">${t}</div><div style="font-size:.75rem;font-family:sans-serif;color:var(--brown);line-height:1.4;">${d}</div></div>`).join('')}</div>
-    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-bottom:.6rem;">Preparación del Día</div>
-    ${mkStepsMT([['Revisión del Rol','Revisar la asignación del día: cluster asignado, tareas especiales y prioridades.'],['Preparación Personal','Uniforme limpio, calzado cerrado y equipo de protección disponible.'],['Revisión del Equipo','Kit de herramientas: llaves, destornilladores, linterna, cinta métrica, cinta aislante.'],['Inspección Visual Inicial','Al llegar a cada área: observar antes de tocar. Detectar anomalías evidentes.'],['Registro y Comunicación','Toda anomalía debe registrarse. Clasificar: URGENTE / PRIORIDAD / PROGRAMAR.']])}
-    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-top:1.1rem;margin-bottom:.6rem;">Aspectos de Seguridad</div>
-    <div class="doc-note" style="margin-bottom:.75rem;">⚠️ El cumplimiento de estas normas es obligatorio.</div>
-    ${mkStepsMT([['EPP','Guantes, calzado cerrado antideslizante, mascarilla con químicos, protector solar en exteriores.'],['Electricidad','⚠️ NO intervenir en tableros ni cableado interno. Reportar: cables expuestos, quemaduras en outlets.'],['Sistemas de Agua','Cerrar la válvula correspondiente antes de intervenir en tuberías. Reportar fugas de inmediato.'],['Trabajo en Altura','Usar escalera estable. No trabajar en altura con lluvia o piso mojado.'],['Herramientas y Químicos','Guardar herramientas en bodega. Leer instrucciones de dilución.'],['Emergencias','Falla eléctrica: reportar de inmediato. Fuga significativa: cerrar válvula y reportar.']])}
-    <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);font-weight:600;margin-top:1.1rem;margin-bottom:.6rem;">Registro y Reporte de Anomalías</div>
-    <div class="crit-box" style="margin-bottom:1rem;"><div class="crit-lbl">Clasificación de Anomalías</div>
-      <div class="crit-row">🔴 URGENTE — Riesgo para personas o falla crítica. Reportar de inmediato.</div>
-      <div class="crit-row">🟡 PRIORIDAD — Falla sin riesgo inmediato. Resolver en 24h.</div>
-      <div class="crit-row">🟢 PROGRAMAR — Deterioro menor. Incluir en lista de proyectos semanales.</div>
-    </div>
-    <div class="doc-note">Canal: Urgentes → llamada al Gerente + WhatsApp. Prioridad → WhatsApp con foto. Programar → bitácora semanal.</div>`,
-
-  'organizacion-mt': `${['Tránsito Constante — Oficina · Juice Bar · Cocina','Cluster 1 — Storage · Terralab · Hanging Bridge · Estudio de Movimiento · Lounge · Duchas Principales · Baños Principales','Cluster 2 — Toensmeier · Baños 7600 · Baños de la Teca · Lancaster · Götsch · Holzer · Cocina de Residentes · Ingham · Carson','Cluster 3 — Baño de Madera · Hememway · Primavesi · Salatin · Shiva · Savory · Yeomans · Fukuoka · Mollison','Cluster 4 — Starhawk · Crawford · Eisenstein · Doherty · Macy · Baños Bahareque · Wex Camp · Maloca','Atención Diaria — Piscina · Sistemas de Agua · Casita Azul'].map(c=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:8px;padding:.75rem;margin-bottom:.5rem;font-size:.8rem;font-family:sans-serif;color:var(--brown);">${c}</div>`).join('')}
-    <div class="gcard" onclick="openMapaTierramor()" style="margin-top:.75rem;display:flex;align-items:center;gap:.75rem;padding:.9rem 1rem;">
-      <div style="font-size:1.4rem;">🗺️</div>
-      <div><div class="ct" style="font-size:.88rem;">Mapa de la Propiedad</div><div class="cd">Vista aérea · Clusters y zonas</div></div>
-    </div>`,
-
-  'oficina-mt':  `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Detectar humedad, plagas o daños estructurales.'],['Equipos','Funcionamiento de equipos de cómputo, router/conectividad, aire acondicionado, impresora y periféricos.'],['Organización','Cables organizados sin riesgos de tropiezo. Basureros limpios con bolsa.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'juicebar-mt': `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas, basureros.'],['Equipos','Funcionamiento de licuadora/extractor, refrigeradora o nevera de bebidas, grifo/toma de agua.'],['Estado general','Estado de barra exterior. Stock visible de insumos — reportar faltantes.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'cocina-mt':   `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas, basureros.'],['Equipos de cocina','Funcionamiento de quemadores, extractor de olores, refrigeradora, lavaplatos y grifo.'],['Estado general','Estado de mostrador y mobiliario. Estado de filtro de agua. Presencia de fugas bajo el fregadero.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'estudio-mt':  `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas, basureros.'],['Equipos y mobiliario','Estado del piso, espejos, equipo de sonido, colchonetas y props.'],['Espacio','Libre de obstáculos. Ventilación adecuada.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'storage-mt':  `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas, basureros.'],['Almacenamiento','Organización visible, estado de estantes y anclajes. Presencia de plagas en productos.'],['Stock','Insumos críticos en nivel adecuado.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'terralab-mt': `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas, basureros.'],['Equipos','Estado de equipos y herramientas de laboratorio, refrigeración, organización y etiquetado de insumos.'],['Ventilación','Ventilación adecuada del espacio.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'bridge-mt':   `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección · Cluster 1 · ⚠️ Estructura de seguridad crítica</div><div class="doc-note" style="margin-bottom:.75rem;">⚠️ Inspeccionar con atención. Cualquier anomalía estructural es URGENTE.</div>${mkStepsMT([['Estructura de soporte','Estado de cables o estructura de soporte. Barandas firmes y sin daños.'],['Superficie de paso','Estado de tablones o superficie de paso. Sin deterioro, astillas o piezas sueltas.'],['Condiciones','Sin presencia de humedad excesiva. Iluminación del puente funcionando (si aplica).']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'lounge-mt':   `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas, basureros.'],['Mobiliario','Estado de muebles y tapizado, hamacas o mobiliario exterior.'],['Deck','Estado del deck: sin tablas sueltas, astillas ni daños. Iluminación exterior funcionando.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'duchas-mt':   `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas, basureros.'],['Ducha y agua','Funcionamiento de ducha (presión y temperatura), grifo del lavatorio. Presencia de fugas o taponamientos.'],['Baño seco','Estado de la caja de aserrín, funcionamiento del inodoro/compostaje. Espejos y accesorios de baño.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'banos-mt':    `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas, basureros.'],['Ducha y agua','Funcionamiento de ducha (presión y temperatura), grifo del lavatorio. Presencia de fugas o taponamientos.'],['Baño seco','Estado de la caja de aserrín, funcionamiento del inodoro/compostaje. Espejos y accesorios de baño.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-
-  agua: `<div class="doc-note" style="margin-bottom:.8rem;">⚠️ Ante cualquier anomalía en los sistemas de agua, reportar de inmediato.</div>
-    ${[['M1','Pozo Principal','Salida del tanque a la par del pozo — envía agua a las casitas'],['M2','Tanques Ojoche','Entrada de los tanques en la loma'],['M4','Tanque Potable','Entrada del tanque de almacenamiento a la par de la bodega'],['M5','Tanques Piscina Izq.','Tanques de la piscina, mano izquierda'],['M6','Tanques Piscina Der.','Tanques de la piscina, mano derecha'],['M7','Tubería Principal Piscina','Tubería de abastecimiento del pozo hacia los tanques de piscina'],].map(([m,n,d])=>`<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:8px;padding:.7rem;margin-bottom:.45rem;display:flex;gap:.7rem;align-items:flex-start;"><span style="font-size:.68rem;font-family:sans-serif;font-weight:600;color:var(--clay);min-width:28px;">${m}</span><div><div style="font-size:.8rem;font-family:sans-serif;color:var(--brown);font-weight:500;">${n}</div><div style="font-size:.7rem;font-family:sans-serif;color:var(--tm);">${d}</div></div></div>`).join('')}
-    <div class="doc-note" style="margin-top:.5rem;">📌 Sin medidor activo: Tanques Pozo Principal · Tanques Bahareque · Pozo Maloca — registro visual solamente.</div>`,
-
-  'casitas-madera-mt': (function(){
-    const casitas = [
-      { id:'toensmeier-mt', nombre:'Toensmeier', m2:60, cama:'King',  cap:2 },
-      { id:'hemenway-mt',   nombre:'Hemenway',   m2:60, cama:'King',  cap:2 },
-      { id:'primavesi-mt',  nombre:'Primavesi',  m2:60, cama:'King',  cap:4 },
-      { id:'salatin-mt',    nombre:'Salatin',    m2:60, cama:'King',  cap:4 },
-      { id:'shiva-mt',      nombre:'Shiva',      m2:60, cama:'King',  cap:2 },
-      { id:'savory-mt',     nombre:'Savory',     m2:50, cama:'Twin',  cap:2 },
-      { id:'yeomans-mt',    nombre:'Yeomans',    m2:50, cama:'Twin',  cap:2 },
-      { id:'fukuoka-mt',    nombre:'Fukuoka',    m2:50, cama:'Twin',  cap:2 },
-      { id:'mollison-mt',   nombre:'Mollison',   m2:50, cama:'Twin',  cap:2 },
-      { id:'lancaster-mt',  nombre:'Lancaster',  m2:50, cama:'Dorm',  cap:4 },
-      { id:'gotsch-mt',     nombre:'Götsch',     m2:50, cama:'Twin',  cap:2 },
-      { id:'holzer-mt',     nombre:'Holzer',     m2:50, cama:'Twin',  cap:2 },
-      { id:'ingham-mt',     nombre:'Ingham',     m2:50, cama:'Twin',  cap:2 },
-      { id:'carson-mt',     nombre:'Carson',     m2:50, cama:'Twin',  cap:2 },
-    ];
-    window._casitasMaderaMT = casitas;
-    return `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1rem;">Selecciona la casita a inspeccionar</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
-        ${casitas.map(c=>`<div class="gcard" onclick="openCasitaDetalleMT('madera','${c.id}')" style="padding:.85rem .8rem;">
-          <div class="ct" style="font-size:.9rem;">${c.nombre}</div>
-          <div class="cd">${c.cama} · ${c.m2}m² · ${c.cap} huéspedes</div>
-        </div>`).join('')}
-      </div>`;
-  })(),
-
-  'casitas-bah-mt': (function(){
-    const casitas = [
-      { id:'starhawk-mt',   nombre:'Starhawk',   m2:50, cama:'Queen', cap:2 },
-      { id:'crawford-mt',   nombre:'Crawford',   m2:50, cama:'Queen', cap:2 },
-      { id:'einsestein-mt', nombre:'Einsestein', m2:50, cama:'Queen', cap:2 },
-      { id:'doherty-mt',    nombre:'Doherty',    m2:50, cama:'Queen', cap:2 },
-      { id:'macy-mt',       nombre:'Macy',       m2:50, cama:'Queen', cap:2 },
-    ];
-    window._casitasBahMT = casitas;
-    return `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1rem;">Selecciona la casita a inspeccionar</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
-        ${casitas.map(c=>`<div class="gcard" onclick="openCasitaDetalleMT('bah','${c.id}')" style="padding:.85rem .8rem;">
-          <div class="ct" style="font-size:.9rem;">${c.nombre}</div>
-          <div class="cd">${c.cama} · ${c.m2}m² · ${c.cap} huéspedes</div>
-        </div>`).join('')}
-      </div>`;
-  })(),
-};
 
 function openCasitaDetalleMT(tipo, casitaId) {
   const allCasitas = tipo === 'madera' ? window._casitasMaderaMT : window._casitasBahMT;
