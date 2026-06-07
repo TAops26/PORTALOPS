@@ -963,7 +963,7 @@ function openForm(formId) {
   const manto = `<select id="f-colab"><option value="">— Seleccionar —</option>${COLABS_MANTO.map(n=>`<option${CU&&n===CU.nombre?' selected':''}>${n}</option>`).join('')}</select>`;
   const all   = `<select id="f-colab"><option value="">— Seleccionar —</option>${ALL_COLABS.map(n=>`<option${CU&&n===CU.nombre?' selected':''}>${n}</option>`).join('')}</select>`;
 
-  const FORMS = {
+  var FORMS = {
     'reporte-area': { title:'Reporte de Área', dept:'limpieza', btnCls:'', html:
       `<div class="fg"><label>Colaboradora</label>${limp}</div>
        <div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
