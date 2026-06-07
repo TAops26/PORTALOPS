@@ -641,8 +641,8 @@ function openResource(id, title, type) {
 function openRepasoHab(habitacion) {
   const today = new Date().toISOString().split('T')[0];
   const colabOpts = COLABS_LIMP.map(n=>`<option${CU&&n===CU.nombre?' selected':''}>${n}</option>`).join('');
-  setConScreen(`Repaso — ${habitacion}`,
-    () => openForm('repaso-hab'),
+  const backFn = () => openForm('repaso-hab');
+  setConScreen(`Repaso — ${habitacion}`, backFn,
     `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1rem;">Registra el repaso de esta habitación</div>
      <div class="fg"><label>Colaboradora</label>
        <select id="rh-colab"><option value="">— Seleccionar —</option>${colabOpts}</select>
@@ -956,12 +956,6 @@ function cleanMic(wid){const b=document.getElementById('mic-'+wid);if(!b)return;
 
 function openForm(formId) {
   stopRec();
-  // repaso-hab: show casita grid via con-screen instead of standard form
-  if (formId === 'repaso-hab') {
-    const f = FORMS[formId];
-    setConScreen(f.title, () => goBack(), eval('`' + f.html + '`'));
-    return;
-  }
   if (!window._photos) window._photos = {};
   window._photos['form-photos'] = [];
   const today = new Date().toISOString().split('T')[0];
@@ -1024,6 +1018,21 @@ function openForm(formId) {
 
   const f = FORMS[formId];
   if (!f) return;
+
+  // repaso-hab: show casita grid via con-screen instead of standard form
+  if (formId === 'repaso-hab') {
+    const habs = ['Toensmeier','Hemenway','Primavesi','Salatin','Shiva','Savory','Yeomans','Fukuoka','Mollison','Lancaster','Götsch','Holzer','Ingham','Carson'];
+    const grid = habs.map(hab =>
+      `<div class="gcard" onclick="openRepasoHab('${hab}')" style="padding:.85rem .8rem;cursor:pointer;">
+        <div class="ct" style="font-size:.9rem;">${hab}</div>
+        <div class="cd">Toca para reportar</div>
+      </div>`).join('');
+    setConScreen('Repaso de Habitaciones', () => goBack(),
+      `<div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1rem;">Selecciona la habitación a reportar</div>
+       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">${grid}</div>`);
+    return;
+  }
+
   document.getElementById('ft').textContent = f.title;
   document.getElementById('fs-back').onclick = () => goBack();
   document.getElementById('fbody').innerHTML = `
