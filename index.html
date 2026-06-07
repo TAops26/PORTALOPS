@@ -683,6 +683,19 @@ async function submitRepasoHab(habitacion) {
   }
 }
 
+let matCount = 1;
+function matRow(idx) {
+  const unidades = ['Unidad','Paquete','Kilo (kg)','Gramo (g)','Litro (L)','Mililitro (mL)','Galón','Rollo','Caja','Bolsa','Par','Metro','Otro'];
+  return `<div id="mat-row-${idx}" style="display:grid;grid-template-columns:1.8fr .8fr 1fr auto;gap:.4rem;margin-bottom:.55rem;align-items:center;">
+    <input type="text" id="mat-item-${idx}" placeholder="Material o herramienta" style="background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .7rem;font-size:.85rem;font-family:sans-serif;color:var(--brown);outline:none;">
+    <input type="number" id="mat-qty-${idx}" placeholder="Cant." min="1" style="background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .7rem;font-size:.85rem;font-family:sans-serif;color:var(--brown);outline:none;">
+    <select id="mat-unit-${idx}" style="background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .5rem;font-size:.78rem;font-family:sans-serif;color:var(--brown);outline:none;appearance:none;">${unidades.map(u=>`<option value="${u}">${u}</option>`).join('')}</select>
+    ${idx > 0 ? `<button onclick="removeMatRow(${idx})" style="width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(84,66,54,.2);background:none;color:var(--tm);font-size:1rem;cursor:pointer;line-height:1;">×</button>` : '<div style="width:28px;"></div>'}
+  </div>`;
+}
+function addMatRow() { document.getElementById('mat-list').insertAdjacentHTML('beforeend', matRow(matCount)); matCount++; }
+function removeMatRow(idx) { document.getElementById('mat-row-' + idx)?.remove(); }
+
 function openInsumosLimp() {
   setConScreen('Insumos', () => goBack(),
     `<div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Gestión de insumos del departamento de Limpieza</div>
@@ -1077,12 +1090,15 @@ function openForm(formId) {
 
     materiales: { title:'Solicitud de Materiales', dept:'mantenimiento', btnCls:'materiales', html:
       `<div class="fg"><label>Colaborador</label>${manto}</div>
-       <div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
-       <div class="fg"><label>Prioridad</label><select id="f-prior"><option value="Normal">Normal</option><option value="Urgente">Urgente</option></select></div>
-       <div class="fg"><label>Descripción del material</label>${aw('desc','Lista los materiales o herramientas que necesitas...')}</div>
+       <div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
+       <div class="fg"><label>Prioridad</label><select id="f-prior"><option value="Normal">Normal</option><option value="Urgente">Urgente</option></select></div></div>
+       <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:1rem;">
+         <div class="cl-sec-title" style="margin-bottom:.8rem;">Materiales solicitados</div>
+         <div id="mat-list">${matRow(0)}</div>
+         <button onclick="addMatRow()" style="width:100%;margin-top:.75rem;background:none;border:1.5px dashed rgba(153,92,68,.3);border-radius:8px;padding:.65rem;color:var(--clay);font-size:.82rem;font-family:sans-serif;cursor:pointer;">+ Agregar otro material</button>
+       </div>
        <div class="fg"><label>Observaciones</label>${aw('obs','Uso específico, urgencia u otras notas...')}</div>
        ${photoUploadWidget('form-photos')}` },
-
     reunion: { title:'Reunión de Operaciones', dept: CD||'limpieza', btnCls:'', html:
       `<div class="doc-note" style="margin-bottom:1rem;">📋 Confirmación de asistencia · Reunión semanal de operaciones</div>
        <div class="fg"><label>Colaborador</label>${all}</div>
@@ -1108,6 +1124,9 @@ function openForm(formId) {
 
   const f = FORMS[formId];
   if (!f) return;
+
+  // reset row counters
+  if (formId === 'materiales') matCount = 1;
 
   // repaso-hab: show casita grid via con-screen instead of standard form
   if (formId === 'repaso-hab') {
@@ -1155,6 +1174,21 @@ async function submitForm(formId, dept) {
   if (formId==='agua') {
     ['m1','m2','m3','m4','m5','m6','m7'].forEach(m=>{datos[m]=document.getElementById(`f-${m}`)?.value||'';});
   }
+  // materiales: collect rows same as insumos
+  if (formId === 'materiales') {
+    const items = [];
+    for (let i = 0; i < matCount; i++) {
+      const el = document.getElementById('mat-row-' + i);
+      if (!el) continue;
+      const item = document.getElementById('mat-item-' + i)?.value?.trim();
+      const qty  = document.getElementById('mat-qty-' + i)?.value;
+      const unit = document.getElementById('mat-unit-' + i)?.value || 'Unidad';
+      if (item) items.push({ item, qty: qty || '1', unit });
+    }
+    datos.items = items;
+    matCount = 1;
+  }
+
   // repaso-hab: collect habitaciones checkboxes
   if (formId === 'repaso-hab') {
     const HABS = ['Toensmeier','Hemenway','Primavesi','Salatin','Shiva','Savory','Yeomans','Fukuoka','Mollison','Lancaster','Götsch','Holzer','Ingham','Carson'];
