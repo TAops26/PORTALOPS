@@ -2100,10 +2100,10 @@ function renderManualLimp(){
   let html = `<div style="font-size:.72rem;font-family:var(--font-sans);color:rgba(232,226,209,0.35);font-style:italic;letter-spacing:.05em;margin-bottom:1.2rem;">Estándares, procedimientos y criterios de limpieza · Versión 2.0 · 2025</div>`;
   let inGrid = false;
 
-  MANUAL_LMP_SECS.forEach(s => {
+  MANUAL_LMP_SECS.forEach((s, idx) => {
     if (s.divider) {
       if (inGrid) { html += `</div>`; inGrid = false; }
-      html += `<div class="sec-band">${s.divider}</div>`;
+      html += `<div class="sec-band band-blue">${s.divider}</div>`;
       html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem;">`;
       inGrid = true;
     } else {
@@ -2111,7 +2111,7 @@ function renderManualLimp(){
         html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem;">`;
         inGrid = true;
       }
-      html += `<div class="gcard" onclick="openManualSection('limp','${s.id}','${s.title}')" style="margin-bottom:0;">
+      html += `<div class="gcard" onclick="openManualSectionByIdx('limp',${idx})" style="margin-bottom:0;">
         <div class="ct" style="font-size:.9rem;">${s.title}</div>
       </div>`;
     }
@@ -2203,10 +2203,10 @@ function renderManualManto(){
   let html = `<div style="font-size:.72rem;font-family:var(--font-sans);color:rgba(232,226,209,0.35);font-style:italic;letter-spacing:.05em;margin-bottom:1.2rem;">Estándares, procedimientos e inspecciones · Versión 2.0 · 2025</div>`;
   let inGrid = false;
 
-  MANUAL_MT_SECS.forEach(s => {
+  MANUAL_MT_SECS.forEach((s, idx) => {
     if (s.divider) {
       if (inGrid) { html += `</div>`; inGrid = false; }
-      html += `<div class="sec-band">${s.divider}</div>`;
+      html += `<div class="sec-band band-clay">${s.divider}</div>`;
       html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem;">`;
       inGrid = true;
     } else {
@@ -2214,7 +2214,7 @@ function renderManualManto(){
         html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem;">`;
         inGrid = true;
       }
-      html += `<div class="gcard" onclick="openManualSection('manto','${s.id}','${s.title}')" style="margin-bottom:0;">
+      html += `<div class="gcard" onclick="openManualSectionByIdx('manto',${idx})" style="margin-bottom:0;">
         <div class="ct" style="font-size:.9rem;">${s.title}</div>
       </div>`;
     }
@@ -2284,6 +2284,13 @@ function openMapaTierramor() {
          onerror="this.parentElement.innerHTML='<div style=\'padding:2rem;text-align:center;font-family:sans-serif;color:var(--tm);\'><div style=\'font-size:2rem;margin-bottom:.75rem;\'>🗺️</div><div style=\'font-size:.82rem;\'>Sube <strong>mapa-tierramor.jpg</strong> al repo de GitHub.</div></div>'">
      </div>
      <div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);text-align:center;margin-top:.75rem;">Toca la imagen para ampliarla</div>`);
+}
+
+function openManualSectionByIdx(manual, idx) {
+  const secs = manual === 'limp' ? MANUAL_LMP_SECS : MANUAL_MT_SECS;
+  const s = secs[idx];
+  if (!s || s.divider) return;
+  openManualSection(manual, s.id, s.title);
 }
 
 function openManualSection(manual, sectionId, title) {
