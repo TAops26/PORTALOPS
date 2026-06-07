@@ -508,7 +508,7 @@ function renderDeptHome() {
           <h3 style="color:var(--cream);">Mi Desempeño</h3>
           <p style="color:var(--tm);">KPIs, cumplimiento y evaluación de pares</p>
         </div>
-        <span style="color:var(--tm);font-size:.75rem;">→</span>
+        
       </button>
     </div>`;
 
@@ -520,14 +520,14 @@ function renderDeptHome() {
       btns += `<button class="dept-btn" onclick="openResource('${r.id}','${r.title}','${r.type||'doc'}')">
         <div class="dico ${cfg.cls}">${cfg.ico}</div>
         <div class="dinf"><h3>${r.title}</h3><p>${r.desc||''}</p></div>
-        <span style="color:var(--tm);font-size:.75rem;">→</span>
+        
       </button>`;
     });
     if (dept.reports.length) {
       btns += `<div class="sec-lbl" style="margin-top:.6rem;">Reportes</div>`;
       dept.reports.forEach(r => {
         btns += `<button class="rbtn ${r.cls}" onclick="openForm('${r.form}')">
-          <div class="rdot"></div><span>${r.label}</span><span class="arr">→</span>
+          <div class="rdot"></div><span>${r.label}</span>
         </button>`;
       });
     }
@@ -542,7 +542,7 @@ const DEPTS = {
       { id:'manual-limp',   title:'Manual de Limpieza General', desc:'Procedimientos y estándares', type:'doc' },
       { id:'inventarios',   title:'Inventarios',                 desc:'Control de insumos',           type:'inventarios' },
       { id:'insumos-limp',  title:'Insumos',                     desc:'Catálogo y solicitud',          type:'insumos' },
-      { id:'schedule-limp', title:'Schedule del Día',             desc:'Tareas por hora y rol',         type:'schedule' },
+      { id:'schedule-limp', title:'Actividades del Día',             desc:'Tareas por hora y rol',         type:'schedule' },
       { id:'frases-en',     title:'Frases Comunes en Inglés',     desc:'Próximamente disponible' },
       { id:'cal-limpieza',  title:'Calendario',                   desc:'Turnos y eventos del equipo',  type:'cal' },
     ],
@@ -605,7 +605,7 @@ function openDept(dept) {
     rlbl.style.display = '';
     rl.innerHTML = d.reports.map(r =>
       `<button class="rbtn ${r.cls}" onclick="openForm('${r.form}')">
-        <div class="rdot"></div><span>${r.label}</span><span class="arr">→</span>
+        <div class="rdot"></div><span>${r.label}</span>
       </button>`).join('');
   } else {
     rlbl.style.display = 'none';
@@ -733,15 +733,18 @@ function openProveedores() {
      <div class="cs"><h3>Próximamente disponible</h3><p>El catálogo de proveedores estará aquí.</p></div>`);
 }
 
-const ROPA_ITEMS = ['Topper Individual','Topper Matrimonial','Topper King','Forro de cama Individual','Forro de cama Queen','Forro de cama King','Sábana Individual','Sábana Queen','Sábana King','Cubre Duvet Individual','Cubre Duvet Queen','Cubre Duvet King','Duvet Individual','Duvet Queen','Duvet King','Pie de cama','Forro de almohada Standard','Forro de almohada King','Alfombra','Mosquitero Individual','Mosquitero King'];
-const PROPS_MALOCA   = ['Matts de yoga negros','Blocks de yoga','Correas de yoga','Almohadones (Bolsters)'];
-const PROPS_MOVEMENT = ['Matts de yoga verdes','Blocks de yoga','Correas de yoga','Silla de suelo','Almohadones (Bolsters)','Cojines redondos','Cojines grandes','Cojines medianos'];
+const ROPA_ITEMS = ['Topper Individual','Topper Matrimonial','Topper King','Forro de cama Individual','Forro de cama Queen','Forro de cama King','Sábana Individual','Sábana Queen','Sábana King','Cubre Duvet Individual','Cubre Duvet Queen','Cubre Duvet King','Duvet Individual','Duvet Queen','Duvet King','Pie de cama','Forro de almohada Standard','Forro de almohada King','Almohada Standard','Almohada King','Almohadones de Decoración','Toallas','Puente de Cama','Alfombra de Bambú','Alfombra de Fibra de Coco','Mosquitero Individual','Mosquitero King'];
+const PROPS_MALOCA   = ['Matts de yoga negros','Blocks de yoga','Correas de yoga','Almohadones (Bolsters)','Candelas','Alfombras de yute'];
+const PROPS_CAMPAMENTO = ['Tiendas de campaña','Hamacas','Colchones inflables'];
+
+const PROPS_MOVEMENT = ['Matts de yoga verdes','Blocks de yoga','Correas de yoga','Silla de suelo','Almohadones (Bolsters)','Cojines redondos','Cojines grandes','Cojines medianos','Bases de incienso','Proyector','Parlantes'];
 
 function openInventarios() {
   setConScreen('Inventarios', () => goBack(),
     `<div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Selecciona el inventario a registrar</div>
      <div class="gcard" onclick="openRopaCama()" style="margin-bottom:.7rem;"><div class="ct">Inventario de Ropa de Cama</div><div class="cd">Sábanas, fundas, cobijas, duvets y más</div></div>
-     <div class="gcard" onclick="openPropsMenu()"><div class="ct">Inventario de Props de Wellness</div><div class="cd">Colchonetas, bloques, correas y accesorios</div></div>`);
+     <div class="gcard" onclick="openPropsMenu()" style="margin-bottom:.7rem;"><div class="ct">Inventario Wellness</div><div class="cd">Colchonetas, bloques, correas y accesorios</div></div>
+     <div class="gcard" onclick="openCampamentoInv()"><div class="ct">Inventario Campamento</div><div class="cd">Tiendas, hamacas y colchones inflables</div></div>`);
 }
 
 function openRopaCama() {
@@ -769,18 +772,18 @@ function openRopaCama() {
 }
 
 function openPropsMenu() {
-  document.getElementById('con-title').textContent = 'Props de Wellness';
+  document.getElementById('con-title').textContent = 'Inventario Wellness';
   document.getElementById('con-back').onclick = () => openInventarios();
   document.getElementById('conbody').innerHTML = `
     <div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Selecciona el espacio a inventariar</div>
     <div class="gcard" onclick="openPropsForm('maloca')" style="margin-bottom:.7rem;"><div class="ct">Props Maloca</div><div class="cd">Matts, blocks, correas y bolsters</div></div>
-    <div class="gcard" onclick="openPropsForm('movement')"><div class="ct">Props Movement Studio</div><div class="cd">Matts, blocks, correas, cojines y sillas</div></div>`;
+    <div class="gcard" onclick="openPropsForm('movement')"><div class="ct">Props Estudio de Movimiento</div><div class="cd">Matts, blocks, correas, cojines y sillas</div></div>`;
   show('con-screen');
 }
 
 function openPropsForm(space) {
   const items = space === 'maloca' ? PROPS_MALOCA : PROPS_MOVEMENT;
-  const title = space === 'maloca' ? 'Props Maloca' : 'Props Movement Studio';
+  const title = space === 'maloca' ? 'Props Maloca' : 'Props Estudio de Movimiento';
   document.getElementById('con-title').textContent = title;
   document.getElementById('con-back').onclick = () => openPropsMenu();
   document.getElementById('conbody').innerHTML = `
@@ -807,6 +810,48 @@ function openPropsForm(space) {
 function adjQty(id, delta) {
   const el = document.getElementById(id);
   if (el) el.value = Math.max(0, (parseInt(el.value)||0) + delta);
+}
+
+function openCampamentoInv() {
+  document.getElementById('con-title').textContent = 'Inventario Campamento';
+  document.getElementById('con-back').onclick = () => openInventarios();
+  document.getElementById('conbody').innerHTML = `
+    <div class="fg"><label>Responsable</label>
+      <select id="inv-colab"><option value="">— Seleccionar —</option>${ALL_COLABS.map(n=>`<option>${n}</option>`).join('')}</select></div>
+    <div class="fg"><label>Fecha</label><input type="date" id="inv-fecha" value="${new Date().toISOString().split('T')[0]}"></div>
+    ${PROPS_CAMPAMENTO.map((item,i) => `
+      <div class="inv-item">
+        <span class="inv-name">${item}</span>
+        <div class="inv-qty">
+          <button onclick="adjQty('camp-${i}',-1)">−</button>
+          <input type="number" id="camp-${i}" value="0" min="0">
+          <button onclick="adjQty('camp-${i}',1)">+</button>
+        </div>
+      </div>`).join('')}
+    <div class="fg" style="margin-top:1rem"><label>Observaciones</label><textarea id="inv-obs" placeholder="Estado del equipo, piezas faltantes..."></textarea></div>
+    <button class="btn-sub" id="inv-btn" onclick="submitCampamentoInv()">Guardar Inventario</button>
+    <div class="fnote">Los datos se guardarán en Google Sheets</div>
+    <div class="ok-msg" id="inv-ok"><p>✅ Inventario guardado correctamente.</p></div>
+    <div class="err-msg" id="inv-err"><p>❌ Error al guardar. Intenta de nuevo.</p></div>`;
+  show('con-screen');
+}
+
+async function submitCampamentoInv() {
+  const colab = document.getElementById('inv-colab')?.value;
+  if (!colab) { alert('Por favor selecciona el responsable.'); return; }
+  const items = PROPS_CAMPAMENTO.map((item,i) => ({
+    item, cantidad: parseInt(document.getElementById(`camp-${i}`)?.value||'0')
+  }));
+  const btn = document.getElementById('inv-btn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  const ok = await sendToSheets({
+    type: 'inventario', usuario: CU.usuario, tipo: 'campamento',
+    fecha: document.getElementById('inv-fecha')?.value || '',
+    observaciones: document.getElementById('inv-obs')?.value || '',
+    items
+  });
+  if (ok) { showCompletado(() => openInventarios()); }
+  else { document.getElementById('inv-err').style.display='block'; btn.disabled=false; btn.textContent='Guardar Inventario'; }
 }
 
 async function submitInventario(type) {
@@ -970,7 +1015,7 @@ function openForm(formId) {
        <div class="fg"><label>Turno</label><select id="f-turno"><option value="AM">AM (7:00am – 12:00md)</option><option value="PM">PM (12:30pm – 4:30pm)</option></select></div></div>
        <div class="fg"><label>Rol</label><select id="f-rol"><option value="Rol 1">Rol 1</option><option value="Rol 2">Rol 2</option></select></div>
        <div class="fg"><label>Área completada</label><select id="f-area">
-         <option>Salón de Cocina y Recepción</option><option>Baños Principales</option><option>Duchas Principales</option>
+         <option>Salón de Cocina y Recepción</option><option>Baños</option><option>Duchas</option>
          <option>Juice Bar</option><option>Lounge / Deck</option><option>Estudio de Movimiento</option>
          <option>Maloca y Baños</option><option>Cocina de Residentes</option><option>Baños 7600</option>
          <option>Baños de Madera</option><option>Baños de Teca</option><option>Baños de Bahareque</option>
@@ -993,6 +1038,51 @@ function openForm(formId) {
              <div class="cd">Toca para reportar</div>
            </div>`).join('')}
        </div>` },
+    trabajo: { title:'Reporte de Trabajo', dept:'mantenimiento', btnCls:'', html:
+      `<div class="fg"><label>Colaborador</label>${manto}</div>
+       <div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
+       <div class="fg"><label>Área</label><input type="text" id="f-area" placeholder="Área o ubicación del trabajo..."></div>
+       <div class="fg"><label>Estado</label><select id="f-estado"><option>Completado</option><option>En progreso</option><option>Pendiente</option></select></div>
+       <div class="fg"><label>Prioridad</label><select id="f-prior"><option>Normal</option><option>Urgente</option><option>Programado</option></select></div>
+       <div class="fg"><label>Descripción</label>${aw('desc','Describe el trabajo realizado...')}</div>
+       <div class="fg"><label>Materiales utilizados</label>${aw('mat','Lista de materiales o herramientas usadas...')}</div>
+       <div class="fg"><label>Observaciones</label>${aw('obs','Observaciones adicionales...')}</div>
+       ${photoUploadWidget('form-photos')}` },
+
+    agua: { title:'Reporte de Agua', dept:'mantenimiento', btnCls:'', html:
+      `<div class="fg"><label>Colaborador</label>${manto}</div>
+       <div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
+       <div class="fg"><label>Hora</label><input type="time" id="f-hora" value="${new Date().toTimeString().slice(0,5)}"></div>
+       <div class="sec-lbl" style="margin-top:.5rem;">Lecturas de medidores</div>
+       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+         <div class="fg"><label>M1 — Pozo Principal</label><input type="number" id="f-m1" placeholder="0" step="0.1"></div>
+         <div class="fg"><label>M2 — Tanques Ojoche</label><input type="number" id="f-m2" placeholder="0" step="0.1"></div>
+         <div class="fg"><label>M4 — Tanque Potable</label><input type="number" id="f-m4" placeholder="0" step="0.1"></div>
+         <div class="fg"><label>M5 — Piscina Izq.</label><input type="number" id="f-m5" placeholder="0" step="0.1"></div>
+         <div class="fg"><label>M6 — Piscina Der.</label><input type="number" id="f-m6" placeholder="0" step="0.1"></div>
+         <div class="fg"><label>M7 — Tubería Piscina</label><input type="number" id="f-m7" placeholder="0" step="0.1"></div>
+       </div>
+       <div class="fg"><label>Observaciones</label>${aw('obs','Anomalías, fugas o situaciones a reportar...')}</div>
+       ${photoUploadWidget('form-photos')}` },
+
+    averia: { title:'Reporte de Avería', dept:'mantenimiento', btnCls:'averia', html:
+      `<div class="doc-note" style="margin-bottom:1rem;">🔴 Reporta averías o fallas que requieren atención.</div>
+       <div class="fg"><label>Colaborador</label>${manto}</div>
+       <div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
+       <div class="fg"><label>Prioridad</label><select id="f-prior"><option value="Urgente">🔴 Urgente — Riesgo inmediato</option><option value="Prioridad">🟡 Prioridad — Resolver en 24h</option><option value="Programar">🟢 Programar — Deterioro menor</option></select></div>
+       <div class="fg"><label>Área o ubicación</label><input type="text" id="f-area" placeholder="¿Dónde ocurre la avería?"></div>
+       <div class="fg"><label>Descripción</label>${aw('desc','Describe la avería con el mayor detalle posible...')}</div>
+       <div class="fg"><label>Observaciones</label>${aw('obs','Acciones tomadas o contexto adicional...')}</div>
+       ${photoUploadWidget('form-photos')}` },
+
+    materiales: { title:'Solicitud de Materiales', dept:'mantenimiento', btnCls:'materiales', html:
+      `<div class="fg"><label>Colaborador</label>${manto}</div>
+       <div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
+       <div class="fg"><label>Prioridad</label><select id="f-prior"><option value="Normal">Normal</option><option value="Urgente">Urgente</option></select></div>
+       <div class="fg"><label>Descripción del material</label>${aw('desc','Lista los materiales o herramientas que necesitas...')}</div>
+       <div class="fg"><label>Observaciones</label>${aw('obs','Uso específico, urgencia u otras notas...')}</div>
+       ${photoUploadWidget('form-photos')}` },
+
     reunion: { title:'Reunión de Operaciones', dept: CD||'limpieza', btnCls:'', html:
       `<div class="doc-note" style="margin-bottom:1rem;">📋 Confirmación de asistencia · Reunión semanal de operaciones</div>
        <div class="fg"><label>Colaborador</label>${all}</div>
@@ -1300,8 +1390,9 @@ const MANUAL_LMP_SECS = [
   { id:'comedor',        title:'Cocina' },
   { id:'templo',         title:'Estudio de Movimiento' },
   { id:'lounge',         title:'Lounge' },
-  { id:'duchas-limp',    title:'Duchas Principales' },
-  { id:'banos-limp',     title:'Baños Principales' },
+  { id:'maloca',         title:'Maloca' },
+  { id:'duchas-limp',    title:'Duchas' },
+  { id:'banos-limp',     title:'Baños' },
   { divider:'Habitaciones' },
   { id:'casitas-madera', title:'Casitas de Madera' },
   { id:'casitas-bah',    title:'Casitas de Bahareque' },
@@ -1387,8 +1478,8 @@ const MANUAL_MT_SECS = [
   { id:'terralab-mt',    title:'Terralab' },
   { id:'bridge-mt',      title:'Hanging Bridge' },
   { id:'lounge-mt',      title:'Lounge' },
-  { id:'duchas-mt',      title:'Duchas Principales' },
-  { id:'banos-mt',       title:'Baños Principales' },
+  { id:'duchas-mt',      title:'Duchas' },
+  { id:'banos-mt',       title:'Baños' },
   { id:'agua',           title:'Sistemas de Agua' },
   { divider:'Habitaciones' },
   { id:'casitas-madera-mt', title:'Casitas de Madera' },
@@ -1467,12 +1558,14 @@ const MANUAL_LMP_CONTENT = {
 
   lounge:    mkAreaLimp('Lounge',[['Revisión Inicial','Verificar si hay personas en el espacio. Limpiar silenciosamente los sectores vacíos.'],['Superficies y Mobiliario','Quitar polvo con paño seco de mesas, escritorios, repisas, sillas y lámparas. Desinfectar superficies de alto contacto.'],['Equipos Electrónicos','Limpiar pantallas y teclados con paño seco — sin líquidos. Revisar enchufes y extensiones.'],['Pisos','Barrer incluyendo debajo de escritorios. Trapear con desinfectante neutro.'],['Ventanas y Ventilación','Limpiar cristales con limpiavidrios o paño húmedo. Asegurar que las ventanas puedan abrirse.'],['Basureros','Vaciar cuando el área lo requiera.'],['Revisión Final','No queden objetos ajenos. Apagar luces y ventiladores si el área no está en uso.']],['Superficies libres de polvo y manchas','Pisos secos sin residuos','Mobiliario alineado y ordenado','Basureros vacíos','Olor fresco y ambiente listo para uso'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Superficies libres de polvo y manchas</div><div class="crit-row">✓ Pisos secos sin residuos</div><div class="crit-row">✓ Mobiliario alineado y ordenado</div><div class="crit-row">✓ Basureros vacíos</div><div class="crit-row">✓ Olor fresco y ambiente listo para uso</div></div>`,
 
-  'duchas-limp': `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Duchas Principales</div>
+  maloca:    mkAreaLimp('Espacio ceremonial y de eventos',[['Revisión Inicial','Confirmar sin actividades en curso. Verificar que no haya objetos ceremoniales o personales de huéspedes antes de limpiar.'],['Superficies y Estructura','Limpiar postes, vigas accesibles y superficies de madera con paño seco. Retirar telarañas. Revisar estado de la estructura.'],['Piso','Barrer completamente toda el área incluyendo bordes y esquinas. Si el piso es de tierra compactada, barrer suavemente sin levantar polvo. Si es madera, trapear con agua y jabón suave.'],['Área de Fogón o Centro','Retirar cenizas frías si aplica. Limpiar el área circundante. Reportar si hay daños en la estructura del fogón.'],['Alrededores','Recoger hojas, ramas u otros residuos del área exterior inmediata. Mantener el acceso despejado.'],['Basureros','Vaciar cuando el área lo requiera. Mantener el área libre de residuos orgánicos que atraigan fauna.'],['Revisión Final','Verificar que el espacio esté limpio, organizado y listo para uso. Reportar cualquier daño estructural.']],['Espacio libre de residuos y hojas','Piso barrido y en buen estado','Sin telarañas visibles','Área lista para uso o ceremonia'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Espacio libre de residuos y hojas</div><div class="crit-row">✓ Piso barrido y en buen estado</div><div class="crit-row">✓ Sin telarañas visibles</div><div class="crit-row">✓ Área lista para uso o ceremonia</div></div>`,
+
+  'duchas-limp': `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Duchas</div>
     <div class="doc-note" style="margin-bottom:.9rem;">⚠️ Confirmar sin personas antes de limpiar.</div>
     ${mkStepsMT([['Revisión Inicial','Confirmar sin personas. Verificar que haya agua caliente y buena presión.'],['Limpieza de ducha','Limpiar paredes, grifos y desagüe. Retirar residuos de jabón y cabello.'],['Suelo y drenaje','Barrer y trapear el área completa. Verificar que el drenaje no esté tapado.'],['Aserrín e inodoro','Verificar capa de aserrín — cubrir contenido. Limpiar área del inodoro y tablilla.'],['Reposición','Reponer papel higiénico, jabón y toallas.'],['Revisión Final','Espejos limpios, accesorios en su lugar, área seca y con buen olor.']])}
     <div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Ducha limpia y sin residuos</div><div class="crit-row">✓ Piso seco y sin agua estancada</div><div class="crit-row">✓ Aserrín suficiente, área sin olores</div><div class="crit-row">✓ Papel, jabón y toallas abastecidos</div></div>`,
 
-  'banos-limp': `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Baños Principales</div>
+  'banos-limp': `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Baños</div>
     <div class="doc-note" style="margin-bottom:.9rem;">⚠️ Confirmar sin personas antes de limpiar.</div>
     ${mkStepsMT([['Revisión Inicial','Confirmar sin personas. Identificar zonas que requieren atención especial.'],['Lavamanos y superficies','Limpiar lavamanos, grifos, espejos y repisas. Desinfectar manijas y superficies de alto contacto.'],['Aserrín e inodoro','Verificar capa de aserrín — cubrir contenido. Limpiar área del inodoro y tablilla. Mantener seco.'],['Piso','Barrer completamente. Trapear con agua y desinfectante. Revisar drenajes.'],['Reposición','Reponer papel higiénico, jabón y toallas.'],['Revisión Final','Espejos limpios, accesorios en su lugar, puertas y cerraduras funcionando. Área seca y sin olores.']])}
     <div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Aserrín suficiente, área sin olores</div><div class="crit-row">✓ Lavamanos y espejos limpios</div><div class="crit-row">✓ Piso seco y sin residuos</div><div class="crit-row">✓ Papel, jabón y toallas abastecidos</div></div>`,
@@ -1488,7 +1581,7 @@ const MANUAL_LMP_CONTENT = {
       { id:'yeomans',    nombre:'Yeomans',    m2:50, cama:'Twin',  cap:2 },
       { id:'fukuoka',    nombre:'Fukuoka',    m2:50, cama:'Twin',  cap:2 },
       { id:'mollison',   nombre:'Mollison',   m2:50, cama:'Twin',  cap:2 },
-      { id:'lancaster',  nombre:'Lancaster',  m2:50, cama:'Dorm',  cap:2 },
+      { id:'lancaster',  nombre:'Lancaster',  m2:50, cama:'Dorm',  cap:4 },
       { id:'gotsch',     nombre:'Götsch',     m2:50, cama:'Twin',  cap:2 },
       { id:'holzer',     nombre:'Holzer',     m2:50, cama:'Twin',  cap:2 },
       { id:'ingham',     nombre:'Ingham',     m2:50, cama:'Twin',  cap:2 },
@@ -1562,7 +1655,6 @@ const MANUAL_MT_CONTENT = {
     <div class="gcard" onclick="openMapaTierramor()" style="margin-top:.75rem;display:flex;align-items:center;gap:.75rem;padding:.9rem 1rem;">
       <div style="font-size:1.4rem;">🗺️</div>
       <div><div class="ct" style="font-size:.88rem;">Mapa de la Propiedad</div><div class="cd">Vista aérea · Clusters y zonas</div></div>
-      <span style="margin-left:auto;color:var(--tm);font-size:.75rem;">→</span>
     </div>`,
 
   'oficina-mt':  `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:var(--tm);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Detectar humedad, plagas o daños estructurales.'],['Equipos','Funcionamiento de equipos de cómputo, router/conectividad, aire acondicionado, impresora y periféricos.'],['Organización','Cables organizados sin riesgos de tropiezo. Basureros limpios con bolsa.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
@@ -1591,7 +1683,7 @@ const MANUAL_MT_CONTENT = {
       { id:'yeomans-mt',    nombre:'Yeomans',    m2:50, cama:'Twin',  cap:2 },
       { id:'fukuoka-mt',    nombre:'Fukuoka',    m2:50, cama:'Twin',  cap:2 },
       { id:'mollison-mt',   nombre:'Mollison',   m2:50, cama:'Twin',  cap:2 },
-      { id:'lancaster-mt',  nombre:'Lancaster',  m2:50, cama:'Dorm',  cap:2 },
+      { id:'lancaster-mt',  nombre:'Lancaster',  m2:50, cama:'Dorm',  cap:4 },
       { id:'gotsch-mt',     nombre:'Götsch',     m2:50, cama:'Twin',  cap:2 },
       { id:'holzer-mt',     nombre:'Holzer',     m2:50, cama:'Twin',  cap:2 },
       { id:'ingham-mt',     nombre:'Ingham',     m2:50, cama:'Twin',  cap:2 },
@@ -1969,7 +2061,7 @@ const SCHEDULE_RESIDENCIES = {
 };
 
 function openScheduleDelDia() {
-  setConScreen('Schedule del Día', () => goBack(), renderScheduleDelDia());
+  setConScreen('Actividades del Día', () => goBack(), renderScheduleDelDia());
 }
 
 function renderScheduleDelDia() {
