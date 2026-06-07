@@ -348,6 +348,26 @@ function nav(to) {
 
 // goBack(): destino correcto según el rol
 // Admin → pantalla dept | Colaborador → home de su dept
+function showCompletado(backFn, msg) {
+  // Show all screens hidden, then show a full-screen completado overlay
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:var(--brown);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;padding:2rem;text-align:center;';
+  overlay.innerHTML = `
+    <div style="font-size:3rem;margin-bottom:1rem;">✅</div>
+    <div style="color:var(--cream);font-size:1.4rem;font-style:italic;margin-bottom:.5rem;">Completado</div>
+    ${msg ? `<div style="color:var(--tm);font-size:.8rem;font-family:sans-serif;margin-bottom:1.5rem;line-height:1.5;">${msg}</div>` : '<div style="margin-bottom:1.5rem;"></div>'}
+    <button onclick="this.parentElement.remove();if(typeof backFn==='function')backFn();"
+      style="background:var(--clay);border:none;border-radius:10px;padding:.85rem 2rem;color:var(--cream);font-size:.95rem;font-family:sans-serif;cursor:pointer;">
+      Volver
+    </button>`;
+  // Store backFn for the button
+  overlay.querySelector('button').onclick = () => { overlay.remove(); if(backFn) backFn(); };
+  document.body.appendChild(overlay);
+  // Auto-redirect after 2.5 seconds
+  setTimeout(() => { if(overlay.parentElement) { overlay.remove(); if(backFn) backFn(); } }, 2500);
+}
+
 function goBack() {
   if (CU && CU.rol !== 'admin') { renderDeptHome(); show('home'); }
   else { nav('dept'); }
@@ -756,8 +776,13 @@ async function submitInventario(type) {
   const btn = document.getElementById('inv-sub');
   btn.disabled = true; btn.textContent = 'Guardando...';
   const ok = await sendToSheets({ type:'inventario', usuario:CU.usuario, tipo:type, fecha:document.getElementById('inv-fecha')?.value||'', items, observaciones:document.getElementById('inv-obs')?.value||'' });
-  if (ok) { document.getElementById('inv-ok').style.display = 'block'; }
-  else { document.getElementById('inv-err').style.display = 'block'; btn.disabled=false; btn.textContent='Guardar Inventario'; }
+  if (ok) {
+    showCompletado(() => goBack());
+  } else {
+    document.getElementById('inv-err').style.display = 'block';
+    btn.disabled=false;
+    btn.textContent='Guardar Inventario';
+  }
 }
 
 function photoUploadWidget(groupId) {
@@ -846,8 +871,14 @@ async function submitPiscina() {
   const btn=document.getElementById('pisc-sub'); btn.disabled=true; btn.textContent='Enviando...';
   const ok=await sendToSheets({type:'reporte',usuario:CU.usuario,departamento:'mantenimiento',tipo:'piscina',datos:{colaborador:colab,fecha:document.getElementById('pisc-fecha')?.value||'',ph,orp,sal,alertas:alertas.join(' · '),obs:document.getElementById('ta-pisc-obs')?.value||''}});
   const okEl=document.getElementById('pisc-ok'),errEl=document.getElementById('pisc-err');
-  if (ok) { okEl.style.display='block'; okEl.innerHTML=alertas.length?`<p>✅ Reporte enviado.<br><span style="color:var(--clay);font-size:.78rem;">⚠️ ${alertas.join('<br>')}</span></p>`:'<p>✅ Reporte de piscina enviado correctamente.</p>'; }
-  else { errEl.style.display='block'; btn.disabled=false; btn.textContent='Enviar Reporte de Piscina'; }
+  if (ok) {
+    const msg = alertas.length ? `Reporte enviado.\n⚠️ ${alertas.join('\n')}` : 'Reporte de piscina enviado correctamente.';
+    showCompletado(() => goBack(), msg);
+  } else {
+    errEl.style.display='block';
+    btn.disabled=false;
+    btn.textContent='Enviar Reporte de Piscina';
+  }
 }
 
 function aw(id, ph) {
@@ -1050,8 +1081,13 @@ async function submitForm(formId, dept) {
   // Route to correct sheet based on formId
   const payloadType = (formId === 'materiales') ? 'solicitud-insumos' : 'reporte';
   const ok=await sendToSheets({type:payloadType,usuario:CU.usuario,departamento:dept,tipo:formId,datos});
-  if (ok){document.getElementById('ok-msg').style.display='block';}
-  else{document.getElementById('err-msg').style.display='block';btn.disabled=false;btn.textContent='Enviar';}
+  if (ok){
+    showCompletado(() => goBack());
+  } else {
+    document.getElementById('err-msg').style.display='block';
+    btn.disabled=false;
+    btn.textContent='Enviar';
+  }
 }
 
 const iBasico = ['Conexión eléctrica principal funcionando','Funcionamiento de outlets eléctricos','Funcionamiento de luces (internas y externas)','Funcionamiento de abanico(s) / ventilador(es)','Funcionamiento de llavines y cerraduras','Funcionamiento de ventanas (abren, cierran, traban correctamente)','Daños visibles en estructura (paredes, cielo raso, piso, puertas)','Presencia de humedad, manchas de agua o filtraciones','Presencia de plagas o nidos de insectos','Estado de basureros (limpios, con bolsa, tapados)'];
@@ -1188,8 +1224,13 @@ async function submitChecklist(id,dept){
     observaciones:document.getElementById('ta-cl-obs')?.value||'', items:allItems
   });
   checkedMap={};
-  if(ok){document.getElementById('cl-ok').style.display='block';}
-  else{document.getElementById('cl-err').style.display='block';btn.disabled=false;btn.textContent='Enviar Reporte de Inspección';}
+  if(ok){
+    showCompletado(() => goBack());
+  } else {
+    document.getElementById('cl-err').style.display='block';
+    btn.disabled=false;
+    btn.textContent='Enviar Reporte de Inspección';
+  }
 }
 
 
@@ -1325,8 +1366,14 @@ async function submitSolicitudInsumos(){
   if(!items.length){alert('Por favor agrega al menos un insumo.');return;}
   const btn=document.getElementById('ins-sub');btn.disabled=true;btn.textContent='Enviando...';
   const ok=await sendToSheets({type:'solicitud-insumos',usuario:CU.usuario,departamento:'limpieza',tipo:'solicitud-insumos',datos:{colaborador:colab,fecha:document.getElementById('ins-fecha')?.value||'',prior:document.getElementById('ins-prior')?.value||'',items,obs:document.getElementById('ins-obs')?.value||''}});
-  if(ok){document.getElementById('ins-ok').style.display='block';insCount=1;}
-  else{document.getElementById('ins-err').style.display='block';btn.disabled=false;btn.textContent='Enviar Solicitud';}
+  if(ok){
+    insCount=1;
+    showCompletado(() => goBack());
+  } else {
+    document.getElementById('ins-err').style.display='block';
+    btn.disabled=false;
+    btn.textContent='Enviar Solicitud';
+  }
 }
 
 const MANUAL_MT_SECS = [
@@ -1729,8 +1776,13 @@ async function submitPeerEval(){
   const promedio=vals.length?(vals.reduce((a,b)=>a+parseInt(b),0)/vals.length).toFixed(1):'—';
   const btn=document.getElementById('ep-sub');btn.disabled=true;btn.textContent='Enviando...';
   const ok=await sendToSheets({type:'evaluacion',usuario:CU.usuario,departamento:CU.departamento,tipo:'evaluacion-pares',datos:{evaluador:CU.nombre,evaluado,periodo:document.getElementById('ep-tipo')?.value||'',fecha:document.getElementById('ep-fecha')?.value||'',competencias,promedio,comportamientos,fortalezas:document.getElementById('ta-ep-bien')?.value||'',mejoras:document.getElementById('ta-ep-mejorar')?.value||'',recomendacion:getRadio('ep-rec'),comentario:document.getElementById('ep-comentario')?.value||''}});
-  if(ok){document.getElementById('ep-ok').style.display='block';}
-  else{document.getElementById('ep-err').style.display='block';btn.disabled=false;btn.textContent='Enviar Evaluación';}
+  if(ok){
+    showCompletado(() => goBack());
+  } else {
+    document.getElementById('ep-err').style.display='block';
+    btn.disabled=false;
+    btn.textContent='Enviar Evaluación';
+  }
 }
 
 
