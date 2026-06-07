@@ -290,6 +290,22 @@ async function sha256(msg) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
+async function loadConfigColabs() {
+  try {
+    const res = await fetch(WEBHOOK + '?action=get_config_reportes');
+    const data = await res.json();
+    if (data.ok && data.config) {
+      // Column H header is "Coolaboradores" — find that column
+      const colabs = data.config
+        .map(row => row['Coolaboradores'] || row['coolaboradores'] || '')
+        .filter(Boolean);
+      window._configColabs = colabs;
+    }
+  } catch(e) {
+    window._configColabs = [];
+  }
+}
+
 async function loadUsers() {
   try {
     setLoading('Cargando usuarios...');
@@ -557,7 +573,7 @@ const DEPTS = {
     resources: [
       { id:'manual-prev',       title:'Manual de Mantenimiento', desc:'Estándares y procedimientos',   type:'doc' },
       { id:'operacion-piscina', title:'Operación de Piscina',    desc:'Checklist y parámetros',        type:'piscina' },
-      { id:'checklist-manto',   title:'Checklist por Cluster',   desc:'Inspección por zona',           type:'checklist' },
+      { id:'checklist-manto',   title:'Clusters',                desc:'Inspección por zona',           type:'checklist' },
       { id:'cal-manto',         title:'Calendario',              desc:'Tareas programadas y eventos',  type:'cal' },
     ],
     reports: [
@@ -575,7 +591,9 @@ const DEPTS = {
       { id:'proveedores',    title:'Catálogo de Proveedores',   desc:'Contactos, productos y crédito', type:'proveedores' },
     ],
     reports: [
-      { label:'Reunión de Operaciones', form:'reunion', cls:'' },
+      { label:'Solicitud de Herramientas', form:'herramientas',  cls:'' },
+      { label:'Uso de Cuadraciclo',        form:'cuadraciclo',   cls:'' },
+      { label:'Reunión de Operaciones',    form:'reunion',       cls:'' },
     ]
   },
   seguridad: {
@@ -755,7 +773,7 @@ const PROPS_MOVEMENT = ['Matts de yoga verdes','Blocks de yoga','Correas de yoga
 function openInventarios() {
   setConScreen('Inventarios', () => goBack(),
     `<div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Selecciona el inventario a registrar</div>
-     <div class="gcard" onclick="openRopaCama()" style="margin-bottom:.7rem;"><div class="ct">Inventario de Ropa de Cama</div><div class="cd">Sábanas, fundas, cobijas, duvets y más</div></div>
+     <div class="gcard" onclick="openRopaCama()" style="margin-bottom:.7rem;"><div class="ct">Inventario Ropa de Cama</div><div class="cd">Sábanas, fundas, cobijas, duvets y más</div></div>
      <div class="gcard" onclick="openPropsMenu()" style="margin-bottom:.7rem;"><div class="ct">Inventario Wellness</div><div class="cd">Colchonetas, bloques, correas y accesorios</div></div>
      <div class="gcard" onclick="openCampamentoInv()"><div class="ct">Inventario Campamento</div><div class="cd">Tiendas, hamacas y colchones inflables</div></div>`);
 }
@@ -1099,6 +1117,43 @@ function openForm(formId) {
        </div>
        <div class="fg"><label>Observaciones</label>${aw('obs','Uso específico, urgencia u otras notas...')}</div>
        ${photoUploadWidget('form-photos')}` },
+    herramientas: { title:'Solicitud de Herramientas', dept:'proveeduria', btnCls:'', html:
+      `<div class="fg"><label>Nombre</label>
+         <select id="f-colab"><option value="">— Seleccionar —</option>${(window._configColabs||[]).map(n=>`<option>${n}</option>`).join('')}</select>
+       </div>
+       <div class="frow">
+         <div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
+         <div class="fg"><label>Hora</label><input type="time" id="f-hora" value="${new Date().toTimeString().slice(0,5)}"></div>
+       </div>
+       <div class="fg"><label>Herramienta</label><input type="text" id="f-area" placeholder="Nombre de la herramienta..."></div>
+       <div class="fg"><label>Estado</label>
+         <select id="f-estado">
+           <option value="Bueno">Bueno</option>
+           <option value="Regular">Regular</option>
+           <option value="Dañado">Dañado</option>
+           <option value="Faltante">Faltante</option>
+         </select>
+       </div>
+       <div class="fg"><label>Observaciones</label>${aw('obs','Detalles adicionales...')}</div>` },
+
+    cuadraciclo: { title:'Uso de Cuadraciclo', dept:'proveeduria', btnCls:'', html:
+      `<div class="fg"><label>Nombre</label>
+         <select id="f-colab"><option value="">— Seleccionar —</option>${(window._configColabs||[]).map(n=>`<option>${n}</option>`).join('')}</select>
+       </div>
+       <div class="frow">
+         <div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
+         <div class="fg"><label>Hora</label><input type="time" id="f-hora" value="${new Date().toTimeString().slice(0,5)}"></div>
+       </div>
+       <div class="fg"><label>Cuadraciclo</label>
+         <select id="f-area">
+           <option value="Cuadraciclo de la finca">Cuadraciclo de la finca</option>
+           <option value="Cuadraciclo Líderes">Cuadraciclo Líderes</option>
+         </select>
+       </div>
+       <div class="fg"><label>Kilometraje inicial</label><input type="number" id="f-desc" placeholder="0" min="0" step="1"></div>
+       <div class="fg"><label>Observaciones</label>${aw('obs','Condiciones del cuadraciclo, ruta u otras notas...')}</div>
+       ${photoUploadWidget('form-photos')}` },
+
     reunion: { title:'Reunión de Operaciones', dept: CD||'limpieza', btnCls:'', html:
       `<div class="doc-note" style="margin-bottom:1rem;">📋 Confirmación de asistencia · Reunión semanal de operaciones</div>
        <div class="fg"><label>Colaborador</label>${all}</div>
@@ -1163,7 +1218,7 @@ async function submitForm(formId, dept) {
   const datos = {
     colaborador:colab, fecha:document.getElementById('f-fecha')?.value||'', turno:document.getElementById('f-turno')?.value||'',
     rol:document.getElementById('f-rol')?.value||'', prior:document.getElementById('f-prior')?.value||'',
-    obs:document.getElementById('ta-obs')?.value||'', desc:document.getElementById('ta-desc')?.value||'',
+    obs:document.getElementById('ta-obs')?.value||'', desc:document.getElementById('ta-desc')?.value||document.getElementById('f-desc')?.value||'',
     mat:document.getElementById('ta-mat')?.value||'', area:document.getElementById('f-area')?.value||document.getElementById('f-ubic')?.value||'',
     estado:document.getElementById('f-est')?.value||document.getElementById('f-estado')?.value||'', dur:document.getElementById('f-dur')?.value||'',
   };
@@ -1200,7 +1255,8 @@ async function submitForm(formId, dept) {
   }
 
   // Route to correct sheet based on formId
-  const payloadType = (formId === 'materiales') ? 'solicitud-insumos' : 'reporte';
+  const payloadType = (formId === 'materiales' || formId === 'herramientas' || formId === 'cuadraciclo')
+    ? 'solicitud-insumos' : 'reporte';
   const ok=await sendToSheets({type:payloadType,usuario:CU.usuario,departamento:dept,tipo:formId,datos});
   if (ok){
     showCompletado(() => goBack());
@@ -1280,11 +1336,7 @@ function openChecklistMenu(resourceId) {
 }
 
 function promptChecklist(id, dept) {
-  const cl = CL_MANTO_CLUSTERS.find(x=>x.id===id);
-  if (!cl) return;
-  pendingCL={id,dept};
-  document.getElementById('modal-sub').innerHTML=`Vas a iniciar el checklist de inspección para:<br><strong style="color:var(--brown)">${cl.name}</strong><br><span style="font-size:.75rem;color:var(--tm);">${cl.sub}</span><br><br>Asegúrate de estar en el área indicada.`;
-  document.getElementById('modal').classList.add('show');
+  startChecklist(id, dept);
 }
 
 function closeModal(){document.getElementById('modal').classList.remove('show');pendingCL=null;}
@@ -2170,6 +2222,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
   document.getElementById('modal-confirm').addEventListener('click', confirmChecklist);
   loadUsers();
+  loadConfigColabs();
 });
 </script>
 </body>
