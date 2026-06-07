@@ -292,14 +292,12 @@ async function sha256(msg) {
 
 async function loadConfigColabs() {
   try {
-    const res = await fetch(WEBHOOK + '?action=get_config_reportes');
+    const res  = await fetch(WEBHOOK + '?action=get_colabs');
     const data = await res.json();
-    if (data.ok && data.config) {
-      // Column H header is "Coolaboradores" — find that column
-      const colabs = data.config
-        .map(row => row['Coolaboradores'] || row['coolaboradores'] || '')
-        .filter(Boolean);
-      window._configColabs = colabs;
+    if (data.ok && data.colabs) {
+      window._configColabs = data.colabs;
+    } else {
+      window._configColabs = [];
     }
   } catch(e) {
     window._configColabs = [];
