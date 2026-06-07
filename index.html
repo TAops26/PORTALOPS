@@ -1064,9 +1064,12 @@ async function submitForm(formId, dept) {
     mat:document.getElementById('ta-mat')?.value||'', area:document.getElementById('f-area')?.value||document.getElementById('f-ubic')?.value||'',
     estado:document.getElementById('f-est')?.value||document.getElementById('f-estado')?.value||'', dur:document.getElementById('f-dur')?.value||'',
   };
+  // Collect hora for all forms that have it
+  const horaEl = document.getElementById('f-hora');
+  if (horaEl) datos.hora = horaEl.value || '';
+
   if (formId==='agua') {
     ['m1','m2','m3','m4','m5','m6','m7'].forEach(m=>{datos[m]=document.getElementById(`f-${m}`)?.value||'';});
-    datos.hora=document.getElementById('f-hora')?.value||'';
   }
   // repaso-hab: collect habitaciones checkboxes
   if (formId === 'repaso-hab') {
