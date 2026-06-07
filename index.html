@@ -680,6 +680,58 @@ body::before {
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(232,226,209,0.15); border-radius: 4px; }
+
+
+/* ══════════════════════════════════════════
+   OPTION F — Color by dept + stat personality
+   ══════════════════════════════════════════ */
+
+/* Dept-colored headers */
+#dept.dept-limpieza      .hdr { border-bottom-color: rgba(113,127,126,0.5); }
+#dept.dept-mantenimiento .hdr { border-bottom-color: rgba(153,92,68,0.5); }
+#dept.dept-proveeduria   .hdr { border-bottom-color: rgba(118,114,78,0.5); }
+#dept.dept-seguridad     .hdr { border-bottom-color: rgba(115,81,69,0.5); }
+
+#dept.dept-limpieza      .hdr-t { color: #8FACA9; }
+#dept.dept-mantenimiento .hdr-t { color: #C17A5A; }
+#dept.dept-proveeduria   .hdr-t { color: #9A9560; }
+#dept.dept-seguridad     .hdr-t { color: #9A6A5A; }
+
+/* Dept background tint */
+#dept.dept-limpieza      .rg { background: radial-gradient(ellipse at 10% 0%, rgba(113,127,126,0.12) 0%, transparent 60%); }
+#dept.dept-mantenimiento .rg { background: radial-gradient(ellipse at 10% 0%, rgba(153,92,68,0.12) 0%, transparent 60%); }
+#dept.dept-proveeduria   .rg { background: radial-gradient(ellipse at 10% 0%, rgba(118,114,78,0.12) 0%, transparent 60%); }
+#dept.dept-seguridad     .rg { background: radial-gradient(ellipse at 10% 0%, rgba(115,81,69,0.12) 0%, transparent 60%); }
+
+/* Colored sec-band by context */
+.sec-band.band-blue   { background: rgba(113,127,126,0.2); border: 1px solid rgba(113,127,126,0.25); color: #8FACA9; }
+.sec-band.band-clay   { background: rgba(153,92,68,0.2);   border: 1px solid rgba(153,92,68,0.25);   color: #C17A5A; }
+.sec-band.band-green  { background: rgba(118,114,78,0.2);  border: 1px solid rgba(118,114,78,0.25);  color: #9A9560; }
+.sec-band.band-plum   { background: rgba(115,81,69,0.2);   border: 1px solid rgba(115,81,69,0.25);   color: #9A6A5A; }
+
+/* Colored stat cards */
+.stat-blue  { border-top: 2px solid var(--blue) !important; }
+.stat-green { border-top: 2px solid var(--green) !important; }
+.stat-clay  { border-top: 2px solid var(--clay) !important; }
+.stat-plum  { border-top: 2px solid var(--plum) !important; }
+
+/* Section labels with color */
+.sec-lbl.lbl-blue  { color: rgba(113,127,126,0.6); }
+.sec-lbl.lbl-clay  { color: rgba(153,92,68,0.6); }
+.sec-lbl.lbl-green { color: rgba(118,114,78,0.6); }
+.sec-lbl.lbl-plum  { color: rgba(115,81,69,0.6); }
+
+/* Dept card accent top lines — already via ::before — enhance */
+.dept-btn.dept-limpieza      { border-top: 2px solid rgba(113,127,126,0.4); }
+.dept-btn.dept-mantenimiento { border-top: 2px solid rgba(153,92,68,0.4); }
+.dept-btn.dept-proveeduria   { border-top: 2px solid rgba(118,114,78,0.4); }
+.dept-btn.dept-seguridad     { border-top: 2px solid rgba(115,81,69,0.4); }
+
+/* Collaborator home background tint by dept */
+#home.home-limpieza      { background: radial-gradient(ellipse at 80% 20%, rgba(113,127,126,0.1) 0%, transparent 55%); }
+#home.home-mantenimiento { background: radial-gradient(ellipse at 80% 20%, rgba(153,92,68,0.1) 0%, transparent 55%); }
+#home.home-proveeduria   { background: radial-gradient(ellipse at 80% 20%, rgba(118,114,78,0.1) 0%, transparent 55%); }
+#home.home-seguridad     { background: radial-gradient(ellipse at 80% 20%, rgba(115,81,69,0.1) 0%, transparent 55%); }
 </style>
 </head>
 <body>
@@ -965,7 +1017,20 @@ function renderHome() {
   };
 
   const showDepts = isAdmin ? ['limpieza','mantenimiento','proveeduria','seguridad'] : [CU.departamento];
-  let btns = `<div class="sec-lbl">${isAdmin ? 'Departamentos' : 'Tu área de trabajo'}</div>`;
+  const STAT_HTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.2rem;">
+    <div class="stat-blue" style="background:rgba(255,255,255,0.055);border:1px solid rgba(232,226,209,0.09);border-radius:12px;padding:.9rem;text-align:center;">
+      <div style="font-size:.55rem;text-transform:uppercase;letter-spacing:.18em;color:rgba(113,127,126,0.7);font-family:var(--font-sans);margin-bottom:.35rem;">Esta semana</div>
+      <div style="font-size:2rem;font-family:var(--font-serif);font-style:italic;color:rgba(232,226,209,0.3);">—</div>
+      <div style="font-size:.6rem;font-family:var(--font-sans);color:rgba(232,226,209,0.3);">% cumplimiento</div>
+    </div>
+    <div class="stat-green" style="background:rgba(255,255,255,0.055);border:1px solid rgba(232,226,209,0.09);border-radius:12px;padding:.9rem;text-align:center;">
+      <div style="font-size:.55rem;text-transform:uppercase;letter-spacing:.18em;color:rgba(118,114,78,0.7);font-family:var(--font-sans);margin-bottom:.35rem;">Este mes</div>
+      <div style="font-size:2rem;font-family:var(--font-serif);font-style:italic;color:rgba(232,226,209,0.3);">—</div>
+      <div style="font-size:.6rem;font-family:var(--font-sans);color:rgba(232,226,209,0.3);">% cumplimiento</div>
+    </div>
+  </div>`;
+
+  let btns = STAT_HTML + `<div class="sec-lbl lbl-blue">${isAdmin ? 'Departamentos' : 'Tu área de trabajo'}</div>`;
 
   if (isAdmin) {
     btns += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem;">`;
@@ -974,7 +1039,7 @@ function renderHome() {
   showDepts.forEach(d => {
     const c = deptCfg[d];
     if (!c) return;
-    btns += `<button class="dept-btn" onclick="openDept('${d}')">
+    btns += `<button class="dept-btn dept-${d}" onclick="openDept('${d}')">
       <div class="dico ${c.cls}">${c.ico}</div>
       <div class="dinf"><h3>${c.lbl}</h3><p>${c.sub}</p></div>
     </button>`;
@@ -1018,6 +1083,8 @@ function renderDeptHome() {
   const d = CU.departamento;
   CD = d; // ← establece el dept activo para que nav('dept') funcione
   const cfg = deptCfg[d] || { lbl:d, sub:'', ico:'OP', cls:'a' };
+  // Apply dept color tint to home screen
+  document.getElementById('home').className = 'screen home-' + d;
 
   document.getElementById('home-profile').innerHTML = `
     <div class="lc">
@@ -1121,6 +1188,8 @@ function openDept(dept) {
   CD = dept;
   const d = DEPTS[dept];
   if (!d) return;
+  // Apply dept color class
+  document.getElementById('dept').className = 'screen dept-' + dept;
   document.getElementById('dept-title').textContent = d.label;
   document.getElementById('rgrid').innerHTML = d.resources.map(r =>
     `<div class="gcard" onclick="openResource('${r.id}','${r.title}','${r.type||'doc'}')">
@@ -1965,8 +2034,16 @@ function openMyPerformance(){
       <div style="font-size:.7rem;font-family:sans-serif;color:var(--tm);text-transform:uppercase;letter-spacing:.1em;margin-top:.2rem;">${DEPT_LABEL[CU.departamento]||CU.departamento}</div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1rem;">
-      <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:.9rem;text-align:center;"><div style="font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--blue);font-family:sans-serif;margin-bottom:.4rem;">Esta semana</div><div style="font-size:2rem;font-family:sans-serif;font-weight:700;color:var(--brown);">—</div><div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);">% cumplimiento</div></div>
-      <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:.9rem;text-align:center;"><div style="font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--clay);font-family:sans-serif;margin-bottom:.4rem;">Este mes</div><div style="font-size:2rem;font-family:sans-serif;font-weight:700;color:var(--brown);">—</div><div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);">% cumplimiento</div></div>
+      <div class="stat-blue" style="background:rgba(255,255,255,0.055);border:1px solid rgba(232,226,209,0.09);border-radius:12px;padding:.9rem;text-align:center;">
+        <div style="font-size:.55rem;text-transform:uppercase;letter-spacing:.18em;color:rgba(113,127,126,0.7);font-family:var(--font-sans);margin-bottom:.4rem;">Esta semana</div>
+        <div style="font-size:2rem;font-family:var(--font-serif);font-style:italic;color:rgba(232,226,209,0.3);">—</div>
+        <div style="font-size:.6rem;font-family:var(--font-sans);color:rgba(232,226,209,0.3);">% cumplimiento</div>
+      </div>
+      <div class="stat-green" style="background:rgba(255,255,255,0.055);border:1px solid rgba(232,226,209,0.09);border-radius:12px;padding:.9rem;text-align:center;">
+        <div style="font-size:.55rem;text-transform:uppercase;letter-spacing:.18em;color:rgba(118,114,78,0.7);font-family:var(--font-sans);margin-bottom:.4rem;">Este mes</div>
+        <div style="font-size:2rem;font-family:var(--font-serif);font-style:italic;color:rgba(232,226,209,0.3);">—</div>
+        <div style="font-size:.6rem;font-family:var(--font-sans);color:rgba(232,226,209,0.3);">% cumplimiento</div>
+      </div>
     </div>
     <button class="dept-btn" onclick="openPeerEval()" style="margin-bottom:.65rem;width:100%;"><div class="dico a" style="background:rgba(113,127,126,.15);color:var(--blue);">EP</div><div class="dinf"><h3>Evaluación de Pares</h3><p>Evalúa el desempeño de tus compañeros</p></div><span class="dbadge on" style="background:rgba(113,127,126,.15);color:var(--blue);">Mensual</span></button>
     <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;"><div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);font-family:sans-serif;margin-bottom:.5rem;">KPIs pendientes de definición por administración</div></div>`);
