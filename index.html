@@ -638,6 +638,51 @@ function openResource(id, title, type) {
   setConScreen(title, () => goBack(), getDocContent(id, title));
 }
 
+function openRepasoHab(habitacion) {
+  const today = new Date().toISOString().split('T')[0];
+  const colabOpts = COLABS_LIMP.map(n=>`<option${CU&&n===CU.nombre?' selected':''}>${n}</option>`).join('');
+  setConScreen(`Repaso — ${habitacion}`,
+    () => openForm('repaso-hab'),
+    `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1rem;">Registra el repaso de esta habitación</div>
+     <div class="fg"><label>Colaboradora</label>
+       <select id="rh-colab"><option value="">— Seleccionar —</option>${colabOpts}</select>
+     </div>
+     <div class="fg"><label>Fecha</label>
+       <input type="date" id="rh-fecha" value="${today}">
+     </div>
+     <div class="fg"><label>Notas</label>
+       <textarea id="rh-notas" placeholder="Estado de la habitación, observaciones, incidencias..." style="min-height:90px;"></textarea>
+     </div>
+     ${photoUploadWidget('rh-photos')}
+     <button class="btn-sub" id="rh-btn" onclick="submitRepasoHab('${habitacion}')">Enviar Repaso</button>
+     <div class="fnote">Los datos se guardarán en Google Sheets</div>
+     <div class="err-msg" id="rh-err"><p>❌ Error al enviar. Intenta de nuevo.</p></div>`
+  );
+}
+
+async function submitRepasoHab(habitacion) {
+  const colab = document.getElementById('rh-colab')?.value;
+  if (!colab) { alert('Por favor selecciona la colaboradora.'); return; }
+  const btn = document.getElementById('rh-btn');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  const datos = {
+    colaborador: colab,
+    fecha:       document.getElementById('rh-fecha')?.value || '',
+    habitacion,
+    notas:       document.getElementById('rh-notas')?.value || '',
+  };
+  const ok = await sendToSheets({
+    type: 'reporte', usuario: CU.usuario, departamento: 'limpieza',
+    tipo: 'repaso-hab', datos
+  });
+  if (ok) {
+    showCompletado(() => openForm('repaso-hab'));
+  } else {
+    document.getElementById('rh-err').style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Enviar Repaso';
+  }
+}
+
 function openInsumosLimp() {
   setConScreen('Insumos', () => goBack(),
     `<div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Gestión de insumos del departamento de Limpieza</div>
@@ -911,6 +956,12 @@ function cleanMic(wid){const b=document.getElementById('mic-'+wid);if(!b)return;
 
 function openForm(formId) {
   stopRec();
+  // repaso-hab: show casita grid via con-screen instead of standard form
+  if (formId === 'repaso-hab') {
+    const f = FORMS[formId];
+    setConScreen(f.title, () => goBack(), eval('`' + f.html + '`'));
+    return;
+  }
   if (!window._photos) window._photos = {};
   window._photos['form-photos'] = [];
   const today = new Date().toISOString().split('T')[0];
@@ -940,80 +991,14 @@ function openForm(formId) {
        <div class="fg"><label>Observaciones</label>${aw('obs','Describe incidencias o situaciones relevantes...')}</div>
        ${photoUploadWidget('form-photos')}` },
     'repaso-hab': { title:'Repaso de Habitaciones', dept:'limpieza', btnCls:'', html:
-      `<div class="fg"><label>Colaboradora</label>${limp}</div>
-       <div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
-       <div class="fg"><label>Rol</label><select id="f-rol"><option value="Rol 1">Rol 1</option><option value="Rol 2">Rol 2</option></select></div></div>
-       <div class="doc-note" style="margin-bottom:1rem;">📋 Marca cada habitación que fue repasada hoy</div>
-       ${['Toensmeier','Hemenway','Primavesi','Salatin','Shiva','Savory','Yeomans','Fukuoka','Mollison','Lancaster','Götsch','Holzer','Ingham','Carson'].map((hab,i)=>`
-         <div class="cl-item" style="padding:.55rem 0;border-bottom:1px solid rgba(84,66,54,.05);">
-           <div class="cl-cb" id="hab-cb-${i}" onclick="this.classList.toggle('checked')"></div>
-           <div style="flex:1">
-             <div class="cl-txt">${hab}</div>
-             <div class="cl-note"><input type="text" placeholder="Nota opcional..." id="hab-nota-${i}"></div>
-           </div>
-         </div>`).join('')}
-       <div class="fg" style="margin-top:.75rem"><label>Observaciones generales</label>${aw('obs','Habitaciones con problemas, daños o situaciones especiales...')}</div>
-       <div class="fg"><label style="margin-bottom:.3rem;">Fotografías</label>
-         <div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);margin-bottom:.5rem;">Solo si hay incidencia</div>
-         ${photoUploadWidget('form-photos').replace('<label>Fotografías</label>','')}
+      `<div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1rem;">Selecciona la habitación a reportar</div>
+       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
+         ${['Toensmeier','Hemenway','Primavesi','Salatin','Shiva','Savory','Yeomans','Fukuoka','Mollison','Lancaster','Götsch','Holzer','Ingham','Carson'].map(hab=>`
+           <div class="gcard" onclick="openRepasoHab('${hab}')" style="padding:.85rem .8rem;cursor:pointer;">
+             <div class="ct" style="font-size:.9rem;">${hab}</div>
+             <div class="cd">Toca para reportar</div>
+           </div>`).join('')}
        </div>` },
-    trabajo: { title:'Reporte de Trabajo', dept:'mantenimiento', btnCls:'', html:
-      `<div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
-       <div class="fg"><label>Prioridad</label><select id="f-prior"><option>Normal</option><option>Urgente</option><option>Programado</option></select></div></div>
-       <div class="fg"><label>Encargado</label>${manto}</div>
-       <div class="fg"><label>Área / Ubicación</label><input type="text" id="f-ubic" placeholder="Ej: Habitación 3, Piscina..."></div>
-       <div class="fg"><label>Estado</label><select id="f-est"><option>Completado</option><option>En proceso</option><option>Pendiente de materiales</option><option>Requiere revisión</option></select></div>
-       <div class="fg"><label>Descripción del trabajo</label>${aw('desc','¿Qué se realizó?...')}</div>
-       <div class="fg"><label>Materiales utilizados</label>${aw('mat','Lista materiales...')}</div>
-       <div class="fg"><label>Observaciones</label>${aw('obs','¿Acción adicional?...')}</div>
-       ${photoUploadWidget('form-photos')}` },
-    agua: { title:'Reporte de Agua', dept:'mantenimiento', btnCls:'', html:
-      `<div class="doc-note" style="margin-bottom:1rem;">💧 Registrar antes de las 7:30 AM · Lunes a Viernes</div>
-       <div class="fg"><label>Encargado</label>${manto}</div>
-       <div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
-       <div class="fg"><label>Hora de registro</label><input type="time" id="f-hora"></div></div>
-       <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:1rem;">
-         <div class="cl-sec-title" style="margin-bottom:.8rem;">Lecturas de Medidores</div>
-         ${[['M1','Pozo Principal','Salida del tanque a la par del pozo — envía agua a las casitas'],
-            ['M2','Tanques Ojoche','Entrada de los tanques en la loma'],
-            ['M4','Tanque Potable','Entrada del tanque de almacenamiento a la par de la bodega'],
-            ['M5','Tanques Piscina Izq.','Tanques de la piscina — mano izquierda'],
-            ['M6','Tanques Piscina Der.','Tanques de la piscina — mano derecha'],
-            ['M7','Tubería Principal Piscina','Tubería de abastecimiento del pozo hacia los tanques de piscina'],
-           ].map(([m,n,desc]) => `
-             <div style="margin-bottom:.85rem;">
-               <div style="display:flex;align-items:baseline;gap:.5rem;margin-bottom:.3rem;">
-                 <span style="font-size:.78rem;font-family:sans-serif;font-weight:700;color:var(--clay);min-width:24px;">${m}</span>
-                 <span style="font-size:.75rem;font-family:sans-serif;font-weight:600;color:var(--brown);">${n}</span>
-               </div>
-               <div style="font-size:.7rem;font-family:sans-serif;color:var(--tm);margin-bottom:.3rem;padding-left:24px;">${desc}</div>
-               <input type="number" id="f-${m.toLowerCase()}" step="0.01" min="0" placeholder="Lectura"
-                 style="width:100%;background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.65rem .85rem;font-size:1rem;font-family:sans-serif;font-weight:600;color:var(--brown);outline:none;">
-             </div>`).join('')}
-         <div class="doc-note" style="margin-top:.5rem;">📌 Sistemas sin medidor activo: Tanques Pozo Principal · Tanques Bahareque · Pozo Maloca — registro visual solamente.</div>
-       </div>
-       <div class="fg"><label>Anomalías detectadas</label>${aw('obs','Describe cualquier anomalía en los sistemas de agua...')}</div>` },
-    averia: { title:'Reporte de Avería', dept:'mantenimiento', btnCls:'red', html:
-      `<div class="doc-note" style="margin-bottom:1rem;">🔴 Usa este reporte cuando detectes una avería que requiere atención.</div>
-       <div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
-       <div class="fg"><label>Urgencia</label><select id="f-prior">
-         <option value="URGENTE">🔴 Urgente — riesgo inmediato</option>
-         <option value="PRIORIDAD">🟡 Prioridad — resolver en 24h</option>
-         <option value="PROGRAMAR">🟢 Programar</option>
-       </select></div></div>
-       <div class="fg"><label>Encargado que reporta</label>${manto}</div>
-       <div class="fg"><label>Área / Ubicación exacta</label><input type="text" id="f-ubic" placeholder="Ej: Toensmeier, Puente colgante..."></div>
-       <div class="fg"><label>Descripción de la avería</label>${aw('desc','Describe la avería con detalle...')}</div>
-       <div class="fg"><label>Acciones tomadas de inmediato</label>${aw('obs','¿Se acordonó el área, se cerró una válvula?...')}</div>
-       ${photoUploadWidget('form-photos')}` },
-    materiales: { title:'Solicitud de Materiales', dept:'mantenimiento', btnCls:'green', html:
-      `<div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
-       <div class="fg"><label>Prioridad</label><select id="f-prior"><option>Normal</option><option>Urgente</option></select></div></div>
-       <div class="fg"><label>Solicitante</label>${manto}</div>
-       <div class="fg"><label>Área de uso</label><input type="text" id="f-ubic" placeholder="¿Para qué área o proyecto?"></div>
-       <div class="fg"><label>Materiales solicitados</label>${aw('mat','Lista los materiales con cantidad aproximada...')}</div>
-       <div class="fg"><label>Justificación / Notas</label>${aw('obs','¿Por qué se necesitan? ¿Hay algún plazo?...')}</div>
-       ${photoUploadWidget('form-photos')}` },
     reunion: { title:'Reunión de Operaciones', dept: CD||'limpieza', btnCls:'', html:
       `<div class="doc-note" style="margin-bottom:1rem;">📋 Confirmación de asistencia · Reunión semanal de operaciones</div>
        <div class="fg"><label>Colaborador</label>${all}</div>
