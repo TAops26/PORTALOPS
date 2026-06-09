@@ -2112,6 +2112,25 @@ const MANUAL_LMP_CONTENT={
   })(),
 };
 
+const MANUAL_LMP_SECS = [
+  { id:'depto',          title:'Departamento de Operaciones' },
+  { id:'marco-principios', title:'Marco de Principios' },
+  { id:'criterios-todo', title:'Criterios, Preparación y Procedimientos Generales' },
+  { divider:'Áreas Comunes' },
+  { id:'oficina',        title:'Oficina' },
+  { id:'juicebar',       title:'Juice Bar' },
+  { id:'recepcion',      title:'Recepción' },
+  { id:'comedor',        title:'Cocina' },
+  { id:'templo',         title:'Estudio de Movimiento' },
+  { id:'lounge',         title:'Lounge' },
+  { id:'maloca',         title:'Maloca' },
+  { id:'duchas-limp',    title:'Duchas' },
+  { id:'banos-limp',     title:'Baños' },
+  { divider:'Habitaciones' },
+  { id:'casitas-madera', title:'Casitas de Madera' },
+  { id:'casitas-bah',    title:'Casitas de Bahareque' },
+];
+
 function renderManualLimp(){
   let html = `<div style="font-size:.72rem;font-family:var(--font-sans);color:rgba(232,226,209,0.35);font-style:italic;letter-spacing:.05em;margin-bottom:1.2rem;">Estándares, procedimientos y criterios de limpieza · Versión 2.0 · 2025</div>`;
   let inGrid = false;
