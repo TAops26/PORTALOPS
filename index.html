@@ -533,7 +533,7 @@ body::before {
   color: rgba(232,226,209,0.38); margin-bottom: 0.55rem; font-family: var(--font-sans);
 }
 .crit-row {
-  font-size: 0.8rem; color: #9A9560; padding: 0.3rem 0;
+  font-size: 0.8rem; color: #b8b870; padding: 0.3rem 0;
   border-bottom: 1px solid rgba(232,226,209,0.06); line-height: 1.4;
 }
 .crit-row:last-child { border-bottom: none; }
@@ -546,7 +546,7 @@ body::before {
 .acc-hdr {
   padding: 0.85rem 1rem; cursor: pointer;
   display: flex; align-items: center; justify-content: space-between;
-  font-size: 0.85rem; color: var(--cream); font-family: var(--font-sans);
+  font-size: 0.85rem; color: rgba(232,226,209,0.85); font-family: var(--font-sans);
 }
 .acc-hdr .parr { color: rgba(232,226,209,0.35); font-size: 0.75rem; transition: transform 0.2s; }
 .acc.open .acc-hdr .parr { transform: rotate(90deg); }
@@ -732,6 +732,98 @@ body::before {
 #home.home-mantenimiento { background: radial-gradient(ellipse at 80% 20%, rgba(153,92,68,0.1) 0%, transparent 55%); }
 #home.home-proveeduria   { background: radial-gradient(ellipse at 80% 20%, rgba(118,114,78,0.1) 0%, transparent 55%); }
 #home.home-seguridad     { background: radial-gradient(ellipse at 80% 20%, rgba(115,81,69,0.1) 0%, transparent 55%); }
+
+/* ══════════════════════════════════════════
+   MOBILE RESPONSIVE
+   ══════════════════════════════════════════ */
+
+/* Base touch improvements */
+button, .dept-btn, .rbtn, .gcard, .area-card, .cluster-card, .cl-cb {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Larger touch targets on mobile */
+@media (max-width: 600px) {
+  /* Login */
+  .login-wrap { max-width: 100%; padding: 0 0.25rem; }
+  .login-brand .brand-name { font-size: 2rem; }
+  .login-box { padding: 1.5rem 1.25rem; }
+  .lf input { padding: 0.85rem 1rem; font-size: 1rem; }
+  .btn-login { padding: 1rem; font-size: 0.95rem; }
+
+  /* Header */
+  .hdr { padding: 0.75rem 1rem; }
+  .hdr-t { font-size: 0.95rem; }
+  .pnm { font-size: 0.92rem; }
+  .pub-label { font-size: 0.52rem; letter-spacing: 0.12em; }
+  .actl { font-size: 0.65rem !important; padding: 0.35rem 0.65rem !important; }
+  .sico { font-size: 0.65rem; padding: 0.32rem 0.6rem; }
+
+  /* Content areas */
+  .rg, .fbody, .conbody, .cl-body, .rep-body { padding: 0.9rem 1rem; }
+
+  /* Dept grid — 1 col on very small screens */
+  div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Dept buttons */
+  .dept-btn { padding: 0.85rem 0.9rem; margin-bottom: 0.5rem; }
+  .dico { width: 34px; height: 34px; font-size: 0.58rem; }
+  .dinf h3 { font-size: 0.92rem; }
+  .dinf p { font-size: 0.62rem; }
+
+  /* Report buttons */
+  .rbtn { padding: 0.85rem 0.9rem; font-size: 0.8rem; min-height: 48px; }
+
+  /* General cards */
+  .gcard { padding: 0.85rem 0.9rem; }
+  .gcard .ct { font-size: 0.88rem; }
+  .gcard .cd { font-size: 0.65rem; }
+
+  /* Forms */
+  .fg label { font-size: 0.6rem; }
+  .fg input, .fg select, .fg textarea {
+    padding: 0.85rem 0.9rem;
+    font-size: 0.95rem;
+  }
+  .frow { flex-direction: column; gap: 0; }
+  .btn-sub { padding: 1rem; font-size: 0.95rem; min-height: 52px; }
+
+  /* Checklist */
+  .cl-cb { width: 26px; height: 26px; }
+  .cl-txt { font-size: 0.85rem; }
+
+  /* Schedule grid */
+  div[style*="grid-template-columns:1fr 1fr;"] {
+    gap: 0.5rem !important;
+  }
+
+  /* Photo upload */
+  .photo-upload-box { padding: 1.25rem; }
+
+  /* Modal */
+  .modal-box { padding: 1.5rem 1.25rem; }
+  .modal-title { font-size: 1.2rem; }
+  .mbtn-bk, .mbtn-ok { padding: 0.85rem; font-size: 0.85rem; }
+
+  /* Sec band */
+  .sec-band { font-size: 0.58rem; padding: 0.5rem 0.85rem; }
+
+  /* Manual sections - 1 col on very small */
+  @media (max-width: 380px) {
+    div[style*="grid-template-columns:1fr 1fr"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+}
+
+/* iPhone safe areas */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .screen { padding-bottom: env(safe-area-inset-bottom); }
+  .btn-sub { margin-bottom: env(safe-area-inset-bottom); }
+}
+
 </style>
 </head>
 <body>
@@ -968,6 +1060,7 @@ async function doLogin() {
   btn.disabled = false;
   if (match) {
     CU = match;
+    try { localStorage.setItem('tm_session', JSON.stringify(CU)); } catch(e) {}
     document.getElementById('lerr').textContent = '';
     if (CU.rol === 'admin') {
       renderHome();
@@ -981,7 +1074,7 @@ async function doLogin() {
   }
 }
 
-function logout() { CU = null; stopRec(); show('ls'); }
+function logout() { CU = null; stopRec(); try { localStorage.removeItem('tm_session'); } catch(e) {} show('ls'); }
 
 function renderHome() {
   const isAdmin = CU.rol === 'admin';
@@ -1243,7 +1336,7 @@ function openRepasoHab(habitacion) {
        <input type="date" id="rh-fecha" value="${today}">
      </div>
      <div class="fg"><label>Observaciones</label>
-       <textarea id="rh-notas" placeholder="Estado de la habitación, observaciones, incidencias..." style="min-height:90px;"></textarea>
+       ${aw('rh-notas','Estado de la habitación, observaciones, incidencias...')}
      </div>
      ${photoUploadWidget('rh-photos')}
      <button class="btn-sub" id="rh-btn" onclick="submitRepasoHab('${habitacion}')">Enviar Repaso</button>
@@ -1368,7 +1461,7 @@ function openRopaCama() {
           <button onclick="adjQty('rc-${i}',1)">+</button>
         </div>
       </div>`).join('')}
-    <div class="fg" style="margin-top:1rem"><label>Observaciones</label><textarea id="inv-obs" placeholder="Artículos dañados, faltantes..."></textarea></div>
+    <div class="fg" style="margin-top:1rem"><label>Observaciones</label>${aw('inv-obs','Artículos dañados, faltantes...')}</div>
     ${photoUploadWidget('inv-photos')}
     <button class="btn-sub" id="inv-sub" onclick="submitInventario('ropa-cama')">Guardar Inventario</button>
     <div class="ok-msg" id="inv-ok"><p>✅ Inventario guardado correctamente.</p></div>
@@ -1404,7 +1497,7 @@ function openPropsForm(space) {
           <button onclick="adjQty('pr-${i}',1)">+</button>
         </div>
       </div>`).join('')}
-    <div class="fg" style="margin-top:1rem"><label>Observaciones</label><textarea id="inv-obs" placeholder="Artículos dañados, faltantes..."></textarea></div>
+    <div class="fg" style="margin-top:1rem"><label>Observaciones</label>${aw('inv-obs','Artículos dañados, faltantes...')}</div>
     ${photoUploadWidget('inv-photos')}
     <button class="btn-sub" id="inv-sub" onclick="submitInventario('props-${space}')">Guardar Inventario</button>
     <div class="ok-msg" id="inv-ok"><p>✅ Inventario guardado correctamente.</p></div>
@@ -1433,7 +1526,7 @@ function openCampamentoInv() {
           <button onclick="adjQty('camp-${i}',1)">+</button>
         </div>
       </div>`).join('')}
-    <div class="fg" style="margin-top:1rem"><label>Observaciones</label><textarea id="inv-obs" placeholder="Estado del equipo, piezas faltantes..."></textarea></div>
+    <div class="fg" style="margin-top:1rem"><label>Observaciones</label>${aw('inv-obs','Estado del equipo, piezas faltantes...')}</div>
     <button class="btn-sub" id="inv-btn" onclick="submitCampamentoInv()">Guardar Inventario</button>
     <div class="fnote">Los datos se guardarán en Google Sheets</div>
     <div class="ok-msg" id="inv-ok"><p>✅ Inventario guardado correctamente.</p></div>
@@ -1480,36 +1573,56 @@ async function submitInventario(type) {
   }
 }
 
-function photoUploadWidget(groupId) {
+function photoUploadWidget(groupId, minPhotos=3) {
   return `<div class="fg">
-    <label>Fotografías</label>
+    <label>Fotografías <span id="photo-lbl-${groupId}" style="font-size:.62rem;color:rgba(232,226,209,0.45);font-weight:normal;">— mínimo ${minPhotos} fotos</span></label>
     <div class="photo-upload-box" onclick="document.getElementById('file-${groupId}').click()">
-      <input type="file" id="file-${groupId}" accept="image/*" multiple capture="environment" onchange="handlePhotoUpload(event,'${groupId}')">
-      <div class="pub-icon">📷</div>
-      <div class="pub-label">Toca para <strong>tomar o adjuntar fotos</strong></div>
-      <div style="font-size:.65rem;font-family:sans-serif;color:var(--tm);margin-top:.2rem;">Se guardarán en Google Drive al enviar</div>
+      <input type="file" id="file-${groupId}" accept="image/*" multiple capture="environment" onchange="handlePhotoUpload(event,'${groupId}',${minPhotos})">
+      <div style="font-size:1.5rem;margin-bottom:.3rem;">📷</div>
+      <div style="font-size:.82rem;font-family:var(--font-sans);color:rgba(232,226,209,0.6);">Toca para <strong style="color:var(--cream);">tomar o adjuntar fotos</strong></div>
+      <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.35);margin-top:.2rem;">Se guardarán en Google Drive al enviar</div>
     </div>
-    <div class="photo-preview" id="prev-${groupId}"></div>
+    <div class="photo-preview" id="prev-${groupId}" style="display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem;"></div>
   </div>`;
 }
 
-function handlePhotoUpload(event, groupId) {
+function handlePhotoUpload(event, groupId, minPhotos=3) {
   const files = Array.from(event.target.files);
   const preview = document.getElementById('prev-' + groupId);
   if (!window._photos) window._photos = {};
   if (!window._photos[groupId]) window._photos[groupId] = [];
-  files.forEach((file, idx) => {
+  files.forEach((file, i) => {
+    window._photos[groupId].push(file);
     const reader = new FileReader();
     reader.onload = e => {
-      const id = `${groupId}-${Date.now()}-${idx}`;
       const thumb = document.createElement('div');
-      thumb.className = 'photo-thumb'; thumb.id = 'thumb-' + id;
-      thumb.innerHTML = `<img src="${e.target.result}"><button onclick="removePhoto('${id}','${groupId}')">×</button>`;
+      thumb.style.cssText = 'position:relative;';
+      thumb.innerHTML = `<img src="${e.target.result}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1.5px solid rgba(232,226,209,0.2);">
+        <button onclick="removePhoto('${groupId}',${window._photos[groupId].length-1},this.parentElement)" style="position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:#E07A5F;border:none;color:white;font-size:.65rem;cursor:pointer;line-height:1;">×</button>`;
       preview.appendChild(thumb);
-      window._photos[groupId].push({ id, name:file.name, data:e.target.result });
+      updatePhotoLabel(groupId, minPhotos);
     };
     reader.readAsDataURL(file);
   });
+}
+
+function removePhoto(groupId, idx, el) {
+  if (window._photos && window._photos[groupId]) {
+    window._photos[groupId].splice(idx, 1);
+    el.remove();
+    updatePhotoLabel(groupId, 3);
+  }
+}
+
+function updatePhotoLabel(groupId, minPhotos) {
+  const count = (window._photos[groupId] || []).length;
+  const lbl = document.getElementById('photo-lbl-' + groupId);
+  if (!lbl) return;
+  const ok = count >= minPhotos;
+  lbl.textContent = count === 0
+    ? `— mínimo ${minPhotos} fotos`
+    : ok ? `— ${count} foto(s) ✅` : `— ${count}/${minPhotos} fotos`;
+  lbl.style.color = ok ? 'rgba(154,149,96,0.8)' : 'rgba(232,226,209,0.45)';
 }
 
 function removePhoto(id, groupId) {
@@ -1578,11 +1691,10 @@ async function submitPiscina() {
 
 function aw(id, ph) {
   return `<div class="aw">
-    <textarea id="ta-${id}" placeholder="${ph}" style="width:100%;border:none;border-bottom:1px solid rgba(84,66,54,.1);padding:.7rem .85rem;font-size:.88rem;font-family:sans-serif;color:var(--brown);outline:none;resize:none;height:72px;line-height:1.5;display:block;background:white;"></textarea>
-    <div class="actl">
-      <button class="bmk" id="mic-${id}" onclick="toggleMic('${id}')">🎙</button>
-      <span class="mst" id="ms-${id}">Toca para dictar</span>
-      <button class="bclr" onclick="document.getElementById('ta-${id}').value=''">Limpiar</button>
+    <textarea id="ta-${id}" placeholder="${ph}" style="width:100%;border:none;border-bottom:1px solid rgba(232,226,209,.1);padding:.7rem .85rem;font-size:.88rem;font-family:var(--font-sans);color:var(--cream);background:transparent;outline:none;resize:none;height:72px;line-height:1.5;"></textarea>
+    <div class="bclr">
+      <button class="bmk" id="bmk-${id}" onclick="toggleRec('${id}')">🎙</button>
+      <span id="rtxt-${id}" style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,.4);flex:1;"></span>
     </div>
   </div>`;
 }
@@ -2159,7 +2271,7 @@ function openCatalogoProductos(){
   setConScreen('Catálogo de Productos',()=>openInsumosLimp(),
     `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:.75rem;">Productos aprobados por efectividad, seguridad y compatibilidad con materiales naturales.</div>
      <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;overflow:hidden;">
-       <div style="display:grid;grid-template-columns:1.4fr 1.5fr 1.3fr;background:var(--brown);padding:.55rem .75rem;gap:.5rem;">${['Producto','Uso principal','Precauciones'].map(h=>`<div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--cream);font-family:sans-serif;">${h}</div>`).join('')}</div>
+       <div style="display:grid;grid-template-columns:1.4fr 1.5fr 1.3fr;background:var(--brown);padding:.55rem .75rem;gap:.5rem;color:var(--cream);">${['Producto','Uso principal','Precauciones'].map(h=>`<div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--cream);font-family:sans-serif;">${h}</div>`).join('')}</div>
        ${[['Jabón líquido Florex','Higiene personal y lavado de superficies generales','Evitar contacto con ojos. Uso externo.'],['Detergente Lavaropa Florex','Lavado de ropa y textiles de cama','No mezclar con cloro. Enjuagar bien.'],['Gel de baño sábila','Higiene corporal en duchas de huéspedes','Uso externo. Evitar contacto con ojos.'],['Shampoo sábila','Higiene capilar en duchas de huéspedes','Uso externo. Evitar contacto con ojos.'],['Cera líquida antideslizante Blanca','Tratamiento y protección de pisos de madera y bahareque','Aplicar en capa delgada. Dejar secar antes de transitar.'],['Silicon abrillantador Florex','Lustre y protección de superficies de madera y plástico','No aplicar en pisos transitables. Evitar inhalación.'],['Cloro 4% Florex','Desinfección de baños y superficies de alto contacto','No mezclar con otros productos. Ventilar el área. Usar guantes.'],['Blanqueador para ropa Florex','Blanqueado de textiles blancos y de cama','Solo en ropa blanca. No mezclar con otros químicos.'],['Suavizante de ropa','Suavizado de textiles y sábanas en lavandería','No usar en microfibra. No sobredosificar.'],['Desinfectante Florex','Desinfección de superficies en baños, cocinas y áreas comunes','Respetar la dilución indicada. Usar guantes.'],['Bolsa jumbo transparente','Recolección y traslado de basura general','Cambiar cuando sea necesario, no por rutina fija.'],['Bolsas naranjas jumbo','Identificación de residuos orgánicos o especiales','Mantener separadas de otros residuos.'],['Bolsas blancas pequeñas','Basureros de habitaciones y baños','Reemplazar cuando el área lo requiera, no cuando estén llenas.'],].map(([p,u,pr],i)=>`<div style="display:grid;grid-template-columns:1.4fr 1.5fr 1.3fr;padding:.55rem .75rem;gap:.5rem;background:${i%2===0?'white':'#faf8f4'};border-bottom:1px solid rgba(84,66,54,.05);"><div style="font-size:.78rem;font-family:sans-serif;font-weight:600;color:var(--brown);">${p}</div><div style="font-size:.73rem;font-family:sans-serif;color:var(--brown);">${u}</div><div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);line-height:1.4;">${pr}</div></div>`).join('')}
      </div>`);
 }
@@ -2178,7 +2290,7 @@ function openSolicitudInsumos(){
       <div id="ins-list">${insRow(0)}</div>
       <button onclick="addInsRow()" style="width:100%;margin-top:.75rem;background:none;border:1.5px dashed rgba(153,92,68,.3);border-radius:8px;padding:.65rem;color:var(--clay);font-size:.82rem;font-family:sans-serif;cursor:pointer;">+ Agregar otro insumo</button>
     </div>
-    <div class="fg"><label>Observaciones</label><textarea id="ins-obs" placeholder="Urgencia, uso específico, notas adicionales..."></textarea></div>
+    <div class="fg"><label>Observaciones</label>${aw('ins-obs','Urgencia, uso específico, notas adicionales...')}</div>
     <button class="btn-sub" id="ins-sub" onclick="submitSolicitudInsumos()">Enviar Solicitud</button>
     <div class="fnote">La solicitud se enviará a administración</div>
     <div class="ok-msg" id="ins-ok"><p>✅ Solicitud enviada correctamente.</p></div>
@@ -2413,7 +2525,7 @@ function openPeerEval() {
         <label style="flex:1;cursor:pointer;"><input type="radio" name="ep-rec" value="No" style="display:none;"><div class="ep-opt" data-id="ep-rec" data-val="No" style="background:#faf8f4;border:1.5px solid rgba(84,66,54,.15);border-radius:8px;padding:.65rem;font-size:.82rem;font-family:sans-serif;color:var(--tm);text-align:center;cursor:pointer;">👎 No por ahora</div></label>
       </div>
       <div class="fg" style="margin-top:.9rem;margin-bottom:0"><label>Comentario adicional (opcional)</label>
-        <textarea id="ep-comentario" placeholder="Comentario adicional..." style="width:100%;background:white;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.7rem .85rem;font-size:.9rem;font-family:sans-serif;color:var(--brown);outline:none;resize:none;height:75px;line-height:1.5;"></textarea>
+        ${aw('ep-comentario','Comentario adicional...')}
       </div>
     </div>
     <button class="btn-sub" id="ep-sub" onclick="submitPeerEval()">Enviar Evaluación</button>
@@ -2715,6 +2827,28 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('modal-confirm').addEventListener('click', confirmChecklist);
   loadUsers();
   loadConfigColabs();
+  // Restore session from localStorage if available
+  try {
+    const saved = localStorage.getItem('tm_session');
+    if (saved) {
+      const savedUser = JSON.parse(saved);
+      // Validate session still valid after users load
+      setTimeout(() => {
+        if (USERS && USERS.length > 0) {
+          const match = USERS.find(u => u.usuario === savedUser.usuario);
+          if (match) {
+            CU = match;
+            CD = match.departamento;
+            if (CU.rol !== 'admin') { renderDeptHome(); }
+            else { renderHome(); }
+            show('home');
+          } else {
+            localStorage.removeItem('tm_session');
+          }
+        }
+      }, 1200);
+    }
+  } catch(e) {}
 });
 </script>
 </body>
