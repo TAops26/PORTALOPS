@@ -1697,11 +1697,11 @@ function openChecklistPiscina() {
       <div class="fg" style="margin-bottom:0"><label>Fecha y hora</label>
         <input type="datetime-local" id="pisc-fecha" value="${today.toISOString().slice(0,16)}"></div>
     </div>
-    <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
+    <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(232,226,209,0.12);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
       <div class="cl-sec-title">Parámetros del Agua</div>
-      <div class="fg" style="margin-bottom:.9rem;"><label>pH</label><input type="number" id="pisc-ph" step="0.1" min="0" max="14" placeholder="Ej: 7.4" style="font-size:1.1rem;font-weight:600;"><div style="font-size:.65rem;font-family:sans-serif;color:var(--tm);margin-top:.25rem;">Rango ideal: 7.2 – 7.6</div></div>
-      <div class="fg" style="margin-bottom:.9rem;"><label>ORP (mV)</label><input type="number" id="pisc-orp" step="1" min="0" placeholder="Ej: 720" style="font-size:1.1rem;font-weight:600;"><div style="font-size:.65rem;font-family:sans-serif;color:var(--tm);margin-top:.25rem;">Rango ideal: 650 – 750 mV</div></div>
-      <div class="fg" style="margin-bottom:0"><label>Sal PPM</label><input type="number" id="pisc-sal" step="10" min="0" placeholder="Ej: 3200" style="font-size:1.1rem;font-weight:600;"><div style="font-size:.65rem;font-family:sans-serif;color:var(--tm);margin-top:.25rem;">Mínimo requerido: 3,000 PPM</div></div>
+      <div class="fg" style="margin-bottom:.9rem;"><label>pH</label><input type="number" id="pisc-ph" step="0.1" min="0" max="14" placeholder="Ej: 7.4" style="color:var(--cream);background:rgba(255,255,255,0.07);border-color:rgba(232,226,209,0.14);" style="font-size:1.1rem;font-weight:600;color:var(--cream);"><div style="font-size:.65rem;font-family:sans-serif;color:rgba(232,226,209,0.4);margin-top:.25rem;">Rango ideal: 7.2 – 7.6</div></div>
+      <div class="fg" style="margin-bottom:.9rem;"><label>ORP (mV)</label><input type="number" id="pisc-orp" step="1" min="0" placeholder="Ej: 720" style="color:var(--cream);background:rgba(255,255,255,0.07);border-color:rgba(232,226,209,0.14);" style="font-size:1.1rem;font-weight:600;color:var(--cream);"><div style="font-size:.65rem;font-family:sans-serif;color:rgba(232,226,209,0.4);margin-top:.25rem;">Rango ideal: 650 – 750 mV</div></div>
+      <div class="fg" style="margin-bottom:0"><label>Sal PPM</label><input type="number" id="pisc-sal" step="10" min="0" placeholder="Ej: 3200" style="color:var(--cream);background:rgba(255,255,255,0.07);border-color:rgba(232,226,209,0.14);" style="font-size:1.1rem;font-weight:600;color:var(--cream);"><div style="font-size:.65rem;font-family:sans-serif;color:rgba(232,226,209,0.4);margin-top:.25rem;">Mínimo requerido: 3,000 PPM</div></div>
     </div>
     <div class="fg"><label>Observaciones</label>${aw('pisc-obs','Observaciones sobre el estado del agua, equipos o área...')}</div>
     ${photoUploadWidget('pisc-photos')}
