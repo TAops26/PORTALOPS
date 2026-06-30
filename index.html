@@ -938,6 +938,7 @@ input[style*="background:white"]::placeholder,
     <div class="glbl">Recursos</div>
     <div class="grid" id="rgrid"></div>
     <div class="divider"></div>
+    <div id="averias-section"></div>
     <div class="glbl" id="rlist-lbl">Reportes</div>
     <div id="rlist"></div>
   </div>
@@ -1024,6 +1025,55 @@ async function loadConfigColabs() {
     }
   } catch(e) {
     window._configColabs = [];
+  }
+}
+
+async function loadAverias() {
+  const list = document.getElementById('averias-list');
+  try {
+    const res  = await fetch(WEBHOOK + '?action=get_averias');
+    const data = await res.json();
+    if (!list) return; // user already navigated away
+    if (data.ok && data.averias) {
+      renderAverias(data.averias);
+    } else {
+      list.innerHTML = `<div style="text-align:center;padding:1rem;font-size:.78rem;font-family:sans-serif;color:rgba(232,226,209,0.4);">No se pudieron cargar las averías.</div>`;
+    }
+  } catch(e) {
+    if (list) list.innerHTML = `<div style="text-align:center;padding:1rem;font-size:.78rem;font-family:sans-serif;color:rgba(232,226,209,0.4);">No se pudieron cargar las averías.</div>`;
+  }
+}
+
+function renderAverias(averias) {
+  const list = document.getElementById('averias-list');
+  if (!list) return;
+  if (!averias.length) {
+    list.innerHTML = `<div style="text-align:center;padding:1rem;font-size:.78rem;font-family:sans-serif;color:rgba(232,226,209,0.4);font-style:italic;">No hay averías pendientes 🎉</div>`;
+    return;
+  }
+  const prioColor = { 'Urgente':'#E07A5F', 'Prioridad':'#C17A5A', 'Programar':'#9A9560' };
+  list.innerHTML = averias.map(a => `
+    <div class="rbtn" style="cursor:default;border-left-color:${prioColor[a.prioridad]||'var(--clay)'};" id="av-row-${a.id}">
+      <div style="flex:1;">
+        <div style="font-size:.82rem;font-family:var(--font-sans);color:var(--cream);font-weight:500;margin-bottom:.15rem;">${a.averia || a.descripcion || 'Avería sin título'}</div>
+        <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);">${a.fecha || ''} ${a.cluster ? '· '+a.cluster : ''}</div>
+      </div>
+      <button onclick="marcarAveriaCompletada('${a.id}')" style="background:rgba(118,114,78,0.15);border:1px solid rgba(118,114,78,0.3);border-radius:8px;padding:.4rem .75rem;color:#9A9560;font-size:.7rem;font-family:var(--font-sans);cursor:pointer;white-space:nowrap;">✓ Completada</button>
+    </div>`).join('');
+}
+
+async function marcarAveriaCompletada(id) {
+  const row = document.getElementById('av-row-' + id);
+  if (row) row.style.opacity = '0.5';
+  try {
+    const res = await fetch(WEBHOOK, {
+      method: 'POST', mode: 'no-cors',
+      body: JSON.stringify({ type:'actualizar_averia', id }),
+      headers: { 'Content-Type': 'text/plain' }
+    });
+    if (row) row.remove();
+  } catch(e) {
+    if (row) row.style.opacity = '1';
   }
 }
 
@@ -1292,6 +1342,7 @@ const DEPTS = {
     reports: [
       { label:'Reporte de Área',        form:'reporte-area', cls:'' },
       { label:'Repaso de Habitaciones', form:'repaso-hab',   cls:'' },
+      { label:'Reporte de Avería',      form:'averia',       cls:'averia' },
       { label:'Reunión de Operaciones', form:'reunion',      cls:'' },
     ]
   },
@@ -1304,6 +1355,7 @@ const DEPTS = {
       { id:'cal-manto-multi',   title:'Calendarios de Mantenimiento', desc:'Tareas programadas y eventos', type:'cal-multi' },
     ],
     reports: [
+      { label:'Inspección de Cluster',   form:'averia-cluster', cls:'' },
       { label:'Reporte de Trabajo',      form:'trabajo',    cls:'' },
       { label:'Reporte de Agua',         form:'agua',       cls:'' },
       { label:'Reporte de Avería',       form:'averia',     cls:'averia' },
@@ -1320,6 +1372,7 @@ const DEPTS = {
     reports: [
       { label:'Solicitud de Herramientas', form:'herramientas',  cls:'' },
       { label:'Uso de Cuadraciclo',        form:'cuadraciclo',   cls:'' },
+      { label:'Reporte de Avería',         form:'averia',        cls:'averia' },
       { label:'Reunión de Operaciones',    form:'reunion',       cls:'' },
     ]
   },
@@ -1346,6 +1399,14 @@ function openDept(dept) {
     `<div class="gcard" onclick="openResource('${r.id}','${r.title}','${r.type||'doc'}')">
       <div class="ct">${r.title}</div><div class="cd">${r.desc||''}</div>
     </div>`).join('');
+  // Averías pendientes — solo visible en Mantenimiento
+  const avSec = document.getElementById('averias-section');
+  if (dept === 'mantenimiento') {
+    avSec.innerHTML = `<div class="glbl">Averías Pendientes</div><div id="averias-list"><div style="text-align:center;padding:1rem;font-size:.78rem;font-family:sans-serif;color:rgba(232,226,209,0.4);">Cargando...</div></div>`;
+    loadAverias();
+  } else {
+    avSec.innerHTML = '';
+  }
   const rl   = document.getElementById('rlist');
   const rlbl = document.getElementById('rlist-lbl');
   if (d.reports.length) {
@@ -1487,6 +1548,25 @@ function matRow(idx) {
 }
 function addMatRow() { document.getElementById('mat-list').insertAdjacentHTML('beforeend', matRow(matCount)); matCount++; }
 function removeMatRow(idx) { document.getElementById('mat-row-' + idx)?.remove(); }
+
+let avcCount = 0;
+function avcRow(idx) {
+  return `<div id="avc-row-${idx}" style="background:#fafaf8;border:1px solid rgba(84,66,54,.15);border-radius:10px;padding:.75rem;margin-bottom:.6rem;">
+    <div style="display:flex;gap:.4rem;align-items:flex-start;margin-bottom:.5rem;">
+      <input type="text" id="avc-averia-${idx}" placeholder="Avería (ej: Fuga de agua)" style="flex:1;background:white;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .7rem;font-size:.85rem;font-family:sans-serif;color:var(--brown);outline:none;">
+      <select id="avc-prior-${idx}" style="width:120px;background:white;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .4rem;font-size:.75rem;font-family:sans-serif;color:var(--brown);outline:none;appearance:none;">
+        <option value="Urgente">🔴 Urgente</option>
+        <option value="Prioridad">🟡 Prioridad</option>
+        <option value="Programar">🟢 Programar</option>
+      </select>
+      <button onclick="removeAvcRow(${idx})" style="width:32px;height:32px;flex-shrink:0;border-radius:50%;border:1.5px solid rgba(84,66,54,.2);background:none;color:var(--tm);font-size:1rem;cursor:pointer;line-height:1;${idx===0?'visibility:hidden;':''}">×</button>
+    </div>
+    <textarea id="avc-desc-${idx}" placeholder="Descripción de la avería..." style="width:100%;background:white;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .7rem;font-size:.82rem;font-family:sans-serif;color:var(--brown);outline:none;resize:none;height:54px;line-height:1.4;margin-bottom:.5rem;"></textarea>
+    <div style="border:1.5px dashed rgba(84,66,54,.2);border-radius:8px;padding:.5rem;text-align:center;font-size:.68rem;font-family:sans-serif;color:rgba(84,66,54,.4);">📷 Foto de esta avería — próximamente</div>
+  </div>`;
+}
+function addAvcRow() { document.getElementById('avc-list').insertAdjacentHTML('beforeend', avcRow(avcCount)); avcCount++; }
+function removeAvcRow(idx) { document.getElementById('avc-row-' + idx)?.remove(); }
 
 function openInsumosLimp() {
   setConScreen('Insumos', () => goBack(),
@@ -1884,6 +1964,21 @@ function openForm(formId) {
        <div class="fg"><label>Observaciones</label>${aw('obs','Observaciones adicionales...')}</div>
        ${photoUploadWidget('form-photos')}` },
 
+    'averia-cluster': { title:'Inspección de Cluster', dept:'mantenimiento', btnCls:'', html:
+      `<div class="doc-note" style="margin-bottom:1rem;">🔍 Inspecciona un cluster y registra las averías encontradas. Puedes enviar sin novedades.</div>
+       <div class="fg"><label>Colaborador</label>${manto}</div>
+       <div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
+       <div class="fg"><label>Cluster</label><select id="f-cluster">
+         <option value="Cluster 1">Cluster 1</option>
+         <option value="Cluster 2">Cluster 2</option>
+         <option value="Cluster 3">Cluster 3</option>
+         <option value="Cluster 4">Cluster 4</option>
+       </select></div>
+       <div class="sec-lbl" style="margin-top:.5rem;">Averías encontradas</div>
+       <div id="avc-list">${avcRow(0)}</div>
+       <button onclick="addAvcRow()" style="width:100%;margin-top:.25rem;margin-bottom:.5rem;background:none;border:1.5px dashed rgba(153,92,68,.3);border-radius:8px;padding:.65rem;color:var(--clay);font-size:.82rem;font-family:sans-serif;cursor:pointer;">+ Agregar otra avería</button>
+       ${photoUploadWidget('form-photos')}` },
+
     agua: { title:'Reporte de Agua', dept:'mantenimiento', btnCls:'', html:
       `<div class="fg"><label>Colaborador</label>${manto}</div>
        <div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
@@ -1900,14 +1995,14 @@ function openForm(formId) {
        </div>
        <div class="fg"><label>Observaciones</label>${aw('obs','Anomalías, fugas o situaciones a reportar...')}</div>
        ${photoUploadWidget('form-photos')}` },
-    averia: { title:'Reporte de Avería', dept:'mantenimiento', btnCls:'averia', html:
+    averia: { title:'Reporte de Avería', dept: CD||'mantenimiento', btnCls:'averia', html:
       `<div class="doc-note" style="margin-bottom:1rem;">🔴 Reporta averías o fallas que requieren atención.</div>
-       <div class="fg"><label>Colaborador</label>${manto}</div>
+       <div class="fg"><label>Colaborador</label>${all}</div>
        <div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
+       <div class="fg"><label>Avería</label><input type="text" id="f-averia" placeholder="Ej: Fuga de agua, llave dañada..."></div>
        <div class="fg"><label>Prioridad</label><select id="f-prior"><option value="Urgente">🔴 Urgente — Riesgo inmediato</option><option value="Prioridad">🟡 Prioridad — Resolver en 24h</option><option value="Programar">🟢 Programar — Deterioro menor</option></select></div>
        <div class="fg"><label>Área o ubicación</label><input type="text" id="f-area" placeholder="¿Dónde ocurre la avería?"></div>
        <div class="fg"><label>Descripción</label>${aw('desc','Describe la avería con el mayor detalle posible...')}</div>
-       <div class="fg"><label>Observaciones</label>${aw('obs','Acciones tomadas o contexto adicional...')}</div>
        ${photoUploadWidget('form-photos')}` },
 
     materiales: { title:'Solicitud de Materiales', dept:'mantenimiento', btnCls:'materiales', html:
@@ -1986,6 +2081,7 @@ function openForm(formId) {
 
   // reset row counters
   if (formId === 'materiales') matCount = 1;
+  if (formId === 'averia-cluster') avcCount = 1;
 
   // populate colabs from Config sheet for proveeduria forms
   if (formId === 'herramientas' || formId === 'cuadraciclo') {
@@ -2048,6 +2144,7 @@ async function submitForm(formId, dept) {
   const datos = {
     colaborador:colab, fecha:document.getElementById('f-fecha')?.value||'',
     rol:document.getElementById('f-rol')?.value||'', prior:document.getElementById('f-prior')?.value||'',
+    averia:document.getElementById('f-averia')?.value||'',
     obs:document.getElementById('ta-obs')?.value||'', desc:document.getElementById('ta-desc')?.value||document.getElementById('f-desc')?.value||'',
     mat:document.getElementById('ta-mat')?.value||'', area:document.getElementById('f-area')?.value||document.getElementById('f-ubic')?.value||'',
     estado:document.getElementById('f-est')?.value||document.getElementById('f-estado')?.value||'',
@@ -2082,6 +2179,22 @@ async function submitForm(formId, dept) {
       repasada: document.getElementById(`hab-cb-${i}`)?.classList.contains('checked') || false,
       nota: document.getElementById(`hab-nota-${i}`)?.value || ''
     }));
+  }
+
+  // averia-cluster: collect dynamic rows of averías found during inspection
+  if (formId === 'averia-cluster') {
+    datos.cluster = document.getElementById('f-cluster')?.value || '';
+    const items = [];
+    for (let i = 0; i < avcCount; i++) {
+      const row = document.getElementById('avc-row-' + i);
+      if (!row) continue;
+      const averia = document.getElementById('avc-averia-' + i)?.value?.trim();
+      const desc   = document.getElementById('avc-desc-' + i)?.value?.trim();
+      const prior  = document.getElementById('avc-prior-' + i)?.value || 'Programar';
+      if (averia || desc) items.push({ averia: averia || '', descripcion: desc || '', prioridad: prior });
+    }
+    datos.items = items;
+    avcCount = 1;
   }
 
   // Route to correct sheet based on formId
