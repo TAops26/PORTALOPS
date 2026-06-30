@@ -466,7 +466,7 @@ body::before {
 .cl-section { margin-bottom: 0.75rem; }
 .cl-sec-title {
   font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase;
-  color: rgba(232,226,209,0.38); padding: 0.55rem 0;
+  color: rgba(232,226,209, 0.55); padding: 0.55rem 0;
   border-bottom: 1px solid rgba(232,226,209,0.08);
   margin-bottom: 0.4rem; font-family: var(--font-sans);
 }
@@ -1283,8 +1283,7 @@ const DEPTS = {
     resources: [
       { id:'manual-prev',       title:'Manual de Mantenimiento', desc:'Estándares y procedimientos',   type:'doc' },
       { id:'operacion-piscina', title:'Operación de Piscina',    desc:'Checklist y parámetros',        type:'piscina' },
-      { id:'checklist-manto',   title:'Clusters',                desc:'Inspección por zona',           type:'checklist' },
-      { id:'cal-manto',         title:'Calendario',              desc:'Tareas programadas y eventos',  type:'cal' },
+      { id:'cal-manto-multi',   title:'Calendarios de Mantenimiento', desc:'Tareas programadas y eventos', type:'cal-multi' },
     ],
     reports: [
       { label:'Reporte de Trabajo',      form:'trabajo',    cls:'' },
@@ -1355,6 +1354,7 @@ function filterCards() {
 function openResource(id, title, type) {
   if (type === 'checklist')   { openChecklistMenu(id); return; }
   if (type === 'cal')         { openCalendar(id); return; }
+  if (type === 'cal-multi')   { openCalendarMultiManto(); return; }
   if (type === 'inventarios') { openInventarios(); return; }
   if (type === 'proveedores') { openProveedores(); return; }
   if (type === 'piscina')     { openOperacionPiscina(); return; }
@@ -1455,19 +1455,35 @@ function getDocContent(id, title) {
 const CAL_IDS = {
   'cal-limpieza':   'c_054c31b4e8e09f946d99b72bf667d10578fd7db7427906dd3604c39926371484@group.calendar.google.com',
   'cal-manto':      'c_13962be80e3d98529a539831bf1b832b9f1839925686f69f57b2bf86dc06984e@group.calendar.google.com',
+  'cal-manto2':     'c_60a16386fb2ab8d0fe5741796d9f76100dd4ef3e8a36120837aa4ad2ca85ba00@group.calendar.google.com',
   'cal-transporte': 'c_3d9aa6550f8f2406c869c3f26c6c5779ddbadcacae515f94bbd8b8818ae27d12@group.calendar.google.com',
 };
-const CAL_LABELS = { 'cal-limpieza':'Limpieza', 'cal-manto':'Mantenimiento', 'cal-transporte':'Proveduría y Transportes' };
+const CAL_LABELS = { 'cal-limpieza':'Limpieza', 'cal-manto':'Mantenimiento', 'cal-manto2':'Mantenimiento', 'cal-transporte':'Proveduría y Transportes' };
 
 function openCalendar(id) {
   const calId = CAL_IDS[id], label = CAL_LABELS[id];
   const src = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(calId)}&ctz=America%2FCosta_Rica&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&mode=MONTH&bgcolor=%23E8E2D1&color=%23995C44`;
   setConScreen(`Calendario — ${label}`, () => goBack(),
-    `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:.9rem;">Calendario de ${label} · Solo lectura</div>
+    `<div style="font-size:.75rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);font-style:italic;margin-bottom:.9rem;">Calendario de ${label} · Solo lectura</div>
      <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:12px;overflow:hidden;">
        <iframe src="${src}" style="border:none;width:100%;height:520px;display:block;" frameborder="0" scrolling="no"></iframe>
      </div>
-     <div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);text-align:center;margin-top:.75rem;line-height:1.5;">Para agregar o editar eventos, hazlo directamente en Google Calendar.</div>`);
+     <div style="font-size:.68rem;font-family:var(--font-sans);color:rgba(232,226,209,0.35);text-align:center;margin-top:.75rem;line-height:1.5;">Para agregar o editar eventos, hazlo directamente en Google Calendar.</div>`);
+}
+
+function openCalendarMultiManto() {
+  const ids = ['cal-manto', 'cal-manto2'];
+  const blocks = ids.map(id => {
+    const calId = CAL_IDS[id];
+    const src = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(calId)}&ctz=America%2FCosta_Rica&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&mode=MONTH&bgcolor=%23E8E2D1&color=%23995C44`;
+    return `<div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:12px;overflow:hidden;margin-bottom:1.2rem;">
+       <iframe src="${src}" style="border:none;width:100%;height:480px;display:block;" frameborder="0" scrolling="no"></iframe>
+     </div>`;
+  }).join('');
+  setConScreen('Calendarios de Mantenimiento', () => goBack(),
+    `<div style="font-size:.75rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);font-style:italic;margin-bottom:.9rem;">Tareas programadas y eventos · Solo lectura</div>
+     ${blocks}
+     <div style="font-size:.68rem;font-family:var(--font-sans);color:rgba(232,226,209,0.35);text-align:center;margin-top:.25rem;line-height:1.5;">Para agregar o editar eventos, hazlo directamente en Google Calendar.</div>`);
 }
 
 function openProveedores() {
@@ -2375,15 +2391,8 @@ const MANUAL_MT_SECS = [
   { id:'prep-seg-rep',   title:'Preparación, Seguridad y Reportes' },
   { divider:'Áreas Comunes' },
   { id:'organizacion-mt', title:'Organización de la Propiedad' },
-  { id:'oficina-mt',     title:'Oficina' },
-  { id:'juicebar-mt',    title:'Juice Bar' },
-  { id:'cocina-mt',      title:'Cocina' },
-  { id:'estudio-mt',     title:'Estudio de Movimiento' },
-  { id:'storage-mt',     title:'Storage / Bodega' },
-  { id:'terralab-mt',    title:'Terralab' },
+  { id:'inspeccion-areas-mt', title:'Inspección Áreas Comunes' },
   { id:'bridge-mt',      title:'Hanging Bridge' },
-  { id:'lounge-mt',      title:'Lounge' },
-  { id:'duchas-mt',      title:'Duchas' },
   { id:'banos-mt',       title:'Baños' },
   { id:'agua',           title:'Sistemas de Agua' },
   { divider:'Habitaciones' },
@@ -2395,7 +2404,42 @@ const MANUAL_MT_SECS = [
 const MANUAL_MT_CONTENT={
   intro:`<p style="font-size:.82rem;font-family:sans-serif;color:rgba(232,226,209,0.8);line-height:1.6;margin-bottom:.8rem;">Este manual establece los estándares de mantenimiento para Tierramor.</p>`,
   'prep-seg-rep':`<div style="font-size:.82rem;font-family:sans-serif;color:rgba(232,226,209,0.8);font-weight:600;margin-bottom:.6rem;">Criterios Generales</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.2rem;">${[['PREVENTIVO','Identificar problemas antes de que se conviertan en fallas.'],['DOCUMENTADO','Toda anomalía se registra. Lo que no se escribe no existe.'],['OPORTUNO','Una intervención a tiempo evita daños mayores.'],['SEGURO','No intervenir en sistemas mayores sin autorización.']].map(([t,d])=>`<div style="background:rgba(255,255,255,0.055);border:1px solid rgba(232,226,209,0.09);border-radius:10px;padding:.85rem .8rem;"><div style="font-size:.72rem;font-weight:600;font-family:sans-serif;color:var(--clay);letter-spacing:.06em;margin-bottom:.25rem;">${t}</div><div style="font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.65);line-height:1.4;">${d}</div></div>`).join('')}</div>${mkStepsMT([['Preparación Personal','Uniforme limpio, calzado cerrado y equipo de protección disponible.'],['Revisión del Equipo','Kit de herramientas: llaves, destornilladores, linterna, cinta métrica.'],['Inspección Visual Inicial','Al llegar a cada área: observar antes de tocar. Detectar anomalías.'],['Registro y Comunicación','Toda anomalía debe registrarse. Clasificar: URGENTE / PRIORIDAD / PROGRAMAR.']])}<div class="crit-box" style="margin-top:1rem;"><div class="crit-lbl">Clasificación de Anomalías</div><div class="crit-row">🔴 URGENTE — Riesgo para personas o falla crítica. Reportar de inmediato.</div><div class="crit-row">🟡 PRIORIDAD — Falla sin riesgo inmediato. Resolver en 24h.</div><div class="crit-row">🟢 PROGRAMAR — Deterioro menor. Incluir en lista semanal.</div></div>`,
-  'organizacion-mt':`${['Tránsito Constante — Oficina · Juice Bar · Cocina','Cluster 1 — Storage · Terralab · Hanging Bridge · Estudio de Movimiento · Lounge · Duchas · Baños','Cluster 2 — Toensmeier · Baños 7600 · Baños de Teca · Lancaster · Götsch · Holzer · Cocina Residentes · Ingham · Carson','Cluster 3 — Baño de Madera · Hemenway · Primavesi · Salatin · Shiva · Savory · Yeomans · Fukuoka · Mollison','Cluster 4 — Starhawk · Crawford · Eisenstein · Doherty · Macy · Baños Bahareque · Wex Camp · Maloca','Atención Diaria — Piscina · Sistemas de Agua · Casita Azul'].map(cl=>`<div style="background:rgba(255,255,255,0.055);border:1px solid rgba(232,226,209,0.09);border-radius:8px;padding:.75rem;margin-bottom:.5rem;font-size:.8rem;font-family:sans-serif;color:rgba(232,226,209,0.8);">${cl}</div>`).join('')}<div class="gcard" onclick="openMapaTierramor()" style="margin-top:.75rem;display:flex;align-items:center;gap:.75rem;padding:.9rem 1rem;"><div style="font-size:1.4rem;">🗺️</div><div><div class="ct" style="font-size:.88rem;">Mapa de la Propiedad</div><div class="cd">Vista aérea · Clusters y zonas</div></div></div>`,
+  'organizacion-mt':`<div class="sec-lbl" style="margin-top:0;">Clusters de Inspección</div>${[
+    ['Tránsito Constante','Oficina · Juice Bar · Salón de Cocina y Recepción — Inspección mensual'],
+    ['Cluster 1','Bodega · Terralab · Puente · Movement Studio · Lounge · Duchas · Baños Principales'],
+    ['Cluster 2','Toensmeier · Baños 7600 · Baños de la Teca · Lancaster · Götsch · Holzer · Cocina Residentes · Ingham · Carson'],
+    ['Cluster 3','Baño de Madera · Hememway · Primavesi · Salatin · Shiva · Savory · Yeomans · Fukuoka · Mollison'],
+    ['Cluster 4','Starhawk · Crawford · Eisenstein · Doherty · Macy · Baños Bahareque · Wex Camp · Maloca'],
+    ['Atención Diaria','Piscina · Sistemas de Agua · Casita Azul'],
+  ].map(([t,d])=>`<div style="background:rgba(255,255,255,0.055);border-left:3px solid var(--clay);border-radius:0 10px 10px 0;padding:.85rem 1rem;margin-bottom:.55rem;">
+    <div style="font-family:var(--font-serif);font-style:italic;font-size:1rem;color:var(--cream);margin-bottom:.25rem;">${t}</div>
+    <div style="font-size:.78rem;font-family:var(--font-sans);color:rgba(232,226,209,0.55);line-height:1.45;">${d}</div>
+  </div>`).join('')}`,
+  'inspeccion-areas-mt':`<div style="font-size:.75rem;font-family:var(--font-sans);font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección mensual · Tránsito Constante y Cluster 1</div>${[
+    ['Oficina','Espacio administrativo'],
+    ['Juice Bar','Área exterior de servicio'],
+    ['Cocina','Cocina principal'],
+    ['Estudio de Movimiento','Templo / Movement Studio'],
+    ['Storage / Bodega','Almacenamiento general'],
+    ['Terralab','Laboratorio'],
+    ['Lounge','Área social'],
+    ['Duchas','Duchas principales'],
+  ].map(([t,sub],i)=>`<div class="acc${i===0?' open':''}" style="margin-bottom:.5rem;">
+    <div class="acc-hdr" onclick="this.parentElement.classList.toggle('open')">
+      <span style="font-family:var(--font-serif);font-style:italic;font-size:.95rem;">${t}</span>
+      <span class="parr">▸</span>
+    </div>
+    <div class="acc-body">
+      <div style="font-size:.7rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);margin-bottom:.7rem;">${sub}</div>
+      ${mkStepsMT([
+        ['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas.'],
+        ['Equipos','Funcionamiento de equipos propios del área (refrigeración, cómputo, sonido, etc).'],
+        ['Estado general','Condición de mobiliario, superficies y stock visible. Reportar faltantes o daños.'],
+      ])}
+    </div>
+  </div>`).join('')}
+  <div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
+
   'oficina-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Detectar humedad, plagas o daños.'],['Equipos','Funcionamiento de equipos de cómputo, router, aire acondicionado, impresora.'],['Organización','Cables organizados sin riesgos de tropiezo. Basureros limpios con bolsa.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
   'juicebar-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas.'],['Equipos','Funcionamiento de licuadora/extractor, refrigeradora, grifo.'],['Estado general','Estado de barra exterior. Stock visible — reportar faltantes.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
   'cocina-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Equipos de cocina','Funcionamiento de quemadores, extractor, refrigeradora, lavaplatos y grifo.'],['Estado general','Estado de mostrador. Estado de filtro de agua. Fugas bajo el fregadero.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
@@ -2870,30 +2914,35 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('rep-out').addEventListener('click', logout);
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
   document.getElementById('modal-confirm').addEventListener('click', confirmChecklist);
-  loadUsers();
-  loadConfigColabs();
-  // Restore session from localStorage if available
+  // Restore session from localStorage — instant, no dependency on network timing
+  let restoredSession = false;
   try {
     const saved = localStorage.getItem('tm_session');
     if (saved) {
       const savedUser = JSON.parse(saved);
-      // Validate session still valid after users load
-      setTimeout(() => {
-        if (USERS && USERS.length > 0) {
-          const match = USERS.find(u => u.usuario === savedUser.usuario);
-          if (match) {
-            CU = match;
-            CD = match.departamento;
-            if (CU.rol !== 'admin') { renderDeptHome(); }
-            else { renderHome(); }
-            show('home');
-          } else {
-            localStorage.removeItem('tm_session');
-          }
-        }
-      }, 1200);
+      CU = savedUser;
+      CD = savedUser.departamento;
+      restoredSession = true;
+      if (CU.rol !== 'admin') { renderDeptHome(); } else { renderHome(); }
+      show('home');
     }
   } catch(e) {}
+
+  loadUsers().then(() => {
+    loadConfigColabs();
+    // Re-validate restored session in the background once fresh user data arrives.
+    // Only force logout if the user was explicitly removed/disabled server-side.
+    if (restoredSession && USERS && USERS.length > 0) {
+      const match = USERS.find(u => u.usuario === CU.usuario);
+      if (match) {
+        CU = match;
+        CD = match.departamento;
+        try { localStorage.setItem('tm_session', JSON.stringify(CU)); } catch(e) {}
+      }
+      // If not found, keep the session as-is rather than logging the person out —
+      // a transient network/sheet hiccup should never interrupt active work.
+    }
+  }).catch(() => { loadConfigColabs(); });
 });
 </script>
 </body>
