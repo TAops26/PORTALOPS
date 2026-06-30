@@ -1358,12 +1358,13 @@ function openDept(dept) {
     rlbl.style.display = 'none';
     rl.innerHTML = '';
   }
-  document.getElementById('si').value = '';
   show('dept');
 }
 
 function filterCards() {
-  const q = document.getElementById('si').value.toLowerCase();
+  const el = document.getElementById('si');
+  if (!el) return;
+  const q = el.value.toLowerCase();
   document.querySelectorAll('.gcard').forEach(c => {
     c.style.display = c.textContent.toLowerCase().includes(q) ? '' : 'none';
   });
