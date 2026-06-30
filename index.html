@@ -32,6 +32,7 @@
 
 body {
   font-family: var(--font-sans);
+  font-size: 17px;
   background: var(--brown);
   color: var(--cream);
   min-height: 100vh;
@@ -95,10 +96,14 @@ body::before {
   width: 100%; background: rgba(255,255,255,0.07);
   border: 1px solid rgba(232,226,209,0.14);
   border-radius: 10px; padding: 0.78rem 1rem;
-  font-family: var(--font-sans); font-size: 0.88rem;
+  font-family: var(--font-sans); font-size: 0.92rem;
   color: var(--cream); outline: none; margin-bottom: 1rem;
   transition: border-color 0.15s;
+  caret-color: var(--cream);
+  -webkit-text-fill-color: var(--cream);
 }
+.lf input::placeholder { color: rgba(232,226,209,0.35); -webkit-text-fill-color: rgba(232,226,209,0.35); }
+.lf input:focus { border-color: rgba(153,92,68,0.55); background: rgba(255,255,255,0.1); }
 .lf input:focus { border-color: rgba(153,92,68,0.55); }
 .lerr {
   font-size: 0.75rem; color: #E07A5F;
@@ -283,7 +288,7 @@ body::before {
 
 .dinf h3 {
   font-family: var(--font-serif); font-style: italic; font-weight: 500;
-  font-size: 1rem; color: var(--cream); margin-bottom: 3px;
+  font-size: 1.2rem; color: var(--cream); margin-bottom: 0;
 }
 .dinf p { font-size: 0.65rem; color: rgba(232,226,209,0.45); line-height: 1.3; }
 
@@ -1302,7 +1307,7 @@ function renderHome() {
     if (!c) return;
     btns += `<button class="dept-btn dept-${d}" onclick="openDept('${d}')">
       <div class="dico ${c.cls}">${c.ico}</div>
-      <div class="dinf"><h3>${c.lbl}</h3><p>${c.sub}</p></div>
+      <div class="dinf"><h3>${c.lbl}</h3></div>
     </button>`;
   });
 
