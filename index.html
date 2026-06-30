@@ -223,8 +223,8 @@ body::before {
 
 /* SECTION LABELS */
 .sec-lbl {
-  font-size: 0.55rem; letter-spacing: 0.22em;
-  text-transform: uppercase; color: rgba(232,226,209,0.35);
+  font-size: 0.68rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: rgba(232,226,209,0.55);
   margin: 0.2rem 0 0.65rem 0.05rem; font-family: var(--font-sans);
 }
 .sec-band {
@@ -870,6 +870,18 @@ div[style*="background:#faf8f4;border-radius:8px;padding:.65rem .7rem;text-align
 /* Section title repeated below header */
 .form-section-ghost { display: none; }
 
+
+/* Inputs sitting on light/white backgrounds must always show dark text */
+input[style*="background:#fafaf8"], input[style*="background:white"],
+select[style*="background:#fafaf8"], select[style*="background:white"],
+textarea[style*="background:#fafaf8"], textarea[style*="background:white"] {
+  color: var(--brown) !important;
+}
+input[style*="background:#fafaf8"]::placeholder,
+input[style*="background:white"]::placeholder {
+  color: rgba(84,66,54,0.4) !important;
+}
+
 </style>
 </head>
 <body>
@@ -1269,7 +1281,7 @@ const DEPTS = {
       { id:'manual-limp',   title:'Manual de Limpieza General', desc:'Procedimientos y estándares', type:'doc' },
       { id:'inventarios',   title:'Inventarios',                 desc:'Control de insumos',           type:'inventarios' },
       { id:'insumos-limp',  title:'Insumos',                     desc:'Catálogo y solicitud',          type:'insumos' },
-      { id:'frases-en',     title:'Frases Comunes en Inglés',     desc:'Próximamente disponible' },
+      { id:'frases-en',     title:'Frases Comunes en Inglés',     desc:'Interacciones rápidas con huéspedes' },
       { id:'cal-limpieza',  title:'Calendario',                   desc:'Turnos y eventos del equipo',  type:'cal' },
     ],
     reports: [
@@ -1282,6 +1294,7 @@ const DEPTS = {
     label: 'Mantenimiento',
     resources: [
       { id:'manual-prev',       title:'Manual de Mantenimiento', desc:'Estándares y procedimientos',   type:'doc' },
+      { id:'mapa-propiedad',    title:'Mapa de la Propiedad',    desc:'Vista aérea · Clusters y zonas', type:'mapa' },
       { id:'operacion-piscina', title:'Operación de Piscina',    desc:'Checklist y parámetros',        type:'piscina' },
       { id:'cal-manto-multi',   title:'Calendarios de Mantenimiento', desc:'Tareas programadas y eventos', type:'cal-multi' },
     ],
@@ -1355,16 +1368,59 @@ function openResource(id, title, type) {
   if (type === 'checklist')   { openChecklistMenu(id); return; }
   if (type === 'cal')         { openCalendar(id); return; }
   if (type === 'cal-multi')   { openCalendarMultiManto(); return; }
+  if (type === 'mapa')        { openMapaTierramor(); return; }
   if (type === 'inventarios') { openInventarios(); return; }
   if (type === 'proveedores') { openProveedores(); return; }
   if (type === 'piscina')     { openOperacionPiscina(); return; }
   if (type === 'insumos')     { openInsumosLimp(); return; }
   if (type === 'schedule')    { openScheduleDelDia(); return; }
   if (id === 'frases-en') {
-    setConScreen('Frases Comunes en Inglés', () => goBack(),
-      `<div class="cs"><h3>Frases Comunes en Inglés</h3><p>Esta sección estará disponible próximamente.</p></div>`);
+    const FRASES = [
+      { sec:'Saludos rápidos', items:[
+        ['Good morning!','¡Buenos días!','Gud mórning!'],
+        ['Good afternoon!','¡Buenas tardes!','Gud afternún!'],
+        ['How are you doing?','¿Cómo está?','Jáu ar iú dúing?'],
+      ]},
+      { sec:'Sí / No / Cortesía', items:[
+        ['Yes, of course.','Sí, claro.','Iés, of cors.'],
+        ['One moment, please.','Un momento, por favor.','Uán móument, plis.'],
+        ["You're welcome.",'Con gusto / De nada.','Iór uélcom.'],
+        ['No problem at all.','No hay ningún problema.','Nóu próblem at ol.'],
+      ]},
+      { sec:'Entendimiento', items:[
+        ['Sorry, could you repeat that?','Disculpe, ¿puede repetir eso?','Sóri, cud iú ripít dat?'],
+        ["I don't speak English very well.",'No hablo inglés muy bien.','Ai dont spik ínglish véri uél.'],
+        ["I'll find someone who speaks English.",'Voy a buscar a alguien que hable inglés.','Áil fáind samuán ju spiks ínglish.'],
+      ]},
+      { sec:'Ofrecer ayuda', items:[
+        ['Can I help you with that?','¿Puedo ayudarle con eso?','Can ai jelp iú uíz dat?'],
+        ['Right this way, please.','Por aquí, por favor.','Ráit dis uéi, plis.'],
+        ['Follow me, please.','Sígame, por favor.','Fólou mi, plis.'],
+      ]},
+      { sec:'Ubicación rápida', items:[
+        ["It's right over there.",'Está justo allá.','Its ráit óuver der.'],
+        ["It's this way.",'Es por aquí.','Its dis uéi.'],
+        ['Just around the corner.','Justo a la vuelta.','Yost eráund de córner.'],
+      ]},
+      { sec:'Cierre de interacción', items:[
+        ['Enjoy your stay!','¡Disfrute su estadía!','Enyói iór stéi!'],
+        ['Have a great day!','¡Que tenga un buen día!','Jav e gréit déi!'],
+        ['See you later!','¡Nos vemos luego!','Sii iú léiter!'],
+      ]},
+    ];
+    const html = FRASES.map(group => `
+      <div class="sec-band band-blue">${group.sec}</div>
+      ${group.items.map(([en,es,pron]) => `
+        <div style="background:rgba(255,255,255,0.055);border:1px solid rgba(232,226,209,0.09);border-radius:10px;padding:.8rem .9rem;margin-bottom:.5rem;">
+          <div style="font-family:var(--font-serif);font-style:italic;font-size:1rem;color:var(--cream);margin-bottom:.3rem;">${en}</div>
+          <div style="font-size:.78rem;font-family:var(--font-sans);color:rgba(232,226,209,0.65);margin-bottom:.2rem;">${es}</div>
+          <div style="font-size:.72rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);font-style:italic;">🔊 ${pron}</div>
+        </div>`).join('')}
+    `).join('');
+    setConScreen('Frases Comunes en Inglés', () => goBack(), html);
     return;
   }
+
   setConScreen(title, () => goBack(), getDocContent(id, title));
 }
 
@@ -1714,7 +1770,7 @@ function openChecklistPiscina() {
         <input type="datetime-local" id="pisc-fecha" value="${today.toISOString().slice(0,16)}"></div>
     </div>
     <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(232,226,209,0.12);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
-      <div class="cl-sec-title">Parámetros del Agua</div>
+      <div class="cl-area-name" style="margin-bottom:.75rem;">Parámetros del Agua</div>
       <div class="fg" style="margin-bottom:.9rem;"><label>pH</label><input type="number" id="pisc-ph" step="0.1" min="0" max="14" placeholder="Ej: 7.4" style="color:var(--cream);background:rgba(255,255,255,0.07);border-color:rgba(232,226,209,0.14);" style="font-size:1.1rem;font-weight:600;color:var(--cream);"><div style="font-size:.65rem;font-family:sans-serif;color:rgba(232,226,209,0.4);margin-top:.25rem;">Rango ideal: 7.2 – 7.6</div></div>
       <div class="fg" style="margin-bottom:.9rem;"><label>ORP (mV)</label><input type="number" id="pisc-orp" step="1" min="0" placeholder="Ej: 720" style="color:var(--cream);background:rgba(255,255,255,0.07);border-color:rgba(232,226,209,0.14);" style="font-size:1.1rem;font-weight:600;color:var(--cream);"><div style="font-size:.65rem;font-family:sans-serif;color:rgba(232,226,209,0.4);margin-top:.25rem;">Rango ideal: 650 – 750 mV</div></div>
       <div class="fg" style="margin-bottom:0"><label>Sal PPM</label><input type="number" id="pisc-sal" step="10" min="0" placeholder="Ej: 3200" style="color:var(--cream);background:rgba(255,255,255,0.07);border-color:rgba(232,226,209,0.14);" style="font-size:1.1rem;font-weight:600;color:var(--cream);"><div style="font-size:.65rem;font-family:sans-serif;color:rgba(232,226,209,0.4);margin-top:.25rem;">Mínimo requerido: 3,000 PPM</div></div>
@@ -1790,7 +1846,7 @@ function openForm(formId) {
     'reporte-area': { title:'Reporte de Área', dept:'limpieza', btnCls:'', html:
       `<div class="fg"><label>Colaboradora</label>${limp}</div>
        <div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
-       <div class="fg"><label>Turno</label><select id="f-turno"><option value="AM">AM (7:00am – 12:00md)</option><option value="PM">PM (12:30pm – 4:30pm)</option></select></div></div>
+       <div class="fg"><label>Hora</label><input type="time" id="f-hora" value="${new Date().toTimeString().slice(0,5)}"></div></div>
        <div class="fg"><label>Rol</label><select id="f-rol"><option value="Rol 1">Rol 1</option><option value="Rol 2">Rol 2</option></select></div>
        <div class="fg"><label>Área completada</label><select id="f-area">
          <option>Salón de Cocina y Recepción</option><option>Baños</option><option>Duchas</option>
@@ -1905,7 +1961,7 @@ function openForm(formId) {
       `<div class="doc-note" style="margin-bottom:1rem;">📋 Confirmación de asistencia · Reunión semanal de operaciones</div>
        <div class="fg"><label>Colaborador</label>${all}</div>
        <div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
-       <div class="fg"><label>Hora</label><input type="time" id="f-hora" value="08:00"></div></div>
+       <div class="fg"><label>Hora</label><input type="time" id="f-hora" value="${new Date().toTimeString().slice(0,5)}"></div></div>
        <div style="background:rgba(118,114,78,.08);border:1px solid rgba(118,114,78,.2);border-radius:10px;padding:1rem;text-align:center;margin:.5rem 0 .8rem;">
          <div style="font-size:1rem;font-family:sans-serif;color:var(--green);font-weight:600;margin-bottom:.25rem;">Confirmar Asistencia</div>
          <div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);">Al enviar quedará registrada tu asistencia</div>
@@ -1989,7 +2045,7 @@ async function submitForm(formId, dept) {
   const btn = document.getElementById('btn-sub');
   btn.disabled = true; btn.textContent = 'Enviando...';
   const datos = {
-    colaborador:colab, fecha:document.getElementById('f-fecha')?.value||'', turno:document.getElementById('f-turno')?.value||'',
+    colaborador:colab, fecha:document.getElementById('f-fecha')?.value||'',
     rol:document.getElementById('f-rol')?.value||'', prior:document.getElementById('f-prior')?.value||'',
     obs:document.getElementById('ta-obs')?.value||'', desc:document.getElementById('ta-desc')?.value||document.getElementById('f-desc')?.value||'',
     mat:document.getElementById('ta-mat')?.value||'', area:document.getElementById('f-area')?.value||document.getElementById('f-ubic')?.value||'',
@@ -2305,7 +2361,7 @@ const MANUAL_LMP_SECS = [
 ];
 
 function renderManualLimp(){
-  let html = `<div style="font-size:.72rem;font-family:var(--font-sans);color:rgba(232,226,209,0.35);font-style:italic;letter-spacing:.05em;margin-bottom:1.2rem;">Estándares, procedimientos y criterios de limpieza · Versión 2.0 · 2025</div>`;
+  let html = `<div class="sec-band">Estándares, procedimientos y criterios de limpieza · Versión 2.0 · 2025</div>`;
   let inGrid = false;
 
   MANUAL_LMP_SECS.forEach((s, idx) => {
@@ -2415,31 +2471,17 @@ const MANUAL_MT_CONTENT={
     <div style="font-family:var(--font-serif);font-style:italic;font-size:1rem;color:var(--cream);margin-bottom:.25rem;">${t}</div>
     <div style="font-size:.78rem;font-family:var(--font-sans);color:rgba(232,226,209,0.55);line-height:1.45;">${d}</div>
   </div>`).join('')}`,
-  'inspeccion-areas-mt':`<div style="font-size:.75rem;font-family:var(--font-sans);font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección mensual · Tránsito Constante y Cluster 1</div>${[
-    ['Oficina','Espacio administrativo'],
-    ['Juice Bar','Área exterior de servicio'],
-    ['Cocina','Cocina principal'],
-    ['Estudio de Movimiento','Templo / Movement Studio'],
-    ['Storage / Bodega','Almacenamiento general'],
-    ['Terralab','Laboratorio'],
-    ['Lounge','Área social'],
-    ['Duchas','Duchas principales'],
-  ].map(([t,sub],i)=>`<div class="acc${i===0?' open':''}" style="margin-bottom:.5rem;">
-    <div class="acc-hdr" onclick="this.parentElement.classList.toggle('open')">
-      <span style="font-family:var(--font-serif);font-style:italic;font-size:.95rem;">${t}</span>
-      <span class="parr">▸</span>
-    </div>
-    <div class="acc-body">
-      <div style="font-size:.7rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);margin-bottom:.7rem;">${sub}</div>
-      ${mkStepsMT([
-        ['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas.'],
-        ['Equipos','Funcionamiento de equipos propios del área (refrigeración, cómputo, sonido, etc).'],
-        ['Estado general','Condición de mobiliario, superficies y stock visible. Reportar faltantes o daños.'],
-      ])}
-    </div>
-  </div>`).join('')}
+  'inspeccion-areas-mt':`<div style="font-size:.75rem;font-family:var(--font-sans);font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección mensual · Tránsito Constante y Cluster 1</div>
+  ${mkStepsMT([
+    ['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas.'],
+    ['Equipos','Funcionamiento de equipos propios del área (refrigeración, cómputo, sonido, etc).'],
+    ['Estado general','Condición de mobiliario, superficies y stock visible. Reportar faltantes o daños.'],
+  ])}
+  <div class="crit-box" style="margin-top:1rem;">
+    <div class="crit-lbl">Esta guía aplica a las siguientes áreas</div>
+    ${['Oficina','Juice Bar','Cocina','Estudio de Movimiento','Storage / Bodega','Terralab','Lounge','Duchas'].map(a=>`<div class="crit-row">• ${a}</div>`).join('')}
+  </div>
   <div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-
   'oficina-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Detectar humedad, plagas o daños.'],['Equipos','Funcionamiento de equipos de cómputo, router, aire acondicionado, impresora.'],['Organización','Cables organizados sin riesgos de tropiezo. Basureros limpios con bolsa.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
   'juicebar-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas.'],['Equipos','Funcionamiento de licuadora/extractor, refrigeradora, grifo.'],['Estado general','Estado de barra exterior. Stock visible — reportar faltantes.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
   'cocina-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Equipos de cocina','Funcionamiento de quemadores, extractor, refrigeradora, lavaplatos y grifo.'],['Estado general','Estado de mostrador. Estado de filtro de agua. Fugas bajo el fregadero.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
@@ -2466,7 +2508,7 @@ const MANUAL_MT_CONTENT={
 };
 
 function renderManualManto(){
-  let html = `<div style="font-size:.72rem;font-family:var(--font-sans);color:rgba(232,226,209,0.35);font-style:italic;letter-spacing:.05em;margin-bottom:1.2rem;">Estándares, procedimientos e inspecciones · Versión 2.0 · 2025</div>`;
+  let html = `<div class="sec-band">Estándares, procedimientos e inspecciones · Versión 2.0 · 2025</div>`;
   let inGrid = false;
 
   MANUAL_MT_SECS.forEach((s, idx) => {
@@ -2543,7 +2585,7 @@ function openCasitaDetalle(tipo, casitaId) {
 
 function openMapaTierramor() {
   setConScreen('Mapa de la Propiedad',
-    () => openManualSection('manto', 'organizacion-mt', 'Organización de la Propiedad'),
+    () => goBack(),
     `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:.75rem;">Vista aérea · Tierramor, Santa Cruz, Guanacaste</div>
      <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:12px;overflow:hidden;">
        <img src="./mapa-tierramor.jpg" alt="Mapa de Tierramor" style="width:100%;height:auto;display:block;"
