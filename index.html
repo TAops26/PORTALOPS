@@ -366,9 +366,9 @@ body::before {
   font-size: 1.1rem; color: var(--cream);
 }
 .glbl {
-  font-size: 0.56rem; letter-spacing: 0.14em;
-  text-transform: uppercase; color: rgba(232,226,209,0.35);
-  margin-bottom: 0.75rem; font-family: var(--font-sans);
+  font-size: 0.78rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: rgba(232,226,209,0.7);
+  margin-bottom: 0.75rem; font-family: var(--font-sans); font-weight: 500;
 }
 
 /* ══════════════════════════════════════════
@@ -868,7 +868,6 @@ div[style*="background:#faf8f4;border-radius:8px;padding:.65rem .7rem;text-align
   background: #3d2f26; color: #E8E2D1;
 }
 /* Section title repeated below header */
-.form-section-ghost { display: none; }
 
 
 /* Inputs sitting on light/white backgrounds must always show dark text —
@@ -935,7 +934,6 @@ input[style*="background:white"]::placeholder,
     <span class="hdr-t" id="dept-title"></span>
     <button class="btn-out" id="dept-out">Salir</button>
   </div>
-  <div class="sbar"><div class="swrap"><span class="sico">🔍</span><input type="text" id="si" placeholder="Buscar..." oninput="filterCards()"></div></div>
   <div class="gsec">
     <div class="glbl">Recursos</div>
     <div class="grid" id="rgrid"></div>
@@ -1749,11 +1747,6 @@ function updatePhotoLabel(groupId, minPhotos) {
   lbl.style.color = ok ? 'rgba(154,149,96,0.8)' : 'rgba(232,226,209,0.45)';
 }
 
-function removePhoto(id, groupId) {
-  document.getElementById('thumb-' + id)?.remove();
-  if (window._photos?.[groupId]) window._photos[groupId] = window._photos[groupId].filter(p => p.id !== id);
-}
-
 function openOperacionPiscina() {
   setConScreen('Operación de Piscina', () => goBack(),
     `<div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Selecciona la acción a realizar</div>
@@ -1817,8 +1810,8 @@ function aw(id, ph) {
   return `<div class="aw">
     <textarea id="ta-${id}" placeholder="${ph}" style="width:100%;border:none;border-bottom:1px solid rgba(232,226,209,.1);padding:.7rem .85rem;font-size:.88rem;font-family:var(--font-sans);color:var(--cream);background:transparent;outline:none;resize:none;height:72px;line-height:1.5;"></textarea>
     <div class="bclr">
-      <button class="bmk" id="bmk-${id}" onclick="toggleRec('${id}')">🎙</button>
-      <span id="rtxt-${id}" style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,.4);flex:1;"></span>
+      <button class="bmk" id="mic-${id}" onclick="toggleMic('${id}')">🎙</button>
+      <span id="ms-${id}" style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,.4);flex:1;"></span>
     </div>
   </div>`;
 }
@@ -2056,7 +2049,7 @@ async function submitForm(formId, dept) {
     rol:document.getElementById('f-rol')?.value||'', prior:document.getElementById('f-prior')?.value||'',
     obs:document.getElementById('ta-obs')?.value||'', desc:document.getElementById('ta-desc')?.value||document.getElementById('f-desc')?.value||'',
     mat:document.getElementById('ta-mat')?.value||'', area:document.getElementById('f-area')?.value||document.getElementById('f-ubic')?.value||'',
-    estado:document.getElementById('f-est')?.value||document.getElementById('f-estado')?.value||'', dur:document.getElementById('f-dur')?.value||'',
+    estado:document.getElementById('f-est')?.value||document.getElementById('f-estado')?.value||'',
   };
   // Collect hora for all forms that have it
   const horaEl = document.getElementById('f-hora');
@@ -2692,7 +2685,7 @@ async function submitPeerEval(){
   const vals=Object.values(competencias).filter(Boolean);
   const promedio=vals.length?(vals.reduce((a,b)=>a+parseInt(b),0)/vals.length).toFixed(1):'—';
   const btn=document.getElementById('ep-sub');btn.disabled=true;btn.textContent='Enviando...';
-  const ok=await sendToSheets({type:'evaluacion',usuario:CU.usuario,departamento:CU.departamento,tipo:'evaluacion-pares',datos:{evaluador:CU.nombre,evaluado,periodo:document.getElementById('ep-tipo')?.value||'',fecha:document.getElementById('ep-fecha')?.value||'',competencias,promedio,comportamientos,fortalezas:document.getElementById('ta-ep-bien')?.value||'',mejoras:document.getElementById('ta-ep-mejorar')?.value||'',recomendacion:getRadio('ep-rec'),comentario:document.getElementById('ep-comentario')?.value||''}});
+  const ok=await sendToSheets({type:'evaluacion',usuario:CU.usuario,departamento:CU.departamento,tipo:'evaluacion-pares',datos:{evaluador:CU.nombre,evaluado,periodo:document.getElementById('ep-tipo')?.value||'',fecha:document.getElementById('ep-fecha')?.value||'',competencias,promedio,comportamientos,fortalezas:document.getElementById('ta-ep-bien')?.value||'',mejoras:document.getElementById('ta-ep-mejorar')?.value||'',recomendacion:getRadio('ep-rec'),comentario:document.getElementById('ta-ep-comentario')?.value||''}});
   if(ok){
     showCompletado(() => goBack());
   } else {
