@@ -871,14 +871,21 @@ div[style*="background:#faf8f4;border-radius:8px;padding:.65rem .7rem;text-align
 .form-section-ghost { display: none; }
 
 
-/* Inputs sitting on light/white backgrounds must always show dark text */
+/* Inputs sitting on light/white backgrounds must always show dark text —
+   must win over the broader dark-bg #fs/.fg rule above */
+#fs input[style*="background:#fafaf8"], #fs input[style*="background:white"],
+#fs select[style*="background:#fafaf8"], #fs select[style*="background:white"],
+#fs textarea[style*="background:#fafaf8"], #fs textarea[style*="background:white"],
+#con-screen input[style*="background:#fafaf8"], #con-screen input[style*="background:white"],
 input[style*="background:#fafaf8"], input[style*="background:white"],
 select[style*="background:#fafaf8"], select[style*="background:white"],
 textarea[style*="background:#fafaf8"], textarea[style*="background:white"] {
   color: var(--brown) !important;
+  background: #fafaf8 !important;
 }
 input[style*="background:#fafaf8"]::placeholder,
-input[style*="background:white"]::placeholder {
+input[style*="background:white"]::placeholder,
+#fs input[style*="background:#fafaf8"]::placeholder {
   color: rgba(84,66,54,0.4) !important;
 }
 
@@ -2361,7 +2368,7 @@ const MANUAL_LMP_SECS = [
 ];
 
 function renderManualLimp(){
-  let html = `<div class="sec-band">Estándares, procedimientos y criterios de limpieza · Versión 2.0 · 2025</div>`;
+  let html = `<div class="sec-band band-blue">Estándares, procedimientos y criterios de limpieza · Versión 2.0 · 2025</div>`;
   let inGrid = false;
 
   MANUAL_LMP_SECS.forEach((s, idx) => {
@@ -2508,7 +2515,7 @@ const MANUAL_MT_CONTENT={
 };
 
 function renderManualManto(){
-  let html = `<div class="sec-band">Estándares, procedimientos e inspecciones · Versión 2.0 · 2025</div>`;
+  let html = `<div class="sec-band band-clay">Estándares, procedimientos e inspecciones · Versión 2.0 · 2025</div>`;
   let inGrid = false;
 
   MANUAL_MT_SECS.forEach((s, idx) => {
