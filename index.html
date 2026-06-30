@@ -997,6 +997,35 @@ input[style*="background:white"]::placeholder,
   </div>
 </div>
 
+<!-- AVERIA DETAIL MODAL -->
+<div class="modal-overlay" id="averia-modal" onclick="if(event.target===this) closeAveriaModal()">
+  <div class="modal-box" style="text-align:left;max-width:380px;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem;">
+      <div id="averia-modal-prior" style="font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;padding:.3rem .65rem;border-radius:20px;font-family:var(--font-sans);"></div>
+      <button onclick="closeAveriaModal()" style="background:none;border:none;color:rgba(232,226,209,0.4);font-size:1.3rem;cursor:pointer;line-height:1;padding:0;">×</button>
+    </div>
+    <div id="averia-modal-titulo" style="font-family:var(--font-serif);font-style:italic;font-size:1.25rem;color:var(--cream);margin-bottom:.85rem;"></div>
+    <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(232,226,209,0.09);border-radius:12px;padding:.9rem 1rem;margin-bottom:.85rem;">
+      <div style="font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(232,226,209,0.4);margin-bottom:.3rem;">Descripción</div>
+      <div id="averia-modal-desc" style="font-size:.85rem;font-family:var(--font-sans);color:rgba(232,226,209,0.85);line-height:1.5;"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1rem;">
+      <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(232,226,209,0.09);border-radius:10px;padding:.7rem .8rem;">
+        <div style="font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(232,226,209,0.4);margin-bottom:.25rem;">Área / Cluster</div>
+        <div id="averia-modal-area" style="font-size:.8rem;font-family:var(--font-sans);color:var(--cream);"></div>
+      </div>
+      <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(232,226,209,0.09);border-radius:10px;padding:.7rem .8rem;">
+        <div style="font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(232,226,209,0.4);margin-bottom:.25rem;">Fecha</div>
+        <div id="averia-modal-fecha" style="font-size:.8rem;font-family:var(--font-sans);color:var(--cream);"></div>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="mbtn-bk" onclick="closeAveriaModal()">Cerrar</button>
+      <button class="mbtn-ok" id="averia-modal-btn">✓ Completada</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── CONFIG ──
 const WEBHOOK = 'https://script.google.com/macros/s/AKfycbydoJ3XAwjsSZ1rcU1g1l0vQyKF8p3RM0QmWpmSzQqqnGlE3VTDZieU7yCIrYr6iABPQg/exec';
@@ -1051,15 +1080,45 @@ function renderAverias(averias) {
     list.innerHTML = `<div style="text-align:center;padding:1rem;font-size:.78rem;font-family:sans-serif;color:rgba(232,226,209,0.4);font-style:italic;">No hay averías pendientes 🎉</div>`;
     return;
   }
+  window._averiasData = {};
+  averias.forEach(a => { window._averiasData[a.id] = a; });
   const prioColor = { 'Urgente':'#E07A5F', 'Prioridad':'#C17A5A', 'Programar':'#9A9560' };
   list.innerHTML = averias.map(a => `
-    <div class="rbtn" style="cursor:default;border-left-color:${prioColor[a.prioridad]||'var(--clay)'};" id="av-row-${a.id}">
+    <div class="rbtn" style="border-left-color:${prioColor[a.prioridad]||'var(--clay)'};cursor:pointer;" id="av-row-${a.id}" onclick="openAveriaModal('${a.id}')">
       <div style="flex:1;">
         <div style="font-size:.82rem;font-family:var(--font-sans);color:var(--cream);font-weight:500;margin-bottom:.15rem;">${a.averia || a.descripcion || 'Avería sin título'}</div>
         <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);">${a.fecha || ''} ${a.cluster ? '· '+a.cluster : ''}</div>
       </div>
-      <button onclick="marcarAveriaCompletada('${a.id}')" style="background:rgba(118,114,78,0.15);border:1px solid rgba(118,114,78,0.3);border-radius:8px;padding:.4rem .75rem;color:#9A9560;font-size:.7rem;font-family:var(--font-sans);cursor:pointer;white-space:nowrap;">✓ Completada</button>
+      <span class="arr">›</span>
     </div>`).join('');
+}
+
+function openAveriaModal(id) {
+  const a = window._averiasData?.[id];
+  if (!a) return;
+  const prioColor = { 'Urgente':'#E07A5F', 'Prioridad':'#C17A5A', 'Programar':'#9A9560' };
+  const prioBg    = { 'Urgente':'rgba(224,122,95,0.15)', 'Prioridad':'rgba(193,122,90,0.15)', 'Programar':'rgba(154,149,96,0.15)' };
+  const prioIcon  = { 'Urgente':'🔴', 'Prioridad':'🟡', 'Programar':'🟢' };
+  const prior = a.prioridad || 'Programar';
+
+  const priorEl = document.getElementById('averia-modal-prior');
+  priorEl.textContent = `${prioIcon[prior]||''} ${prior}`;
+  priorEl.style.color = prioColor[prior] || 'var(--clay)';
+  priorEl.style.background = prioBg[prior] || 'rgba(153,92,68,0.15)';
+
+  document.getElementById('averia-modal-titulo').textContent = a.averia || 'Avería sin título';
+  document.getElementById('averia-modal-desc').textContent = a.descripcion || 'Sin descripción adicional.';
+  document.getElementById('averia-modal-area').textContent = a.cluster || a.area || '—';
+  document.getElementById('averia-modal-fecha').textContent = a.fecha || '—';
+
+  const btn = document.getElementById('averia-modal-btn');
+  btn.onclick = () => { marcarAveriaCompletada(id); closeAveriaModal(); };
+
+  document.getElementById('averia-modal').classList.add('show');
+}
+
+function closeAveriaModal() {
+  document.getElementById('averia-modal').classList.remove('show');
 }
 
 async function marcarAveriaCompletada(id) {
