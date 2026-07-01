@@ -1903,10 +1903,16 @@ function openChecklistPiscina() {
   const day = today.getDay();
   const scheduled = [1,2,4,5].includes(day);
   const dayNames = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const insumos = ['Sal','Clarificante','Alguicida GLB','Ácido Muriático','Cloro granulado'];
+  const units = ['kg','g','litros','ml','galones','onzas','dosis','shots'];
+  const unitOpts = units.map(u=>`<option>${u}</option>`).join('');
+  const inputStyle = 'color:var(--cream);background:rgba(255,255,255,0.07);border:1px solid rgba(232,226,209,0.14);border-radius:8px;padding:.6rem .75rem;font-size:.85rem;font-family:var(--font-sans);outline:none;width:100%;';
+
   document.getElementById('con-title').textContent = 'Parámetros de Piscina';
   document.getElementById('con-back').onclick = () => openOperacionPiscina();
   document.getElementById('conbody').innerHTML = `
     ${!scheduled ? `<div class="doc-note">📅 Hoy es ${dayNames[day]}. El checklist de piscina se realiza Lunes, Martes, Jueves y Viernes.</div>` : ''}
+
     <div class="cl-header-info">
       <div class="cl-area-name">Parámetros de Piscina</div>
       <div class="fg" style="margin-bottom:.6rem"><label>Encargado</label>
@@ -1914,40 +1920,116 @@ function openChecklistPiscina() {
       <div class="fg" style="margin-bottom:0"><label>Fecha y hora</label>
         <input type="datetime-local" id="pisc-fecha" value="${today.toISOString().slice(0,16)}"></div>
     </div>
+
+    <!-- SENSOR PARAMS -->
     <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(232,226,209,0.12);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
       <div class="cl-area-name" style="margin-bottom:.75rem;">Parámetros del Agua</div>
-      <div class="fg" style="margin-bottom:.9rem;"><label>pH</label><input type="number" id="pisc-ph" step="0.1" min="0" max="14" placeholder="Ej: 7.4" style="color:var(--cream);background:rgba(255,255,255,0.07);border-color:rgba(232,226,209,0.14);" style="font-size:1.1rem;font-weight:600;color:var(--cream);"><div style="font-size:.65rem;font-family:sans-serif;color:rgba(232,226,209,0.4);margin-top:.25rem;">Rango ideal: 7.2 – 7.6</div></div>
-      <div class="fg" style="margin-bottom:.9rem;"><label>ORP (mV)</label><input type="number" id="pisc-orp" step="1" min="0" placeholder="Ej: 720" style="color:var(--cream);background:rgba(255,255,255,0.07);border-color:rgba(232,226,209,0.14);" style="font-size:1.1rem;font-weight:600;color:var(--cream);"><div style="font-size:.65rem;font-family:sans-serif;color:rgba(232,226,209,0.4);margin-top:.25rem;">Rango ideal: 650 – 750 mV</div></div>
-      <div class="fg" style="margin-bottom:0"><label>Sal PPM</label><input type="number" id="pisc-sal" step="10" min="0" placeholder="Ej: 3200" style="color:var(--cream);background:rgba(255,255,255,0.07);border-color:rgba(232,226,209,0.14);" style="font-size:1.1rem;font-weight:600;color:var(--cream);"><div style="font-size:.65rem;font-family:sans-serif;color:rgba(232,226,209,0.4);margin-top:.25rem;">Mínimo requerido: 3,000 PPM</div></div>
+      <div class="fg" style="margin-bottom:.9rem;">
+        <label>pH</label>
+        <input type="number" id="pisc-ph" step="0.1" min="0" max="14" placeholder="Ej: 7.4" style="${inputStyle}">
+        <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);margin-top:.3rem;">Rango ideal: 7.2 – 7.6</div>
+      </div>
+      <div class="fg" style="margin-bottom:.9rem;">
+        <label>ORP (mV)</label>
+        <input type="number" id="pisc-orp" step="1" placeholder="Ej: 720" style="${inputStyle}">
+        <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);margin-top:.3rem;">Rango ideal: 650 – 750 mV</div>
+      </div>
+      <div class="fg" style="margin-bottom:0">
+        <label>Sal PPM</label>
+        <input type="number" id="pisc-sal" step="10" placeholder="Ej: 3200" style="${inputStyle}">
+        <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);margin-top:.3rem;">Mínimo requerido: 3,000 PPM</div>
+      </div>
     </div>
+
+    <!-- MANUAL TESTS -->
+    <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(232,226,209,0.12);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
+      <div class="cl-area-name" style="margin-bottom:.75rem;">Pruebas Manuales</div>
+      <div class="frow" style="gap:.6rem;">
+        <div class="fg" style="margin-bottom:.9rem;flex:1;">
+          <label>PH</label>
+          <input type="number" id="pisc-ph-man" step="0.1" min="0" max="14" placeholder="Ej: 7.4" style="${inputStyle}">
+        </div>
+        <div class="fg" style="margin-bottom:.9rem;flex:1;">
+          <label>Alcalinidad Total</label>
+          <input type="number" id="pisc-alc" step="1" placeholder="ppm" style="${inputStyle}">
+        </div>
+        <div class="fg" style="margin-bottom:0;flex:1;">
+          <label>Dureza Cálcica</label>
+          <input type="number" id="pisc-dur" step="1" placeholder="ppm" style="${inputStyle}">
+        </div>
+      </div>
+    </div>
+
+    <!-- INSUMOS -->
+    <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(232,226,209,0.12);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
+      <div class="cl-area-name" style="margin-bottom:.75rem;">Insumos Agregados</div>
+      ${insumos.map((ins,i) => `
+        <div style="margin-bottom:.65rem;">
+          <label style="font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(232,226,209,0.5);display:block;margin-bottom:.35rem;">${ins}</label>
+          <div style="display:flex;gap:.4rem;align-items:center;">
+            <input type="number" id="pisc-ins-qty-${i}" step="0.1" min="0" placeholder="0" style="${inputStyle}width:auto;flex:1;">
+            <select id="pisc-ins-unit-${i}" style="background:rgba(255,255,255,0.07);border:1px solid rgba(232,226,209,0.14);border-radius:8px;padding:.6rem .5rem;font-size:.8rem;font-family:var(--font-sans);color:var(--cream);outline:none;appearance:none;width:110px;">
+              ${unitOpts}
+            </select>
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <!-- OBS -->
     <div class="fg"><label>Observaciones</label>${aw('pisc-obs','Observaciones sobre el estado del agua, equipos o área...')}</div>
     ${photoUploadWidget('pisc-photos')}
     <button class="btn-sub" id="pisc-sub" onclick="submitPiscina()">Enviar Reporte de Piscina</button>
-    <div class="fnote">Los datos se guardarán en Google Sheets</div>
-    <div class="ok-msg" id="pisc-ok"><p>✅ Reporte enviado.</p></div>
-    <div class="err-msg" id="pisc-err"><p>❌ Error al enviar. Intenta de nuevo.</p></div>`;
-  show('con-screen');
+    <div class="ok-msg" id="pisc-ok"></div>
+    <div class="err-msg" id="pisc-err"><p>❌ Error al enviar. Intenta de nuevo.</p></div>
+  `;
 }
+
 
 async function submitPiscina() {
   const colab = document.getElementById('pisc-colab')?.value;
   if (!colab) { alert('Por favor selecciona el encargado.'); return; }
-  const ph=document.getElementById('pisc-ph')?.value, orp=document.getElementById('pisc-orp')?.value, sal=document.getElementById('pisc-sal')?.value;
-  if (!ph||!orp||!sal) { alert('Por favor completa los tres parámetros.'); return; }
-  const alertas=[];
-  if (parseFloat(ph)<7.2||parseFloat(ph)>7.6) alertas.push(`pH fuera de rango (${ph})`);
-  if (parseInt(orp)<650||parseInt(orp)>750) alertas.push(`ORP fuera de rango (${orp} mV)`);
-  if (parseInt(sal)<3000) alertas.push(`Sal por debajo del mínimo (${sal} PPM)`);
-  const btn=document.getElementById('pisc-sub'); btn.disabled=true; btn.textContent='Enviando...';
-  const ok=await sendToSheets({type:'reporte',usuario:CU.usuario,departamento:'mantenimiento',tipo:'piscina',datos:{colaborador:colab,fecha:document.getElementById('pisc-fecha')?.value||'',ph,orp,sal,alertas:alertas.join(' · '),obs:document.getElementById('ta-pisc-obs')?.value||''}});
-  const okEl=document.getElementById('pisc-ok'),errEl=document.getElementById('pisc-err');
+  const btn = document.getElementById('pisc-sub');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+
+  const ph  = document.getElementById('pisc-ph')?.value  || '';
+  const orp = document.getElementById('pisc-orp')?.value || '';
+  const sal = document.getElementById('pisc-sal')?.value || '';
+  const phMan = document.getElementById('pisc-ph-man')?.value || '';
+  const alc   = document.getElementById('pisc-alc')?.value || '';
+  const dur   = document.getElementById('pisc-dur')?.value || '';
+
+  const insNombres = ['Sal','Clarificante','Alguicida GLB','Ácido Muriático','Cloro granulado'];
+  const insumos = insNombres.map((nombre, i) => ({
+    nombre,
+    cantidad: document.getElementById(`pisc-ins-qty-${i}`)?.value || '0',
+    unidad:   document.getElementById(`pisc-ins-unit-${i}`)?.value || '',
+  }));
+
+  const alertas = [];
+  if (ph  && (parseFloat(ph)  < 7.2 || parseFloat(ph)  > 7.6)) alertas.push(`pH fuera de rango (${ph})`);
+  if (orp && (parseInt(orp)   < 650 || parseInt(orp)   > 750)) alertas.push(`ORP fuera de rango (${orp} mV)`);
+  if (sal && parseInt(sal) < 3000) alertas.push(`Sal por debajo del mínimo (${sal} PPM)`);
+
+  const ok = await sendToSheets({
+    type: 'reporte', usuario: CU.usuario, departamento: 'mantenimiento', tipo: 'piscina',
+    datos: {
+      colaborador: colab,
+      fecha: document.getElementById('pisc-fecha')?.value || '',
+      ph, orp, sal,
+      ph_manual: phMan, alcalinidad: alc, dureza: dur,
+      insumos: JSON.stringify(insumos),
+      alertas: alertas.join(' · '),
+      obs: document.getElementById('ta-pisc-obs')?.value || '',
+    }
+  });
+
   if (ok) {
     const msg = alertas.length ? `Reporte enviado.\n⚠️ ${alertas.join('\n')}` : 'Reporte de piscina enviado correctamente.';
     showCompletado(() => goBack(), msg);
   } else {
-    errEl.style.display='block';
-    btn.disabled=false;
-    btn.textContent='Enviar Reporte de Piscina';
+    document.getElementById('pisc-err').style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Enviar Reporte de Piscina';
   }
 }
 
