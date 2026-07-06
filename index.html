@@ -1390,7 +1390,16 @@ function renderDeptHome() {
       });
     }
   }
+
+  // Averías pendientes — visible for mantenimiento collaborators too
+  if (d === 'mantenimiento') {
+    btns += `<div class="sec-lbl" style="margin-top:.75rem;">Averías Pendientes</div>
+      <div id="averias-list"><div style="text-align:center;padding:1rem;font-size:.78rem;font-family:sans-serif;color:rgba(232,226,209,0.4);">Cargando...</div></div>`;
+  }
+
   document.getElementById('home-depts').innerHTML = btns + '<div class="tm-page-footer"><img src="./Tierramor_Emblem-Brown.png" alt="" style="height:36px;opacity:0.18;filter:brightness(2);"></div>';
+
+  if (d === 'mantenimiento') loadAverias();
 }
 
 const DEPTS = {
@@ -1904,7 +1913,7 @@ function openChecklistPiscina() {
   const scheduled = [1,2,4,5].includes(day);
   const dayNames = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   const insumos = ['Sal','Clarificante','Alguicida GLB','Ácido Muriático','Cloro granulado'];
-  const units = ['kg','g','litros','ml','galones','onzas','dosis','shots'];
+  const units = ['kg','g','litros','ml','galones','onzas','dosis','shots','Pichinga','Bolsa'];
   const unitOpts = units.map(u=>`<option>${u}</option>`).join('');
   const inputStyle = 'color:var(--cream);background:rgba(255,255,255,0.07);border:1px solid rgba(232,226,209,0.14);border-radius:8px;padding:.6rem .75rem;font-size:.85rem;font-family:var(--font-sans);outline:none;width:100%;';
 
@@ -2677,7 +2686,7 @@ function openSolicitudInsumos(){
 
 let insCount=1;
 function insRow(idx){
-  const unidades=['Unidad','Paquete','Kilo (kg)','Gramo (g)','Litro (L)','Mililitro (mL)','Galón','Rollo','Caja','Bolsa','Par','Docena','Metro','Otro'];
+  const unidades=['Unidad','Paquete','Kilo (kg)','Gramo (g)','Litro (L)','Mililitro (mL)','Galón','Rollo','Caja','Bolsa','Par','Docena','Metro','Pichinga','Otro'];
   return `<div id="ins-row-${idx}" style="display:grid;grid-template-columns:1.8fr .8fr 1fr auto;gap:.4rem;margin-bottom:.55rem;align-items:center;"><input type="text" id="ins-item-${idx}" placeholder="Insumo" style="background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .7rem;font-size:.85rem;font-family:sans-serif;color:var(--brown);outline:none;"><input type="number" id="ins-qty-${idx}" placeholder="Cant." min="1" style="background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .7rem;font-size:.85rem;font-family:sans-serif;color:var(--brown);outline:none;"><select id="ins-unit-${idx}" style="background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .5rem;font-size:.78rem;font-family:sans-serif;color:var(--brown);outline:none;appearance:none;">${unidades.map(u=>`<option value="${u}">${u}</option>`).join('')}</select>${idx>0?`<button onclick="removeInsRow(${idx})" style="width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(84,66,54,.2);background:none;color:var(--tm);font-size:1rem;cursor:pointer;line-height:1;">×</button>`:'<div style="width:28px;"></div>'}</div>`;
 }
 function addInsRow(){document.getElementById('ins-list').insertAdjacentHTML('beforeend',insRow(insCount));insCount++;}
