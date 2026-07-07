@@ -1,0 +1,759 @@
+// ══════════════════════════════════════════════════════════════
+// PORTAL OPS — WEBHOOK CENTRAL
+// Distribuye datos a 4 spreadsheets según el tipo de payload
+// ══════════════════════════════════════════════════════════════
+
+const SHEETS = {
+  reportes:    '1MTLKGySfwz3GN3qb2xXEUhTen97uoXOVGz0UxHzWkqQ',
+  desempeno:   '16vB-bmPUfpSlQtwy1bKAY2hR_jwMXbmAF8TTiFpfqwk',
+  insumos:     '1uU2En45IfGDNnlI_buwu8r2bq9C-CQz9GVwOHf-8grw',
+  inventarios: '119H6cjpELy4QQQ8mFfH51K2eWjwH8JD66gASG9Jddbk',
+};
+
+// ── GET: leer usuarios o config ──
+function doGet(e) {
+  const action = (e && e.parameter && e.parameter.action) ? e.parameter.action : '';
+
+  let resultado;
+  if (action === 'get_usuarios') {
+    resultado = responderUsuarios();
+  } else if (action === 'get_config_reportes') {
+    resultado = responderConfigReportes();
+  } else if (action === 'get_colabs') {
+    resultado = responderColabs();
+  } else if (action === 'get_averias') {
+    resultado = responderAverias();
+  } else if (action === 'get_guest_reports') {
+    resultado = responderGuestReports();
+  } else {
+    resultado = { ok: false, error: 'Acción no reconocida: ' + action };
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify(resultado))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ── POST: recibir datos ──
+function doPost(e) {
+  try {
+    const payload = JSON.parse(e.postData.contents);
+    const type    = payload.type || '';
+
+    let resultado;
+    if (type === 'reporte' || type === 'checklist') {
+      resultado = guardarReporte(payload);
+    } else if (type === 'evaluacion') {
+      resultado = guardarDesempeno(payload);
+    } else if (type === 'solicitud-insumos') {
+      resultado = guardarInsumo(payload);
+    } else if (type === 'inventario') {
+      resultado = guardarInventario(payload);
+    } else if (type === 'actualizar_averia') {
+      resultado = actualizarEstadoAveria(payload);
+    } else if (type === 'guest_report') {
+      resultado = guardarGuestReport(payload);
+    } else if (type === 'completar_guest_report') {
+      resultado = completarGuestReport(payload);
+    } else {
+      resultado = { ok: false, error: 'Tipo no reconocido: ' + type };
+    }
+
+    return ContentService
+      .createTextOutput(JSON.stringify(resultado))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// USUARIOS
+// ══════════════════════════════════════════════════════════════
+function responderUsuarios() {
+  try {
+    const ss   = SpreadsheetApp.openById(SHEETS.desempeno);
+    const hoja = ss.getSheetByName('Usuarios');
+    if (!hoja) return { ok: false, error: 'Pestaña Usuarios no encontrada' };
+
+    const datos = hoja.getDataRange().getValues();
+    if (datos.length < 2) return { ok: true, usuarios: [] };
+
+    const headers  = datos[0].map(h => h.toString().toLowerCase().trim());
+    const usuarios = datos.slice(1)
+      .filter(row => row[0])
+      .map(row => {
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = row[i] ? row[i].toString().trim() : '');
+        return obj;
+      });
+
+    return { ok: true, usuarios };
+
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// COLABORADORES — lee columna H de Config directamente
+// ══════════════════════════════════════════════════════════════
+function responderColabs() {
+  try {
+    const ss   = SpreadsheetApp.openById(SHEETS.reportes);
+    const hoja = ss.getSheetByName('Config');
+    if (!hoja) return { ok: false, error: 'Pestaña Config no encontrada' };
+
+    const datos = hoja.getDataRange().getValues();
+    // Column H = index 7
+    const colabs = datos.slice(1)
+      .map(row => row[7] ? row[7].toString().trim() : '')
+      .filter(Boolean);
+
+    return { ok: true, colabs };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// AVERÍAS — lectura de pendientes y actualización de estado
+// ══════════════════════════════════════════════════════════════
+function responderAverias() {
+  try {
+    const ss   = SpreadsheetApp.openById(SHEETS.reportes);
+    const hoja = ss.getSheetByName('MANTENIMIENTO - REPORTE DE AVERÍA');
+    if (!hoja || hoja.getLastRow() < 2) return { ok: true, averias: [] };
+
+    const datos   = hoja.getDataRange().getValues();
+    const headers = datos[0];
+
+    // Build index with normalized keys to handle accent/encoding variants
+    const idx = {};
+    headers.forEach((h, i) => {
+      idx[h] = i;
+      idx[h.normalize('NFC')] = i;
+      idx[h.normalize('NFD')] = i;
+      // Also index by simplified version
+      idx[h.replace(/[áàä]/gi,'a').replace(/[éèë]/gi,'e').replace(/[íìï]/gi,'i')
+           .replace(/[óòö]/gi,'o').replace(/[úùü]/gi,'u').toLowerCase()] = i;
+    });
+
+    // Helper: get value by multiple possible column names or fallback to position
+    const col = (names, fallbackPos) => {
+      for (const n of names) { if (idx[n] !== undefined) return idx[n]; }
+      return fallbackPos;
+    };
+
+    // Column positions based on known header order:
+    // Timestamp(0) Usuario(1) Colaborador(2) Fecha(3) Avería(4) Prioridad(5) Área(6) Cluster(7) Descripción(8) Estado(9) ID(10)
+    const cId    = col(['ID'],                          10);
+    const cTs    = col(['Timestamp'],                    0);
+    const cUser  = col(['Usuario'],                      1);
+    const cColab = col(['Colaborador'],                  2);
+    const cFecha = col(['Fecha'],                        3);
+    const cAv    = col(['Avería','Averia'],              4);
+    const cPrio  = col(['Prioridad'],                    5);
+    const cArea  = col(['Área','Area'],                  6);
+    const cClust = col(['Cluster'],                      7);
+    const cDesc  = col(['Descripción','Descripcion'],    8);
+    const cEst   = col(['Estado'],                       9);
+
+    const averias = datos.slice(1)
+      .map(row => ({
+        id:          String(row[cId]    || ''),
+        timestamp:   String(row[cTs]    || ''),
+        usuario:     String(row[cUser]  || ''),
+        colaborador: String(row[cColab] || ''),
+        fecha:       String(row[cFecha] || ''),
+        averia:      String(row[cAv]    || ''),
+        prioridad:   String(row[cPrio]  || ''),
+        area:        String(row[cArea]  || ''),
+        cluster:     String(row[cClust] || ''),
+        descripcion: String(row[cDesc]  || ''),
+        estado:      String(row[cEst]   || 'Pendiente'),
+      }))
+      .filter(a => a.id && a.estado !== 'Completada');
+
+    return { ok: true, averias };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+function actualizarEstadoAveria(payload) {
+  try {
+    const ss   = SpreadsheetApp.openById(SHEETS.reportes);
+    const hoja = ss.getSheetByName('MANTENIMIENTO - REPORTE DE AVERÍA');
+    if (!hoja) return { ok: false, error: 'Pestaña de averías no encontrada' };
+
+    const idBuscado = payload.id || '';
+    if (!idBuscado) return { ok: false, error: 'ID de avería no especificado' };
+
+    const datos   = hoja.getDataRange().getValues();
+    const headers = datos[0];
+    const colId      = headers.indexOf('ID');
+    const colEstado  = headers.indexOf('Estado');
+    if (colId < 0 || colEstado < 0) return { ok: false, error: 'Columnas ID/Estado no encontradas' };
+
+    for (let r = 1; r < datos.length; r++) {
+      if (datos[r][colId] === idBuscado) {
+        hoja.getRange(r + 1, colEstado + 1).setValue('Completada');
+        return { ok: true };
+      }
+    }
+    return { ok: false, error: 'Avería no encontrada: ' + idBuscado };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// CONFIG REPORTES
+// ══════════════════════════════════════════════════════════════
+function responderConfigReportes() {
+  try {
+    const ss   = SpreadsheetApp.openById(SHEETS.reportes);
+    const hoja = ss.getSheetByName('Config');
+    if (!hoja) return { ok: false, error: 'Pestaña Config no encontrada' };
+
+    const datos   = hoja.getDataRange().getValues();
+    const headers = datos[0].map(h => h.toString().trim());
+    const config  = datos.slice(1)
+      .filter(row => row[0])
+      .map(row => {
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = row[i] ? row[i].toString().trim() : '');
+        return obj;
+      });
+
+    return { ok: true, config };
+
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// REPORTES
+// ══════════════════════════════════════════════════════════════
+function guardarReporte(payload) {
+  try {
+    const ss   = SpreadsheetApp.openById(SHEETS.reportes);
+    const tipo = payload.tipo || '';
+    const dept = payload.departamento || '';
+
+    // Reunión de Operaciones → pestaña propia independiente del departamento
+    let nombreHoja;
+    if (tipo === 'reunion') {
+      nombreHoja = 'REUNION DE OPERACIONES';
+    } else if (tipo === 'averia' || tipo === 'averia-cluster') {
+      // Las averías siempre van a la misma pestaña, sin importar quién las reporta
+      nombreHoja = 'MANTENIMIENTO - REPORTE DE AVERÍA';
+    } else if (dept === 'mantenimiento') {
+      // Cada tipo de reporte de mantenimiento tiene su propia pestaña
+      const mantoMap = {
+        'trabajo':    'MANTENIMIENTO - REPORTE TRABAJO',
+        'agua':       'MANTENIMIENTO - REPORTE DE AGUA',
+        'piscina':    'MANTENIMIENTO - PISCINA',
+        'materiales': 'MANTENIMIENTO - REPORTE TRABAJO', // solicitud va junto a trabajo
+      };
+      nombreHoja = mantoMap[tipo] || 'INSPECCION CLUSTER';
+    } else {
+      const deptMap = {
+        limpieza:   'Limpieza',
+        seguridad:  'Seguridad',
+        proveeduria:'Proveduría',
+      };
+      nombreHoja = deptMap[dept] || 'General';
+    }
+
+    let hoja = ss.getSheetByName(nombreHoja);
+    if (!hoja) hoja = ss.insertSheet(nombreHoja);
+
+    const ts    = new Date();
+    const datos = payload.datos || {};
+    const ts_str = Utilities.formatDate(ts, 'America/Costa_Rica', 'yyyy-MM-dd HH:mm:ss');
+
+    // ── Inspección de Cluster: una avería por fila, mismo tab que el reporte individual ──
+    if (tipo === 'averia-cluster') {
+      // 1. Cada avería encontrada → MANTENIMIENTO - REPORTE DE AVERÍA (misma hoja que el reporte individual)
+      if (hoja.getLastRow() === 0) {
+        hoja.appendRow(['Timestamp','Usuario','Colaborador','Fecha','Avería','Prioridad','Área','Cluster','Descripción','Estado','ID']);
+      }
+      const items = datos.items || [];
+      items.forEach((item, i) => {
+        const idUnico = 'AV-' + ts.getTime() + '-' + i;
+        hoja.appendRow([
+          ts_str,
+          payload.usuario   || '',
+          datos.colaborador || '',
+          datos.fecha       || '',
+          item.averia       || '',
+          item.prioridad    || '',
+          '',
+          datos.cluster      || '',
+          item.descripcion  || '',
+          'Pendiente',
+          idUnico,
+        ]);
+      });
+
+      // 2. Registro de que la inspección se realizó → INSPECCION CLUSTER (log de auditoría, una fila por inspección)
+      let hojaLog = ss.getSheetByName('INSPECCION CLUSTER');
+      if (!hojaLog) hojaLog = ss.insertSheet('INSPECCION CLUSTER');
+      if (hojaLog.getLastRow() === 0) {
+        hojaLog.appendRow(['Timestamp','Usuario','Colaborador','Fecha','Cluster','Averías Encontradas']);
+      }
+      hojaLog.appendRow([
+        ts_str,
+        payload.usuario   || '',
+        datos.colaborador || '',
+        datos.fecha       || '',
+        datos.cluster      || '',
+        items.length,
+      ]);
+
+      return { ok: true, registradas: items.length };
+    }
+
+    // ── Fila específica según pestaña ──
+    if (nombreHoja === 'MANTENIMIENTO - REPORTE TRABAJO') {
+      if (hoja.getLastRow() === 0) {
+        hoja.appendRow(['Timestamp','Usuario','Departamento','Tipo','Colaborador','Fecha','Area','Estado','Prioridad','Descripcion','Materiales','Observaciones']);
+      }
+      hoja.appendRow([
+        ts_str,
+        payload.usuario      || '',
+        payload.departamento || '',
+        payload.tipo         || '',
+        datos.colaborador    || '',
+        datos.fecha          || '',
+        datos.area           || '',
+        datos.estado         || '',
+        datos.prior          || '',
+        datos.desc           || '',
+        datos.mat            || '',
+        datos.obs            || '',
+      ]);
+
+    } else if (nombreHoja === 'MANTENIMIENTO - REPORTE DE AGUA') {
+      if (hoja.getLastRow() === 0) {
+        hoja.appendRow(['Timestamp','Usuario','Area','Fecha','Reporte','Colaborador','M1','M2','M3','M4','M5','M6','M7','Observaciones']);
+      }
+      hoja.appendRow([
+        ts_str,
+        payload.usuario      || '',
+        datos.area           || '',
+        datos.fecha          || '',
+        payload.tipo         || '',
+        datos.colaborador    || '',
+        datos.m1 || '', datos.m2 || '', datos.m3 || '', datos.m4 || '',
+        datos.m5 || '', datos.m6 || '', datos.m7 || '',
+        datos.obs            || '',
+      ]);
+
+    } else if (nombreHoja === 'MANTENIMIENTO - REPORTE DE AVERÍA') {
+      if (hoja.getLastRow() === 0) {
+        hoja.appendRow(['Timestamp','Usuario','Colaborador','Fecha','Avería','Prioridad','Área','Cluster','Descripción','Estado','ID']);
+      }
+      const idUnico = 'AV-' + ts.getTime();
+      hoja.appendRow([
+        ts_str,
+        payload.usuario      || '',
+        datos.colaborador    || '',
+        datos.fecha          || '',
+        datos.averia         || '',
+        datos.prior          || '',
+        datos.area           || '',
+        datos.cluster        || '',
+        datos.desc           || '',
+        'Pendiente',
+        idUnico,
+      ]);
+
+    } else if (nombreHoja === 'MANTENIMIENTO - PISCINA') {
+      if (hoja.getLastRow() === 0) {
+        hoja.appendRow(['Timestamp','Usuario','Colaborador','Fecha',
+          'pH','ORP','Sal PPM',
+          'PH Manual','Alcalinidad Total','Dureza Cálcica',
+          'Sal','Clarificante','Alguicida GLB','Ácido Muriático','Cloro granulado',
+          'Alertas','Observaciones']);
+      }
+      // Parse insumos array sent as JSON string
+      let ins = [];
+      try { ins = JSON.parse(datos.insumos || '[]'); } catch(e) {}
+      const getIns = (nombre) => {
+        const found = ins.find(i => i.nombre === nombre);
+        return found ? `${found.cantidad} ${found.unidad}`.trim() : '';
+      };
+      hoja.appendRow([
+        ts_str,
+        payload.usuario      || '',
+        datos.colaborador    || '',
+        datos.fecha          || '',
+        datos.ph             || '',
+        datos.orp            || '',
+        datos.sal            || '',
+        datos.ph_manual      || '',
+        datos.alcalinidad    || '',
+        datos.dureza         || '',
+        getIns('Sal'),
+        getIns('Clarificante'),
+        getIns('Alguicida GLB'),
+        getIns('Ácido Muriático'),
+        getIns('Cloro granulado'),
+        datos.alertas        || '',
+        datos.obs            || '',
+      ]);
+
+    } else if (nombreHoja === 'REUNION DE OPERACIONES') {
+      if (hoja.getLastRow() === 0) {
+        hoja.appendRow(['Timestamp','Usuario','Departamento','Colaborador','Fecha','Hora']);
+      }
+      hoja.appendRow([
+        ts_str,
+        payload.usuario      || '',
+        payload.departamento || '',
+        datos.colaborador    || '',
+        datos.fecha          || '',
+        datos.hora           || datos.hour || '',
+      ]);
+
+    } else {
+      // Limpieza, Seguridad, Proveduría — fila general
+      if (hoja.getLastRow() === 0) {
+        hoja.appendRow([
+          'Timestamp','Usuario','Departamento','Tipo','Colaborador','Fecha',
+          'Turno','Rol','Área','Estado','Observaciones','Habitaciones'
+        ]);
+      }
+      hoja.appendRow([
+        ts_str,
+        payload.usuario      || '',
+        payload.departamento || '',
+        payload.tipo         || '',
+        datos.colaborador    || '',
+        datos.fecha          || '',
+        datos.turno          || '',
+        datos.rol            || '',
+        datos.area           || datos.area_completada || '',
+        datos.estado         || datos.estado_area     || '',
+        datos.obs            || '',
+        datos.habitaciones ? JSON.stringify(datos.habitaciones) : '',
+      ]);
+    }
+
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// DESEMPEÑO
+// ══════════════════════════════════════════════════════════════
+function guardarDesempeno(payload) {
+  try {
+    const ss   = SpreadsheetApp.openById(SHEETS.desempeno);
+    const tipo = payload.tipo || '';
+
+    if (tipo === 'evaluacion-pares') {
+      let hoja = ss.getSheetByName('Evaluaciones');
+      if (!hoja) hoja = ss.insertSheet('Evaluaciones');
+
+      const ts    = new Date();
+      const datos = payload.datos || {};
+      const comp  = datos.competencias    || {};
+      const comp2 = datos.comportamientos || {};
+
+      if (hoja.getLastRow() === 0) {
+        hoja.appendRow([
+          'Timestamp','Evaluador','Evaluado','Período','Fecha',
+          'Colaboración','Responsabilidad','Comunicación','Actitud','Calidad','Promedio',
+          'Apoyo sin pedir','Comunicó problemas','Propuso mejoras','Actitud bajo presión','Generó conflictos',
+          'Fortalezas','Mejoras','Recomendación','Comentario'
+        ]);
+      }
+
+      hoja.appendRow([
+        Utilities.formatDate(ts, 'America/Costa_Rica', 'yyyy-MM-dd HH:mm:ss'),
+        datos.evaluador           || '',
+        datos.evaluado            || '',
+        datos.periodo             || '',
+        datos.fecha               || '',
+        comp.colaboracion         || '',
+        comp.responsabilidad      || '',
+        comp.comunicacion         || '',
+        comp.actitud              || '',
+        comp.calidad              || '',
+        datos.promedio            || '',
+        comp2.apoyo_sin_pedirlo    || '',
+        comp2.comunico_problemas   || '',
+        comp2.propuso_mejoras      || '',
+        comp2.actitud_bajo_presion || '',
+        comp2.genero_conflictos    || '',
+        datos.fortalezas          || '',
+        datos.mejoras             || '',
+        datos.recomendacion       || '',
+        datos.comentario          || '',
+      ]);
+
+    } else {
+      let hoja = ss.getSheetByName('KPIs');
+      if (!hoja) hoja = ss.insertSheet('KPIs');
+      const ts = new Date();
+      if (hoja.getLastRow() === 0) {
+        hoja.appendRow(['Timestamp','Usuario','Tipo','Datos']);
+      }
+      hoja.appendRow([
+        Utilities.formatDate(ts, 'America/Costa_Rica', 'yyyy-MM-dd HH:mm:ss'),
+        payload.usuario || '',
+        tipo,
+        JSON.stringify(payload.datos || {}),
+      ]);
+    }
+
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// INSUMOS
+// ══════════════════════════════════════════════════════════════
+function guardarInsumo(payload) {
+  try {
+    const ss         = SpreadsheetApp.openById(SHEETS.insumos);
+    const dept       = payload.departamento || 'limpieza';
+    const tipo       = payload.tipo || '';
+
+    let nombreHoja;
+    if (tipo === 'herramientas') {
+      nombreHoja = 'HERRAMIENTAS';
+    } else if (tipo === 'cuadraciclo') {
+      nombreHoja = 'USO DE CUADRACICLO';
+    } else {
+      nombreHoja = dept === 'mantenimiento' ? 'MANTENIMIENTO' : 'Limpieza';
+    }
+
+    let hoja = ss.getSheetByName(nombreHoja);
+    if (!hoja) hoja = ss.insertSheet(nombreHoja);
+
+    const ts    = new Date();
+    const datos = payload.datos || {};
+    const items = datos.items   || [];
+    const ts_str = Utilities.formatDate(ts, 'America/Costa_Rica', 'yyyy-MM-dd HH:mm:ss');
+
+    if (tipo === 'herramientas') {
+      if (hoja.getLastRow() === 0) {
+        hoja.appendRow(['Timestamp','Usuario','Colaborador','Fecha','Hora','Herramienta','Estado','Observaciones']);
+      }
+      hoja.appendRow([
+        ts_str, payload.usuario||'', datos.colaborador||'',
+        datos.fecha||'', datos.hora||'', datos.area||'',
+        datos.estado||'', datos.obs||'',
+      ]);
+    } else if (tipo === 'cuadraciclo') {
+      if (hoja.getLastRow() === 0) {
+        hoja.appendRow(['Timestamp','Usuario','Colaborador','Fecha','Hora','Cuadraciclo','Kilometraje Inicial','Observaciones']);
+      }
+      hoja.appendRow([
+        ts_str, payload.usuario||'', datos.colaborador||'',
+        datos.fecha||'', datos.hora||'', datos.area||'',
+        datos.desc||'', datos.obs||'',
+      ]);
+    } else {
+      if (hoja.getLastRow() === 0) {
+        hoja.appendRow(['Timestamp','Usuario','Departamento','Colaborador','Fecha','Prioridad','Observaciones','Items (JSON)','Cant. Items']);
+      }
+      hoja.appendRow([
+        ts_str, payload.usuario||'', dept,
+        datos.colaborador||'', datos.fecha||'', datos.prior||'',
+        datos.obs||'', JSON.stringify(items), items.length,
+      ]);
+    }
+
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// INVENTARIOS
+// ══════════════════════════════════════════════════════════════
+// GUEST REPORTS
+// ══════════════════════════════════════════════════════════════
+function guardarGuestReport(payload) {
+  try {
+    const ss   = SpreadsheetApp.openById(SHEETS.reportes);
+    const hoja = ss.getSheetByName('GUEST REPORT');
+    if (!hoja) return { ok: false, error: 'Pestaña GUEST REPORT no encontrada' };
+
+    const ts     = new Date();
+    const ts_str = Utilities.formatDate(ts, 'America/Costa_Rica', 'yyyy-MM-dd HH:mm:ss');
+    const idUnico = 'GR-' + ts.getTime();
+    const datos  = payload.datos || {};
+
+    // Translate description and area to Spanish on arrival
+    let descEs = datos.descripcion || '';
+    let areaEs = datos.area        || '';
+    try {
+      if (descEs) descEs = LanguageApp.translate(descEs, 'en', 'es');
+      if (areaEs) areaEs = LanguageApp.translate(areaEs, 'en', 'es');
+    } catch(e) {}
+
+    hoja.appendRow([
+      ts_str,
+      descEs,
+      areaEs,
+      'Pendiente',
+      idUnico,
+      '',
+    ]);
+    return { ok: true, id: idUnico };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+function responderGuestReports() {
+  try {
+    const ss   = SpreadsheetApp.openById(SHEETS.reportes);
+    const hoja = ss.getSheetByName('GUEST REPORT');
+    if (!hoja || hoja.getLastRow() < 2) return { ok: true, reportes: [] };
+
+    const datos   = hoja.getDataRange().getValues();
+    const headers = datos[0];
+    const idx = {};
+    headers.forEach((h, i) => {
+      idx[h] = i;
+      idx[h.normalize('NFC')] = i;
+      idx[h.replace(/[áéíóú]/gi, c => ({á:'a',é:'e',í:'i',ó:'o',ú:'u'}[c.toLowerCase()]||c)).toLowerCase()] = i;
+    });
+
+    const col = (names, fallback) => { for (const n of names) { if (idx[n] !== undefined) return idx[n]; } return fallback; };
+    // Timestamp(0) Descripción(1) Área(2) Estado(3) ID(4) Colaborador(5)
+    const cTs    = col(['Timestamp'],                   0);
+    const cDesc  = col(['Descripción','Descripcion'],   1);
+    const cArea  = col(['Área','Area'],                 2);
+    const cEst   = col(['Estado'],                      3);
+    const cId    = col(['ID'],                          4);
+    const cColab = col(['Colaborador'],                 5);
+
+    const reportes = datos.slice(1)
+      .map(row => ({
+        id:          String(row[cId]    || ''),
+        timestamp:   row[cTs] ? Utilities.formatDate(new Date(row[cTs]), 'America/Costa_Rica', 'yyyy-MM-dd') : '',
+        descripcion: String(row[cDesc]  || ''),
+        area:        String(row[cArea]  || ''),
+        estado:      String(row[cEst]   || 'Pendiente'),
+        colaborador: String(row[cColab] || ''),
+      }))
+      .filter(r => r.id && r.estado !== 'Completada');
+
+    return { ok: true, reportes };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+function completarGuestReport(payload) {
+  try {
+    const ss   = SpreadsheetApp.openById(SHEETS.reportes);
+    const hoja = ss.getSheetByName('GUEST REPORT');
+    if (!hoja) return { ok: false, error: 'Pestaña GUEST REPORT no encontrada' };
+
+    const idBuscado    = payload.id          || '';
+    const colaborador  = payload.colaborador || '';
+    if (!idBuscado) return { ok: false, error: 'ID no especificado' };
+
+    const datos    = hoja.getDataRange().getValues();
+    const headers  = datos[0];
+    const colId    = headers.indexOf('ID');
+    const colEst   = headers.indexOf('Estado');
+    const colColab = headers.indexOf('Colaborador');
+
+    for (let r = 1; r < datos.length; r++) {
+      if (datos[r][colId] === idBuscado) {
+        hoja.getRange(r + 1, colEst   + 1).setValue('Completada');
+        hoja.getRange(r + 1, colColab + 1).setValue(colaborador);
+
+        // Also log to MANTENIMIENTO - REPORTE DE AVERÍA
+        const hojaAv = ss.getSheetByName('MANTENIMIENTO - REPORTE DE AVERÍA');
+        if (hojaAv) {
+          const ts     = new Date();
+          const ts_str = Utilities.formatDate(ts, 'America/Costa_Rica', 'yyyy-MM-dd HH:mm:ss');
+          const idAv   = 'AV-GR-' + ts.getTime();
+          if (hojaAv.getLastRow() === 0) {
+            hojaAv.appendRow(['Timestamp','Usuario','Colaborador','Fecha','Avería','Prioridad','Área','Cluster','Descripción','Estado','ID']);
+          }
+          hojaAv.appendRow([
+            ts_str,
+            payload.usuario  || '',
+            colaborador,
+            ts_str,
+            'Reporte de Huésped',
+            'Prioridad',
+            datos[r][headers.indexOf('Área')] || '',
+            '',
+            datos[r][headers.indexOf('Descripción')] || '',
+            'Completada',
+            idAv,
+          ]);
+        }
+        return { ok: true };
+      }
+    }
+    return { ok: false, error: 'Reporte no encontrado: ' + idBuscado };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════════
+function guardarInventario(payload) {
+  try {
+    const ss   = SpreadsheetApp.openById(SHEETS.inventarios);
+    const tipo = payload.tipo || '';
+
+    const hojaMap = {
+      'ropa-cama':      'Ropa de Cama',
+      'props-maloca':   'Props Maloca',
+      'props-movement': 'Props Estudio de Movimiento',
+      'campamento':     'Campamento',
+    };
+    const nombreHoja = hojaMap[tipo] || 'General';
+    let hoja = ss.getSheetByName(nombreHoja);
+    if (!hoja) hoja = ss.insertSheet(nombreHoja);
+
+    const ts    = new Date();
+    const items = payload.items || [];
+
+    if (hoja.getLastRow() === 0) {
+      hoja.appendRow([
+        'Timestamp','Usuario','Tipo','Fecha','Observaciones',
+        ...items.map(i => i.item)
+      ]);
+    }
+
+    hoja.appendRow([
+      Utilities.formatDate(ts, 'America/Costa_Rica', 'yyyy-MM-dd HH:mm:ss'),
+      payload.usuario       || '',
+      tipo,
+      payload.fecha         || '',
+      payload.observaciones || '',
+      ...items.map(i => i.cantidad || 0),
+    ]);
+
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
