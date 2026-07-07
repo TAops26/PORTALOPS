@@ -1092,9 +1092,13 @@ async function loadConfigColabs() {
 
 
 async function loadGuestReports() {
-  // Wait for DOM to be ready
-  await new Promise(r => setTimeout(r, 100));
-  const el = document.getElementById('guest-reports-list');
+  // Retry until DOM element exists (max 10 attempts x 200ms = 2s)
+  let el = null;
+  for (let i = 0; i < 10; i++) {
+    el = document.getElementById('guest-reports-list');
+    if (el) break;
+    await new Promise(r => setTimeout(r, 200));
+  }
   if (!el) return;
   try {
     const res  = await fetch(WEBHOOK + '?action=get_guest_reports');
