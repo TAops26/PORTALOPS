@@ -224,6 +224,10 @@ body {
           <option>Carson</option>
         </select>
       </div>
+      <div class="fg" id="other-area-wrapper" style="display:none;">
+        <label>Please describe the area</label>
+        <input type="text" id="g-other-area" placeholder="e.g. Near the reception, by the pool entrance...">
+      </div>
       <div class="fg">
         <label>Date &amp; Time</label>
         <div class="fecha-display" id="fecha-display"></div>
@@ -256,9 +260,12 @@ const WEBHOOK = 'https://script.google.com/macros/s/AKfycbzGws5rH9g8si9f6efuqIBV
 
 function toggleRoomSelect() {
   const area = document.getElementById('g-area').value;
-  const wrapper = document.getElementById('room-select-wrapper');
-  wrapper.style.display = area === 'My room' ? 'block' : 'none';
-  if (area !== 'My room') document.getElementById('g-room').value = '';
+  const roomWrapper  = document.getElementById('room-select-wrapper');
+  const otherWrapper = document.getElementById('other-area-wrapper');
+  roomWrapper.style.display  = area === 'My room'    ? 'block' : 'none';
+  otherWrapper.style.display = area === 'Other area' ? 'block' : 'none';
+  if (area !== 'My room')    document.getElementById('g-room').value = '';
+  if (area !== 'Other area') document.getElementById('g-other-area').value = '';
 }
 
 async function submitGuestReport() {
@@ -268,11 +275,15 @@ async function submitGuestReport() {
   const btn  = document.getElementById('btn-submit');
 
   err.style.display = 'none';
-  const room = document.getElementById('g-room').value;
+  const room      = document.getElementById('g-room').value;
+  const otherArea = document.getElementById('g-other-area').value.trim();
   if (!desc) { alert('Please describe the issue.'); return; }
   if (!area) { alert('Please select the area.'); return; }
-  if (area === 'My room' && !room) { alert('Please select your room name.'); return; }
-  const areaFinal = area === 'My room' && room ? `My room — ${room}` : area;
+  if (area === 'My room'    && !room)      { alert('Please select your room name.'); return; }
+  if (area === 'Other area' && !otherArea) { alert('Please describe the area.'); return; }
+  const areaFinal = area === 'My room'    ? `My room — ${room}`
+                  : area === 'Other area' ? `Other — ${otherArea}`
+                  : area;
 
   btn.disabled = true;
   btn.textContent = 'Sending...';
