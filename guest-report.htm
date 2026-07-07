@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Tierramor — Reportar Avería</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Jost', sans-serif;
+  background: #E8E2D1;
+  min-height: 100vh;
+  color: #3d2f26;
+}
+
+/* HEADER */
+.header {
+  background: #717F7E;
+  padding: 1.2rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 3px solid rgba(84,66,54,0.15);
+}
+.header img.logo {
+  height: 22px;
+  filter: brightness(10);
+  opacity: 0.9;
+}
+.header-text h1 {
+  font-family: 'Cormorant', serif;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: #E8E2D1;
+  font-weight: 400;
+}
+.header-text p {
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(232,226,209,0.6);
+}
+
+/* MAIN */
+.main {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1.75rem 1.25rem 3rem;
+}
+
+/* INTRO CARD */
+.intro-card {
+  background: #717F7E;
+  border-radius: 16px;
+  padding: 1.25rem 1.25rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+.intro-icon { font-size: 1.6rem; flex-shrink: 0; }
+.intro-card h2 {
+  font-family: 'Cormorant', serif;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: #E8E2D1;
+  margin-bottom: 0.3rem;
+  font-weight: 400;
+}
+.intro-card p {
+  font-size: 0.78rem;
+  color: rgba(232,226,209,0.7);
+  line-height: 1.5;
+}
+
+/* FORM CARD */
+.form-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(84,66,54,0.1);
+  margin-bottom: 1rem;
+}
+
+.fg { margin-bottom: 1.1rem; }
+.fg label {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(84,66,54,0.55);
+  margin-bottom: 0.45rem;
+  font-family: 'Jost', sans-serif;
+}
+.fg input, .fg select, .fg textarea {
+  width: 100%;
+  background: #F5F2EC;
+  border: 1.5px solid rgba(84,66,54,0.15);
+  border-radius: 10px;
+  padding: 0.82rem 1rem;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.92rem;
+  color: #3d2f26;
+  outline: none;
+  transition: border-color 0.15s;
+  -webkit-text-fill-color: #3d2f26;
+}
+.fg input:focus, .fg select:focus, .fg textarea:focus {
+  border-color: #717F7E;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(113,127,126,0.12);
+}
+.fg textarea { min-height: 100px; resize: vertical; line-height: 1.55; }
+.fg input::placeholder, .fg textarea::placeholder {
+  color: rgba(84,66,54,0.35);
+  -webkit-text-fill-color: rgba(84,66,54,0.35);
+}
+.fg select option { color: #3d2f26; background: white; }
+
+/* FECHA DISPLAY */
+.fecha-display {
+  background: #F5F2EC;
+  border: 1.5px solid rgba(84,66,54,0.15);
+  border-radius: 10px;
+  padding: 0.82rem 1rem;
+  font-size: 0.88rem;
+  color: rgba(84,66,54,0.55);
+  font-family: 'Jost', sans-serif;
+}
+
+/* SUBMIT BTN */
+.btn-submit {
+  width: 100%;
+  background: #717F7E;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem;
+  color: #E8E2D1;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 3px 14px rgba(113,127,126,0.3);
+  letter-spacing: 0.02em;
+}
+.btn-submit:hover { background: #617070; transform: translateY(-1px); }
+.btn-submit:disabled { background: rgba(84,66,54,0.2); transform: none; box-shadow: none; cursor: default; color: rgba(84,66,54,0.4); }
+
+/* SUCCESS */
+.success-screen {
+  display: none;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+.success-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+.success-screen h2 {
+  font-family: 'Cormorant', serif;
+  font-style: italic;
+  font-size: 1.6rem;
+  color: #3d2f26;
+  margin-bottom: 0.75rem;
+}
+.success-screen p {
+  font-size: 0.85rem;
+  color: rgba(84,66,54,0.6);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+.btn-nuevo {
+  background: none;
+  border: 2px solid #717F7E;
+  border-radius: 12px;
+  padding: 0.85rem 2rem;
+  color: #717F7E;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-nuevo:hover { background: #717F7E; color: #E8E2D1; }
+
+/* ERROR */
+.err-msg {
+  background: rgba(224,122,95,0.1);
+  border: 1px solid rgba(224,122,95,0.3);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  font-size: 0.82rem;
+  color: #C05A3A;
+  margin-top: 0.75rem;
+  display: none;
+}
+
+/* FOOTER */
+.page-footer {
+  text-align: center;
+  padding: 1.5rem 0 0.5rem;
+}
+.page-footer img {
+  height: 32px;
+  opacity: 0.2;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <img src="./Tierramor_Logomark_Stamp.png" alt="Tierramor" class="logo">
+  <div class="header-text">
+    <h1>Tierramor</h1>
+    <p>Reporte de Avería</p>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- FORM VIEW -->
+  <div id="form-view">
+    <div class="intro-card">
+      <div class="intro-icon">🔧</div>
+      <div>
+        <h2>¿Encontraste algo que necesita atención?</h2>
+        <p>Completa este formulario y nuestro equipo de mantenimiento recibirá el reporte de inmediato.</p>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="fg">
+        <label>Descripción del problema</label>
+        <textarea id="g-desc" placeholder="Describe el problema con el mayor detalle posible..."></textarea>
+      </div>
+      <div class="fg">
+        <label>Ubicación / Área</label>
+        <select id="g-area">
+          <option value="">— Selecciona el área —</option>
+          <option>Mi habitación</option>
+          <option>Baños principales</option>
+          <option>Duchas</option>
+          <option>Juice Bar</option>
+          <option>Cocina / Comedor</option>
+          <option>Piscina</option>
+          <option>Lounge</option>
+          <option>Estudio de Movimiento</option>
+          <option>Maloca</option>
+          <option>Senderos</option>
+          <option>Área exterior</option>
+          <option>Otra área</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Fecha y hora</label>
+        <div class="fecha-display" id="fecha-display"></div>
+      </div>
+      <button class="btn-submit" id="btn-submit" onclick="submitGuestReport()">Enviar Reporte</button>
+      <div class="err-msg" id="err-msg">❌ No se pudo enviar el reporte. Por favor intenta de nuevo.</div>
+    </div>
+  </div>
+
+  <!-- SUCCESS VIEW -->
+  <div class="success-screen" id="success-view">
+    <div class="success-icon">✅</div>
+    <h2>¡Reporte enviado!</h2>
+    <p>Gracias por avisarnos. Nuestro equipo de mantenimiento atenderá el problema a la brevedad posible.</p>
+    <button class="btn-nuevo" onclick="resetForm()">Reportar otro problema</button>
+  </div>
+
+  <div class="page-footer">
+    <img src="./Tierramor_Emblem-Brown.png" alt="Tierramor">
+  </div>
+</div>
+
+<script>
+const WEBHOOK = 'https://script.google.com/macros/s/AKfycbydoJ3XAwjsSZ1rcU1g1l0vQyKF8p3RM0QmWpmSzQqqnGlE3VTDZieU7yCIrYr6iABPQg/exec';
+
+// Set fecha display on load
+(function() {
+  const now = new Date();
+  const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' };
+  document.getElementById('fecha-display').textContent = now.toLocaleDateString('es-CR', opts);
+})();
+
+async function submitGuestReport() {
+  const desc = document.getElementById('g-desc').value.trim();
+  const area = document.getElementById('g-area').value;
+  const err  = document.getElementById('err-msg');
+  const btn  = document.getElementById('btn-submit');
+
+  err.style.display = 'none';
+
+  if (!desc) { alert('Por favor describe el problema.'); return; }
+  if (!area) { alert('Por favor selecciona el área.'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  try {
+    await fetch(WEBHOOK, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({
+        type: 'guest_report',
+        datos: {
+          descripcion: desc,
+          area: area,
+          fecha: new Date().toISOString(),
+        }
+      }),
+      headers: { 'Content-Type': 'text/plain' }
+    });
+    document.getElementById('form-view').style.display = 'none';
+    document.getElementById('success-view').style.display = 'block';
+  } catch(e) {
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Enviar Reporte';
+  }
+}
+
+function resetForm() {
+  document.getElementById('g-desc').value = '';
+  document.getElementById('g-area').value = '';
+  document.getElementById('err-msg').style.display = 'none';
+  document.getElementById('btn-submit').disabled = false;
+  document.getElementById('btn-submit').textContent = 'Enviar Reporte';
+  const now = new Date();
+  const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' };
+  document.getElementById('fecha-display').textContent = now.toLocaleDateString('es-CR', opts);
+  document.getElementById('form-view').style.display = 'block';
+  document.getElementById('success-view').style.display = 'none';
+}
+</script>
+</body>
+</html>
