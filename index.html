@@ -1002,6 +1002,34 @@ input[style*="background:white"]::placeholder,
   </div>
 </div>
 
+<!-- GUEST REPORT DETAIL MODAL -->
+<div class="modal-overlay" id="guest-modal" onclick="if(event.target===this) closeGuestModal()">
+  <div class="modal-box" style="text-align:left;max-width:380px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <div style="font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;padding:.3rem .65rem;border-radius:20px;font-family:var(--font-sans);background:rgba(113,127,126,0.15);color:#8FACA9;">🏠 Reporte de Huésped</div>
+      <button onclick="closeGuestModal()" style="background:none;border:none;color:rgba(232,226,209,0.4);font-size:1.3rem;cursor:pointer;line-height:1;padding:0;">×</button>
+    </div>
+    <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(232,226,209,0.09);border-radius:12px;padding:.9rem 1rem;margin-bottom:.85rem;">
+      <div style="font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(232,226,209,0.4);margin-bottom:.3rem;">Descripción</div>
+      <div id="guest-modal-desc" style="font-size:.85rem;font-family:var(--font-sans);color:rgba(232,226,209,0.85);line-height:1.5;"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1rem;">
+      <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(232,226,209,0.09);border-radius:10px;padding:.7rem .8rem;">
+        <div style="font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(232,226,209,0.4);margin-bottom:.25rem;">Área</div>
+        <div id="guest-modal-area" style="font-size:.8rem;font-family:var(--font-sans);color:var(--cream);"></div>
+      </div>
+      <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(232,226,209,0.09);border-radius:10px;padding:.7rem .8rem;">
+        <div style="font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(232,226,209,0.4);margin-bottom:.25rem;">Fecha</div>
+        <div id="guest-modal-fecha" style="font-size:.8rem;font-family:var(--font-sans);color:var(--cream);"></div>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="mbtn-bk" onclick="closeGuestModal()">Cerrar</button>
+      <button class="mbtn-ok" id="guest-modal-btn">✓ Completada</button>
+    </div>
+  </div>
+</div>
+
 <!-- AVERIA DETAIL MODAL -->
 <div class="modal-overlay" id="averia-modal" onclick="if(event.target===this) closeAveriaModal()">
   <div class="modal-box" style="text-align:left;max-width:380px;">
@@ -1060,6 +1088,62 @@ async function loadConfigColabs() {
   } catch(e) {
     window._configColabs = [];
   }
+}
+
+
+async function loadGuestReports() {
+  const el = document.getElementById('guest-reports-list');
+  if (!el) return;
+  try {
+    const res  = await fetch(WEBHOOK + '?action=get_guest_reports');
+    const data = await res.json();
+    if (data.ok) renderGuestReports(data.reportes || []);
+    else if (el) el.innerHTML = '';
+  } catch(e) { if (el) el.innerHTML = ''; }
+}
+
+function renderGuestReports(reportes) {
+  const el = document.getElementById('guest-reports-list');
+  if (!el) return;
+  window._guestData = {};
+  reportes.forEach(r => { window._guestData[r.id] = r; });
+  if (!reportes.length) { el.innerHTML = ''; return; }
+  el.innerHTML = reportes.map(r => `
+    <div class="rbtn" style="border-left-color:#717F7E;cursor:pointer;" id="gr-row-${r.id}" onclick="openGuestModal('${r.id}')">
+      <div style="flex:1;">
+        <div style="font-size:.82rem;font-family:var(--font-sans);color:var(--cream);font-weight:500;margin-bottom:.15rem;">${r.descripcion || 'Sin descripción'}</div>
+        <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);">${r.area || ''} · ${r.timestamp ? r.timestamp.slice(0,10) : ''}</div>
+      </div>
+      <span class="arr">›</span>
+    </div>`).join('');
+}
+
+function openGuestModal(id) {
+  const r = window._guestData?.[id];
+  if (!r) return;
+  document.getElementById('guest-modal-desc').textContent  = r.descripcion || '—';
+  document.getElementById('guest-modal-area').textContent  = r.area || '—';
+  document.getElementById('guest-modal-fecha').textContent = r.timestamp ? r.timestamp.slice(0,10) : '—';
+  const btn = document.getElementById('guest-modal-btn');
+  btn.onclick = () => { completarGuestReport(id); closeGuestModal(); };
+  document.getElementById('guest-modal').classList.add('show');
+}
+
+function closeGuestModal() {
+  document.getElementById('guest-modal').classList.remove('show');
+}
+
+async function completarGuestReport(id) {
+  const row = document.getElementById('gr-row-' + id);
+  if (row) row.style.opacity = '0.5';
+  try {
+    await fetch(WEBHOOK, {
+      method: 'POST', mode: 'no-cors',
+      body: JSON.stringify({ type:'completar_guest_report', id, usuario: CU?.usuario || '', colaborador: CU?.nombre || '' }),
+      headers: { 'Content-Type': 'text/plain' }
+    });
+    if (row) row.remove();
+  } catch(e) { if (row) row.style.opacity = '1'; }
 }
 
 async function loadAverias() {
@@ -1283,6 +1367,13 @@ function renderHome() {
   };
 
   const showDepts = isAdmin ? ['limpieza','mantenimiento','proveeduria','seguridad'] : [CU.departamento];
+  const GUEST_SECTION = `<div id="guest-reports-section" style="margin-bottom:1rem;">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;padding:.45rem .7rem;background:rgba(113,127,126,0.15);border:1px solid rgba(113,127,126,0.25);border-radius:8px;">
+      <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#8FACA9;font-family:var(--font-sans);">🏠 Reportes de Huéspedes</span>
+    </div>
+    <div id="guest-reports-list"></div>
+  </div>`;
+
   const STAT_HTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.2rem;">
     <div class="stat-blue" style="background:rgba(255,255,255,0.055);border:1px solid rgba(232,226,209,0.09);border-radius:12px;padding:.9rem;text-align:center;">
       <div style="font-size:.55rem;text-transform:uppercase;letter-spacing:.18em;color:rgba(113,127,126,0.7);font-family:var(--font-sans);margin-bottom:.35rem;">Esta semana</div>
@@ -1296,7 +1387,7 @@ function renderHome() {
     </div>
   </div>`;
 
-  let btns = STAT_HTML + `<div class="sec-lbl lbl-blue">${isAdmin ? 'Departamentos' : 'Tu área de trabajo'}</div>`;
+  let btns = GUEST_SECTION + STAT_HTML + `<div class="sec-lbl lbl-blue">${isAdmin ? 'Departamentos' : 'Tu área de trabajo'}</div>`;
 
   if (isAdmin) {
     btns += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem;">`;
@@ -1398,7 +1489,7 @@ function renderDeptHome() {
   }
 
   document.getElementById('home-depts').innerHTML = btns + '<div class="tm-page-footer"><img src="./Tierramor_Emblem-Brown.png" alt="" style="height:36px;opacity:0.18;filter:brightness(2);"></div>';
-
+  loadGuestReports();
   if (d === 'mantenimiento') loadAverias();
 }
 
@@ -1479,8 +1570,7 @@ function openDept(dept) {
     loadAverias();
   } else {
     avSec.innerHTML = '';
-  }
-  const rl   = document.getElementById('rlist');
+  }  const rl   = document.getElementById('rlist');
   const rlbl = document.getElementById('rlist-lbl');
   if (d.reports.length) {
     rlbl.style.display = '';
@@ -1613,8 +1703,8 @@ let matCount = 1;
 function matRow(idx) {
   const unidades = ['Unidad','Paquete','Kilo (kg)','Gramo (g)','Litro (L)','Mililitro (mL)','Galón','Rollo','Caja','Bolsa','Par','Metro','Otro'];
   return `<div id="mat-row-${idx}" style="display:grid;grid-template-columns:1.8fr .8fr 1fr auto;gap:.4rem;margin-bottom:.55rem;align-items:center;">
-    <input type="text" id="mat-item-${idx}" placeholder="Material o herramienta" style="background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .7rem;font-size:.85rem;font-family:sans-serif;color:var(--brown);outline:none;">
-    <input type="number" id="mat-qty-${idx}" placeholder="Cant." min="1" style="background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .7rem;font-size:.85rem;font-family:sans-serif;color:var(--brown);outline:none;">
+    <input type="text" id="mat-item-${idx}" placeholder="Material o herramienta" style="background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .7rem;font-size:.85rem;font-family:sans-serif;color:#3d2f26 !important;-webkit-text-fill-color:#3d2f26 !important;outline:none;">
+    <input type="number" id="mat-qty-${idx}" placeholder="Cant." min="1" style="background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .7rem;font-size:.85rem;font-family:sans-serif;color:#3d2f26 !important;-webkit-text-fill-color:#3d2f26 !important;outline:none;">
     <select id="mat-unit-${idx}" style="background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .5rem;font-size:.78rem;font-family:sans-serif;color:var(--brown);outline:none;appearance:none;">${unidades.map(u=>`<option value="${u}" style="color:#3d2f26;background:#fafaf8;">${u}</option>`).join('')}</select>
     ${idx > 0 ? `<button onclick="removeMatRow(${idx})" style="width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(84,66,54,.2);background:none;color:var(--tm);font-size:1rem;cursor:pointer;line-height:1;">×</button>` : '<div style="width:28px;"></div>'}
   </div>`;
@@ -2687,7 +2777,9 @@ function openSolicitudInsumos(){
 let insCount=1;
 function insRow(idx){
   const unidades=['Unidad','Paquete','Kilo (kg)','Gramo (g)','Litro (L)','Mililitro (mL)','Galón','Rollo','Caja','Bolsa','Par','Docena','Metro','Pichinga','Otro'];
-  return `<div id="ins-row-${idx}" style="display:grid;grid-template-columns:1.8fr .8fr 1fr auto;gap:.4rem;margin-bottom:.55rem;align-items:center;"><input type="text" id="ins-item-${idx}" placeholder="Insumo" style="background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .7rem;font-size:.85rem;font-family:sans-serif;color:var(--brown);outline:none;"><input type="number" id="ins-qty-${idx}" placeholder="Cant." min="1" style="background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .7rem;font-size:.85rem;font-family:sans-serif;color:var(--brown);outline:none;"><select id="ins-unit-${idx}" style="background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .5rem;font-size:.78rem;font-family:sans-serif;color:var(--brown);outline:none;appearance:none;">${unidades.map(u=>`<option value="${u}" style="color:#3d2f26;background:#fafaf8;">${u}</option>`).join('')}</select>${idx>0?`<button onclick="removeInsRow(${idx})" style="width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(84,66,54,.2);background:none;color:var(--tm);font-size:1rem;cursor:pointer;line-height:1;">×</button>`:'<div style="width:28px;"></div>'}</div>`;
+  const iStyle='background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .7rem;font-size:.85rem;font-family:sans-serif;color:#3d2f26 !important;-webkit-text-fill-color:#3d2f26 !important;outline:none;';
+  const sStyle='background:#fafaf8;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .5rem;font-size:.78rem;font-family:sans-serif;color:#3d2f26 !important;-webkit-text-fill-color:#3d2f26 !important;outline:none;appearance:none;';
+  return `<div id="ins-row-${idx}" style="display:grid;grid-template-columns:1.8fr .8fr 1fr auto;gap:.4rem;margin-bottom:.55rem;align-items:center;"><input type="text" id="ins-item-${idx}" placeholder="Insumo" style="${iStyle}"><input type="number" id="ins-qty-${idx}" placeholder="Cant." min="1" style="${iStyle}"><select id="ins-unit-${idx}" style="${sStyle}">${unidades.map(u=>`<option value="${u}" style="color:#3d2f26;background:#fafaf8;">${u}</option>`).join('')}</select>${idx>0?`<button onclick="removeInsRow(${idx})" style="width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(84,66,54,.2);background:none;color:var(--tm);font-size:1rem;cursor:pointer;line-height:1;">×</button>`:'<div style="width:28px;"></div>'}</div>`;
 }
 function addInsRow(){document.getElementById('ins-list').insertAdjacentHTML('beforeend',insRow(insCount));insCount++;}
 function removeInsRow(idx){document.getElementById('ins-row-'+idx)?.remove();}
