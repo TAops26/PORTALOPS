@@ -1172,14 +1172,18 @@ function renderAverias(averias) {
   window._averiasData = {};
   averias.forEach(a => { window._averiasData[a.id] = a; });
   const prioColor = { 'Urgente':'#E07A5F', 'Prioridad':'#C17A5A', 'Programar':'#9A9560' };
-  list.innerHTML = averias.map(a => `
-    <div class="rbtn" style="border-left-color:${prioColor[a.prioridad]||'var(--clay)'};cursor:pointer;" id="av-row-${a.id}" onclick="openAveriaModal('${a.id}')">
+  list.innerHTML = averias.map(a => {
+    // Use any available text field as title
+    const titulo = a.averia || a.descripcion || a.area || a.cluster || '—';
+    const subtitulo = [a.fecha ? a.fecha.slice(0,10) : '', a.cluster || a.area || ''].filter(Boolean).join(' · ');
+    return `<div class="rbtn" style="border-left-color:${prioColor[a.prioridad]||'var(--clay)'};cursor:pointer;" id="av-row-${a.id}" onclick="openAveriaModal('${a.id}')">
       <div style="flex:1;">
-        <div style="font-size:.82rem;font-family:var(--font-sans);color:var(--cream);font-weight:500;margin-bottom:.15rem;">${a.averia || a.descripcion || 'Avería sin título'}</div>
-        <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);">${a.fecha || ''} ${a.cluster ? '· '+a.cluster : ''}</div>
+        <div style="font-size:.82rem;font-family:var(--font-sans);color:var(--cream);font-weight:500;margin-bottom:.15rem;">${titulo}</div>
+        <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);">${subtitulo}</div>
       </div>
       <span class="arr">›</span>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function openAveriaModal(id) {
@@ -1195,10 +1199,12 @@ function openAveriaModal(id) {
   priorEl.style.color = prioColor[prior] || 'var(--clay)';
   priorEl.style.background = prioBg[prior] || 'rgba(153,92,68,0.15)';
 
-  document.getElementById('averia-modal-titulo').textContent = a.averia || 'Avería sin título';
-  document.getElementById('averia-modal-desc').textContent = a.descripcion || 'Sin descripción adicional.';
-  document.getElementById('averia-modal-area').textContent = a.cluster || a.area || '—';
-  document.getElementById('averia-modal-fecha').textContent = a.fecha || '—';
+  document.getElementById('averia-modal-titulo').textContent = a.averia || a.descripcion || '—';
+  document.getElementById('averia-modal-desc').textContent  = a.descripcion || a.averia || 'Sin descripción adicional.';
+  document.getElementById('averia-modal-area').textContent  = a.cluster || a.area || '—';
+  const fechaRaw = a.fecha || a.timestamp || '';
+  const fechaDisplay = fechaRaw.length > 10 ? fechaRaw.slice(0,10) : fechaRaw;
+  document.getElementById('averia-modal-fecha').textContent = fechaDisplay || '—';
 
   const btn = document.getElementById('averia-modal-btn');
   btn.onclick = () => { marcarAveriaCompletada(id); closeAveriaModal(); };
