@@ -189,9 +189,9 @@ body {
       </div>
       <div class="fg">
         <label>Location / Area</label>
-        <select id="g-area">
+        <select id="g-area" onchange="toggleRoomSelect()">
           <option value="">— Select the area —</option>
-          <option>My room</option>
+          <option value="My room">My room</option>
           <option>Main bathrooms</option>
           <option>Showers</option>
           <option>Juice Bar</option>
@@ -203,6 +203,25 @@ body {
           <option>Trails</option>
           <option>Outdoor area</option>
           <option>Other area</option>
+        </select>
+      </div>
+      <div class="fg" id="room-select-wrapper" style="display:none;">
+        <label>Room name</label>
+        <select id="g-room">
+          <option value="">— Select your room —</option>
+          <option>Toensmeier</option>
+          <option>Hemenway</option>
+          <option>Primavesi</option>
+          <option>Salatin</option>
+          <option>Shiva</option>
+          <option>Savory</option>
+          <option>Yeomans</option>
+          <option>Fukuoka</option>
+          <option>Mollison</option>
+          <option>Götsch</option>
+          <option>Holzer</option>
+          <option>Ingham</option>
+          <option>Carson</option>
         </select>
       </div>
       <div class="fg">
@@ -235,6 +254,13 @@ const WEBHOOK = 'https://script.google.com/macros/s/AKfycbzGws5rH9g8si9f6efuqIBV
   document.getElementById('fecha-display').textContent = now.toLocaleDateString('en-US', opts);
 })();
 
+function toggleRoomSelect() {
+  const area = document.getElementById('g-area').value;
+  const wrapper = document.getElementById('room-select-wrapper');
+  wrapper.style.display = area === 'My room' ? 'block' : 'none';
+  if (area !== 'My room') document.getElementById('g-room').value = '';
+}
+
 async function submitGuestReport() {
   const desc = document.getElementById('g-desc').value.trim();
   const area = document.getElementById('g-area').value;
@@ -242,8 +268,11 @@ async function submitGuestReport() {
   const btn  = document.getElementById('btn-submit');
 
   err.style.display = 'none';
+  const room = document.getElementById('g-room').value;
   if (!desc) { alert('Please describe the issue.'); return; }
   if (!area) { alert('Please select the area.'); return; }
+  if (area === 'My room' && !room) { alert('Please select your room name.'); return; }
+  const areaFinal = area === 'My room' && room ? `My room — ${room}` : area;
 
   btn.disabled = true;
   btn.textContent = 'Sending...';
@@ -256,7 +285,7 @@ async function submitGuestReport() {
         type: 'guest_report',
         datos: {
           descripcion: desc,
-          area: area,
+          area: areaFinal,
           fecha: new Date().toISOString(),
         }
       }),
