@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Tierramor — Reportar Avería</title>
+<title>Tierramor — Report an Issue</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -13,8 +13,6 @@ body {
   min-height: 100vh;
   color: #3d2f26;
 }
-
-/* HEADER */
 .header {
   background: #717F7E;
   padding: 1.2rem 1.5rem;
@@ -23,11 +21,7 @@ body {
   gap: 1rem;
   border-bottom: 3px solid rgba(84,66,54,0.15);
 }
-.header img.logo {
-  height: 22px;
-  filter: brightness(10);
-  opacity: 0.9;
-}
+.header img.logo { height: 22px; filter: brightness(10); opacity: 0.9; }
 .header-text h1 {
   font-family: 'Cormorant', serif;
   font-style: italic;
@@ -41,19 +35,15 @@ body {
   text-transform: uppercase;
   color: rgba(232,226,209,0.6);
 }
-
-/* MAIN */
 .main {
   max-width: 480px;
   margin: 0 auto;
   padding: 1.75rem 1.25rem 3rem;
 }
-
-/* INTRO CARD */
 .intro-card {
   background: #717F7E;
   border-radius: 16px;
-  padding: 1.25rem 1.25rem;
+  padding: 1.25rem;
   margin-bottom: 1.5rem;
   display: flex;
   align-items: flex-start;
@@ -68,13 +58,7 @@ body {
   margin-bottom: 0.3rem;
   font-weight: 400;
 }
-.intro-card p {
-  font-size: 0.78rem;
-  color: rgba(232,226,209,0.7);
-  line-height: 1.5;
-}
-
-/* FORM CARD */
+.intro-card p { font-size: 0.78rem; color: rgba(232,226,209,0.7); line-height: 1.5; }
 .form-card {
   background: white;
   border-radius: 16px;
@@ -82,7 +66,6 @@ body {
   box-shadow: 0 4px 20px rgba(84,66,54,0.1);
   margin-bottom: 1rem;
 }
-
 .fg { margin-bottom: 1.1rem; }
 .fg label {
   display: block;
@@ -91,7 +74,6 @@ body {
   text-transform: uppercase;
   color: rgba(84,66,54,0.55);
   margin-bottom: 0.45rem;
-  font-family: 'Jost', sans-serif;
 }
 .fg input, .fg select, .fg textarea {
   width: 100%;
@@ -102,9 +84,9 @@ body {
   font-family: 'Jost', sans-serif;
   font-size: 0.92rem;
   color: #3d2f26;
+  -webkit-text-fill-color: #3d2f26;
   outline: none;
   transition: border-color 0.15s;
-  -webkit-text-fill-color: #3d2f26;
 }
 .fg input:focus, .fg select:focus, .fg textarea:focus {
   border-color: #717F7E;
@@ -117,8 +99,6 @@ body {
   -webkit-text-fill-color: rgba(84,66,54,0.35);
 }
 .fg select option { color: #3d2f26; background: white; }
-
-/* FECHA DISPLAY */
 .fecha-display {
   background: #F5F2EC;
   border: 1.5px solid rgba(84,66,54,0.15);
@@ -126,10 +106,7 @@ body {
   padding: 0.82rem 1rem;
   font-size: 0.88rem;
   color: rgba(84,66,54,0.55);
-  font-family: 'Jost', sans-serif;
 }
-
-/* SUBMIT BTN */
 .btn-submit {
   width: 100%;
   background: #717F7E;
@@ -147,13 +124,7 @@ body {
 }
 .btn-submit:hover { background: #617070; transform: translateY(-1px); }
 .btn-submit:disabled { background: rgba(84,66,54,0.2); transform: none; box-shadow: none; cursor: default; color: rgba(84,66,54,0.4); }
-
-/* SUCCESS */
-.success-screen {
-  display: none;
-  text-align: center;
-  padding: 2rem 1rem;
-}
+.success-screen { display: none; text-align: center; padding: 2rem 1rem; }
 .success-icon { font-size: 3.5rem; margin-bottom: 1rem; }
 .success-screen h2 {
   font-family: 'Cormorant', serif;
@@ -162,12 +133,7 @@ body {
   color: #3d2f26;
   margin-bottom: 0.75rem;
 }
-.success-screen p {
-  font-size: 0.85rem;
-  color: rgba(84,66,54,0.6);
-  line-height: 1.6;
-  margin-bottom: 1.5rem;
-}
+.success-screen p { font-size: 0.85rem; color: rgba(84,66,54,0.6); line-height: 1.6; margin-bottom: 1.5rem; }
 .btn-nuevo {
   background: none;
   border: 2px solid #717F7E;
@@ -181,8 +147,6 @@ body {
   transition: all 0.15s;
 }
 .btn-nuevo:hover { background: #717F7E; color: #E8E2D1; }
-
-/* ERROR */
 .err-msg {
   background: rgba(224,122,95,0.1);
   border: 1px solid rgba(224,122,95,0.3);
@@ -193,80 +157,68 @@ body {
   margin-top: 0.75rem;
   display: none;
 }
-
-/* FOOTER */
-.page-footer {
-  text-align: center;
-  padding: 1.5rem 0 0.5rem;
-}
-.page-footer img {
-  height: 32px;
-  opacity: 0.2;
-}
+.page-footer { text-align: center; padding: 1.5rem 0 0.5rem; }
+.page-footer img { height: 32px; opacity: 0.2; }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <div class="header">
   <img src="./Tierramor_Logomark_Stamp.png" alt="Tierramor" class="logo">
   <div class="header-text">
     <h1>Tierramor</h1>
-    <p>Reporte de Avería</p>
+    <p>Maintenance Request</p>
   </div>
 </div>
 
-<!-- MAIN -->
 <div class="main">
 
-  <!-- FORM VIEW -->
   <div id="form-view">
     <div class="intro-card">
       <div class="intro-icon">🔧</div>
       <div>
-        <h2>¿Encontraste algo que necesita atención?</h2>
-        <p>Completa este formulario y nuestro equipo de mantenimiento recibirá el reporte de inmediato.</p>
+        <h2>Found something that needs attention?</h2>
+        <p>Fill out this form and our maintenance team will receive your report right away.</p>
       </div>
     </div>
 
     <div class="form-card">
       <div class="fg">
-        <label>Descripción del problema</label>
-        <textarea id="g-desc" placeholder="Describe el problema con el mayor detalle posible..."></textarea>
+        <label>Description of the issue</label>
+        <textarea id="g-desc" placeholder="Please describe the issue in as much detail as possible..."></textarea>
       </div>
       <div class="fg">
-        <label>Ubicación / Área</label>
+        <label>Location / Area</label>
         <select id="g-area">
-          <option value="">— Selecciona el área —</option>
-          <option>Mi habitación</option>
-          <option>Baños principales</option>
-          <option>Duchas</option>
+          <option value="">— Select the area —</option>
+          <option>My room</option>
+          <option>Main bathrooms</option>
+          <option>Showers</option>
           <option>Juice Bar</option>
-          <option>Cocina / Comedor</option>
-          <option>Piscina</option>
+          <option>Kitchen / Dining area</option>
+          <option>Swimming pool</option>
           <option>Lounge</option>
-          <option>Estudio de Movimiento</option>
+          <option>Movement Studio</option>
           <option>Maloca</option>
-          <option>Senderos</option>
-          <option>Área exterior</option>
-          <option>Otra área</option>
+          <option>Trails</option>
+          <option>Outdoor area</option>
+          <option>Other area</option>
         </select>
       </div>
       <div class="fg">
-        <label>Fecha y hora</label>
+        <label>Date &amp; Time</label>
         <div class="fecha-display" id="fecha-display"></div>
       </div>
-      <button class="btn-submit" id="btn-submit" onclick="submitGuestReport()">Enviar Reporte</button>
-      <div class="err-msg" id="err-msg">❌ No se pudo enviar el reporte. Por favor intenta de nuevo.</div>
+      <button class="btn-submit" id="btn-submit" onclick="submitGuestReport()">Submit Report</button>
+      <div class="err-msg" id="err-msg">❌ Could not send the report. Please try again.</div>
     </div>
   </div>
 
-  <!-- SUCCESS VIEW -->
   <div class="success-screen" id="success-view">
     <div class="success-icon">✅</div>
-    <h2>¡Reporte enviado!</h2>
-    <p>Gracias por avisarnos. Nuestro equipo de mantenimiento atenderá el problema a la brevedad posible.</p>
-    <button class="btn-nuevo" onclick="resetForm()">Reportar otro problema</button>
+    <h2>Report submitted!</h2>
+    <p>Thank you for letting us know. Our maintenance team will take care of it as soon as possible.</p>
+    <button class="btn-nuevo" onclick="resetForm()">Report another issue</button>
   </div>
 
   <div class="page-footer">
@@ -277,11 +229,10 @@ body {
 <script>
 const WEBHOOK = 'https://script.google.com/macros/s/AKfycbydoJ3XAwjsSZ1rcU1g1l0vQyKF8p3RM0QmWpmSzQqqnGlE3VTDZieU7yCIrYr6iABPQg/exec';
 
-// Set fecha display on load
 (function() {
   const now = new Date();
   const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' };
-  document.getElementById('fecha-display').textContent = now.toLocaleDateString('es-CR', opts);
+  document.getElementById('fecha-display').textContent = now.toLocaleDateString('en-US', opts);
 })();
 
 async function submitGuestReport() {
@@ -291,12 +242,11 @@ async function submitGuestReport() {
   const btn  = document.getElementById('btn-submit');
 
   err.style.display = 'none';
-
-  if (!desc) { alert('Por favor describe el problema.'); return; }
-  if (!area) { alert('Por favor selecciona el área.'); return; }
+  if (!desc) { alert('Please describe the issue.'); return; }
+  if (!area) { alert('Please select the area.'); return; }
 
   btn.disabled = true;
-  btn.textContent = 'Enviando...';
+  btn.textContent = 'Sending...';
 
   try {
     await fetch(WEBHOOK, {
@@ -317,7 +267,7 @@ async function submitGuestReport() {
   } catch(e) {
     err.style.display = 'block';
     btn.disabled = false;
-    btn.textContent = 'Enviar Reporte';
+    btn.textContent = 'Submit Report';
   }
 }
 
@@ -326,10 +276,10 @@ function resetForm() {
   document.getElementById('g-area').value = '';
   document.getElementById('err-msg').style.display = 'none';
   document.getElementById('btn-submit').disabled = false;
-  document.getElementById('btn-submit').textContent = 'Enviar Reporte';
+  document.getElementById('btn-submit').textContent = 'Submit Report';
   const now = new Date();
   const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' };
-  document.getElementById('fecha-display').textContent = now.toLocaleDateString('es-CR', opts);
+  document.getElementById('fecha-display').textContent = now.toLocaleDateString('en-US', opts);
   document.getElementById('form-view').style.display = 'block';
   document.getElementById('success-view').style.display = 'none';
 }
