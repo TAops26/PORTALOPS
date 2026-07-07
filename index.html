@@ -1092,14 +1092,15 @@ async function loadConfigColabs() {
 
 
 async function loadGuestReports() {
+  // Wait for DOM to be ready
+  await new Promise(r => setTimeout(r, 100));
   const el = document.getElementById('guest-reports-list');
   if (!el) return;
   try {
     const res  = await fetch(WEBHOOK + '?action=get_guest_reports');
     const data = await res.json();
     if (data.ok) renderGuestReports(data.reportes || []);
-    else if (el) el.innerHTML = '';
-  } catch(e) { if (el) el.innerHTML = ''; }
+  } catch(e) {}
 }
 
 function renderGuestReports(reportes) {
@@ -1108,14 +1109,20 @@ function renderGuestReports(reportes) {
   window._guestData = {};
   reportes.forEach(r => { window._guestData[r.id] = r; });
   if (!reportes.length) { el.innerHTML = ''; return; }
-  el.innerHTML = reportes.map(r => `
-    <div class="rbtn" style="border-left-color:#717F7E;cursor:pointer;" id="gr-row-${r.id}" onclick="openGuestModal('${r.id}')">
+  el.innerHTML = reportes.map(r => {
+    // Handle both ISO and Date string formats
+    let fechaStr = r.timestamp || '';
+    if (fechaStr.length > 10) {
+      try { fechaStr = new Date(fechaStr).toISOString().slice(0,10); } catch(e) { fechaStr = fechaStr.slice(0,10); }
+    }
+    return `<div class="rbtn" style="border-left-color:#717F7E;cursor:pointer;" id="gr-row-${r.id}" onclick="openGuestModal('${r.id}')">
       <div style="flex:1;">
         <div style="font-size:.82rem;font-family:var(--font-sans);color:var(--cream);font-weight:500;margin-bottom:.15rem;">${r.descripcion || 'Sin descripción'}</div>
-        <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);">${r.area || ''} · ${r.timestamp ? r.timestamp.slice(0,10) : ''}</div>
+        <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);">${r.area || ''} · ${fechaStr}</div>
       </div>
       <span class="arr">›</span>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function openGuestModal(id) {
