@@ -687,7 +687,7 @@ function renderHome() {
   const showDepts = isAdmin ? ['limpieza','mantenimiento','proveeduria','seguridad'] : [CU.departamento];
   const GUEST_SECTION = `<div id="guest-reports-section" style="margin-bottom:1rem;">
     <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;padding:.45rem .7rem;background:rgba(113,127,126,0.15);border:1px solid rgba(113,127,126,0.25);border-radius:8px;">
-      <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#8FACA9;font-family:var(--font-sans);"> Reportes de Huéspedes</span>
+      <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#8FACA9;font-family:var(--font-sans);">Reportes de Huéspedes</span>
     </div>
     <div id="guest-reports-list"></div>
   </div>`;
@@ -794,25 +794,36 @@ function renderDeptHome() {
   // el guest-portal). Seguridad y Proveeduría ya no lo ven.
   const GUEST_BAND = (d === 'limpieza' || d === 'mantenimiento') ? `<div style="margin-bottom:.75rem;">
     <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;padding:.45rem .7rem;background:rgba(113,127,126,0.15);border:1px solid rgba(113,127,126,0.25);border-radius:8px;">
-      <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#8FACA9;font-family:var(--font-sans);"> Reportes de Huéspedes</span>
+      <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#8FACA9;font-family:var(--font-sans);">Reportes de Huéspedes</span>
     </div>
     <div id="guest-reports-list"><div style="text-align:center;padding:.5rem;font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.35);">Cargando...</div></div>
+  </div>` : '';
+
+  // Averías Pendientes — mismo estilo de cintillo que "Reportes de Huéspedes",
+  // pero en el verde de la paleta (var(--green) / rgba(118,114,78,...)).
+  const AVERIAS_BAND = (d === 'mantenimiento') ? `<div style="margin-bottom:.75rem;">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;padding:.45rem .7rem;background:rgba(118,114,78,0.15);border:1px solid rgba(118,114,78,0.25);border-radius:8px;">
+      <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#9A9560;font-family:var(--font-sans);">Averías Pendientes</span>
+    </div>
+    <div id="averias-list"><div style="text-align:center;padding:.5rem;font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.35);">Cargando...</div></div>
   </div>` : '';
 
   // Solicitudes de servicio del guest-portal: Lavandería  Limpieza, Transporte  Proveeduría.
   const SERVICE_BAND = (d === 'limpieza') ? `<div style="margin-bottom:.75rem;">
     <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;padding:.45rem .7rem;background:rgba(143,172,169,0.15);border:1px solid rgba(143,172,169,0.25);border-radius:8px;">
-      <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#8FACA9;font-family:var(--font-sans);"> Solicitudes de Lavandería</span>
+      <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#8FACA9;font-family:var(--font-sans);">Solicitudes de Lavandería</span>
     </div>
     <div id="laundry-requests-list"><div style="text-align:center;padding:.5rem;font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.35);">Cargando...</div></div>
   </div>` : (d === 'proveeduria') ? `<div style="margin-bottom:.75rem;">
     <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;padding:.45rem .7rem;background:rgba(143,172,169,0.15);border:1px solid rgba(143,172,169,0.25);border-radius:8px;">
-      <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#8FACA9;font-family:var(--font-sans);"> Solicitudes de Transporte</span>
+      <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#8FACA9;font-family:var(--font-sans);">Solicitudes de Transporte</span>
     </div>
     <div id="transport-requests-list"><div style="text-align:center;padding:.5rem;font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.35);">Cargando...</div></div>
   </div>` : '';
 
-  let btns = GUEST_BAND + SERVICE_BAND + `<div class="sec-lbl" style="margin-top:.5rem;">Tu área de trabajo</div>`;
+  // Orden en pantalla (Mantenimiento): Reportes de Huéspedes → Averías
+  // Pendientes → Tu área de trabajo → Reportes.
+  let btns = GUEST_BAND + AVERIAS_BAND + SERVICE_BAND + `<div class="sec-lbl" style="margin-top:.5rem;">Tu área de trabajo</div>`;
 
   if (dept) {
     dept.resources.forEach(r => {
@@ -830,11 +841,6 @@ function renderDeptHome() {
         </button>`;
       });
     }
-  }
-
-  if (d === 'mantenimiento') {
-    btns += `<div class="sec-lbl" style="margin-top:.75rem;">Averías Pendientes</div>
-      <div id="averias-list"><div style="text-align:center;padding:1rem;font-size:.78rem;font-family:sans-serif;color:rgba(232,226,209,0.4);">Cargando...</div></div>`;
   }
 
   document.getElementById('home-depts').innerHTML = btns + '<div class="tm-page-footer"><img src="./Tierramor_Emblem-Brown.png" alt="" style="height:36px;opacity:0.18;filter:brightness(2);"></div>';
