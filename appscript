@@ -1,6 +1,15 @@
 // ══════════════════════════════════════════════════════════════
 // PORTAL OPS — WEBHOOK CENTRAL
 // Distribuye datos a 4 spreadsheets según el tipo de payload
+//
+// CAMBIOS EN ESTA VERSIÓN (ver changelog completo en el mensaje de entrega):
+//  1) Nueva acción POST "login": valida usuario/contraseña en el servidor.
+//     El frontend YA NO recibe ni compara password_hash.
+//  2) responderUsuarios() ya NO incluye password_hash en la respuesta.
+//  3) Subida real de fotos: decodifica base64, sube a una carpeta de Drive
+//     y guarda las URLs resultantes en una columna nueva "Fotos" en cada
+//     hoja relevante (reportes, checklist, piscina, inventarios).
+//     Requiere configurar DRIVE_FOTOS_FOLDER_ID (ver más abajo).
 // ══════════════════════════════════════════════════════════════
 
 const SHEETS = {
@@ -9,6 +18,11 @@ const SHEETS = {
   insumos:     '1uU2En45IfGDNnlI_buwu8r2bq9C-CQz9GVwOHf-8grw',
   inventarios: '119H6cjpELy4QQQ8mFfH51K2eWjwH8JD66gASG9Jddbk',
 };
+
+//  CONFIGURACIÓN REQUERIDA: reemplazar por el ID real de una carpeta de
+// Google Drive donde se guardarán las fotos de los reportes. Se puede crear
+// una carpeta nueva en Drive y copiar su ID desde la URL.
+const DRIVE_FOTOS_FOLDER_ID = '1X36GqTB0ZWHdLajmPfZaB9ePUSRIVf6W';
 
 // ── GET: leer usuarios o config ──
 function doGet(e) {
@@ -25,6 +39,20 @@ function doGet(e) {
     resultado = responderAverias();
   } else if (action === 'get_guest_reports') {
     resultado = responderGuestReports();
+  } else if (action === 'get_today_farm') {
+    resultado = responderTodayFarm();
+  } else if (action === 'get_menu') {
+    resultado = responderMenu();
+  } else if (action === 'get_tours') {
+    resultado = responderTours();
+  } else if (action === 'get_emergency_contacts') {
+    resultado = responderEmergencyContacts();
+  } else if (action === 'get_tour_requests') {
+    resultado = responderSolicitudes_('TOUR REQUESTS');
+  } else if (action === 'get_laundry_requests') {
+    resultado = responderSolicitudes_('LAVANDERIA');
+  } else if (action === 'get_transport_requests') {
+    resultado = responderSolicitudes_('TRANSPORTE');
   } else {
     resultado = { ok: false, error: 'Acción no reconocida: ' + action };
   }
@@ -41,7 +69,9 @@ function doPost(e) {
     const type    = payload.type || '';
 
     let resultado;
-    if (type === 'reporte' || type === 'checklist') {
+    if (type === 'login') {
+      resultado = validarLogin(payload);
+    } else if (type === 'reporte' || type === 'checklist') {
       resultado = guardarReporte(payload);
     } else if (type === 'evaluacion') {
       resultado = guardarDesempeno(payload);
@@ -55,6 +85,14 @@ function doPost(e) {
       resultado = guardarGuestReport(payload);
     } else if (type === 'completar_guest_report') {
       resultado = completarGuestReport(payload);
+    } else if (type === 'tour_request') {
+      resultado = guardarSolicitud_('TOUR REQUESTS', ['Timestamp','Nombre Huésped','Habitación','Tour','Fecha Preferida','Cantidad Personas','Notas','Estado','ID'], payload, 'TR');
+    } else if (type === 'laundry_request') {
+      resultado = guardarSolicitud_('LAVANDERIA', ['Timestamp','Nombre Huésped','Habitación','Hora de Recogida','Detalles','Estado','ID'], payload, 'LV');
+    } else if (type === 'transport_request') {
+      resultado = guardarSolicitud_('TRANSPORTE', ['Timestamp','Nombre Huésped','Habitación','Destino','Fecha','Hora','Cantidad Personas','Ida y Vuelta','Notas','Estado','ID'], payload, 'TP');
+    } else if (type === 'completar_solicitud') {
+      resultado = completarSolicitud_(payload);
     } else {
       resultado = { ok: false, error: 'Tipo no reconocido: ' + type };
     }
@@ -67,6 +105,63 @@ function doPost(e) {
     return ContentService
       .createTextOutput(JSON.stringify({ ok: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// AUTENTICACIÓN (NUEVO)
+// La validación de usuario/contraseña ocurre exclusivamente aquí.
+// El frontend nunca recibe password_hash.
+// ══════════════════════════════════════════════════════════════
+function sha256Hex_(texto) {
+  const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, texto, Utilities.Charset.UTF_8);
+  return bytes.map(b => {
+    const v = (b < 0 ? b + 256 : b).toString(16);
+    return v.length === 1 ? '0' + v : v;
+  }).join('');
+}
+
+function validarLogin(payload) {
+  try {
+    const usuario  = (payload.usuario  || '').toString().trim().toLowerCase();
+    const password = (payload.password || '').toString();
+    if (!usuario || !password) {
+      return { ok: false, error: 'Ingresa usuario y contraseña.' };
+    }
+
+    const ss   = SpreadsheetApp.openById(SHEETS.desempeno);
+    const hoja = ss.getSheetByName('Usuarios');
+    if (!hoja) return { ok: false, error: 'Pestaña Usuarios no encontrada' };
+
+    const datos    = hoja.getDataRange().getValues();
+    if (datos.length < 2) return { ok: false, error: 'Usuario o contraseña incorrectos.' };
+
+    const headers  = datos[0].map(h => h.toString().toLowerCase().trim());
+    const idxUser  = headers.indexOf('usuario');
+    const idxHash  = headers.indexOf('password_hash');
+    if (idxUser < 0 || idxHash < 0) {
+      return { ok: false, error: 'Configuración de usuarios incompleta (faltan columnas usuario/password_hash).' };
+    }
+
+    const hashIngresado = sha256Hex_(password);
+
+    for (let r = 1; r < datos.length; r++) {
+      const row = datos[r];
+      const filaUsuario = (row[idxUser] || '').toString().trim().toLowerCase();
+      if (filaUsuario === usuario) {
+        const hashGuardado = (row[idxHash] || '').toString().trim();
+        if (hashGuardado === hashIngresado) {
+          // Solo se devuelven campos mínimos y seguros — NUNCA password_hash.
+          const obj = {};
+          headers.forEach((h, i) => { if (h !== 'password_hash') obj[h] = row[i] ? row[i].toString().trim() : ''; });
+          return { ok: true, usuario: obj };
+        }
+        return { ok: false, error: 'Usuario o contraseña incorrectos.' };
+      }
+    }
+    return { ok: false, error: 'Usuario o contraseña incorrectos.' };
+  } catch (err) {
+    return { ok: false, error: err.message };
   }
 }
 
@@ -87,7 +182,12 @@ function responderUsuarios() {
       .filter(row => row[0])
       .map(row => {
         const obj = {};
-        headers.forEach((h, i) => obj[h] = row[i] ? row[i].toString().trim() : '');
+        headers.forEach((h, i) => {
+          // IMPORTANTE: nunca exponer password_hash al frontend. Esta pestaña
+          // ahora solo se usa para listas de colaboradores y datos de perfil.
+          if (h === 'password_hash') return;
+          obj[h] = row[i] ? row[i].toString().trim() : '';
+        });
         return obj;
       });
 
@@ -108,7 +208,6 @@ function responderColabs() {
     if (!hoja) return { ok: false, error: 'Pestaña Config no encontrada' };
 
     const datos = hoja.getDataRange().getValues();
-    // Column H = index 7
     const colabs = datos.slice(1)
       .map(row => row[7] ? row[7].toString().trim() : '')
       .filter(Boolean);
@@ -131,25 +230,20 @@ function responderAverias() {
     const datos   = hoja.getDataRange().getValues();
     const headers = datos[0];
 
-    // Build index with normalized keys to handle accent/encoding variants
     const idx = {};
     headers.forEach((h, i) => {
       idx[h] = i;
       idx[h.normalize('NFC')] = i;
       idx[h.normalize('NFD')] = i;
-      // Also index by simplified version
       idx[h.replace(/[áàä]/gi,'a').replace(/[éèë]/gi,'e').replace(/[íìï]/gi,'i')
            .replace(/[óòö]/gi,'o').replace(/[úùü]/gi,'u').toLowerCase()] = i;
     });
 
-    // Helper: get value by multiple possible column names or fallback to position
     const col = (names, fallbackPos) => {
       for (const n of names) { if (idx[n] !== undefined) return idx[n]; }
       return fallbackPos;
     };
 
-    // Column positions based on known header order:
-    // Timestamp(0) Usuario(1) Colaborador(2) Fecha(3) Avería(4) Prioridad(5) Área(6) Cluster(7) Descripción(8) Estado(9) ID(10)
     const cId    = col(['ID'],                          10);
     const cTs    = col(['Timestamp'],                    0);
     const cUser  = col(['Usuario'],                      1);
@@ -238,6 +332,75 @@ function responderConfigReportes() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// FOTOS — subida a Drive, organizada por categoría y mes
+// ══════════════════════════════════════════════════════════════
+// Estructura resultante dentro de DRIVE_FOTOS_FOLDER_ID:
+//   Limpieza/2026-07/2026-07-08_maria-fernandez_1.jpg
+//   Mantenimiento/2026-07/...
+//   Averias/2026-07/...
+//   Checklists/2026-07/...
+//   Piscina/2026-07/...
+//   Inventarios - ropa-cama/2026-07/...
+//   Insumos - materiales/2026-07/...
+//
+// Devuelve { ok, urls, error }. Si CUALQUIER foto falla, se detiene y
+// devuelve ok:false — nunca se reporta éxito parcial.
+function procesarFotos_(fotos, categoria, colaborador) {
+  if (!fotos || !fotos.length) return { ok: true, urls: [] };
+  if (!DRIVE_FOTOS_FOLDER_ID || DRIVE_FOTOS_FOLDER_ID.indexOf('REEMPLAZAR') === 0) {
+    return { ok: false, error: 'No se configuró la carpeta de Drive para fotos (DRIVE_FOTOS_FOLDER_ID).' };
+  }
+  try {
+    const raiz = DriveApp.getFolderById(DRIVE_FOTOS_FOLDER_ID);
+    const carpetaCategoria = obtenerOCrearSubcarpeta_(raiz, categoria || 'General');
+    const hoy = new Date();
+    const carpetaMes = obtenerOCrearSubcarpeta_(carpetaCategoria, Utilities.formatDate(hoy, 'America/Costa_Rica', 'yyyy-MM'));
+
+    const fechaStr = Utilities.formatDate(hoy, 'America/Costa_Rica', 'yyyy-MM-dd_HHmmss');
+    const colabSlug = sanitizarNombreArchivo_(colaborador || 'sin-colaborador');
+
+    const urls = [];
+    for (let i = 0; i < fotos.length; i++) {
+      const foto = fotos[i];
+      if (!foto || !foto.data) continue;
+      const extension = extraerExtension_(foto.name, foto.mimeType);
+      const nombreArchivo = `${fechaStr}_${colabSlug}_${i + 1}${extension}`;
+      const blob = Utilities.newBlob(Utilities.base64Decode(foto.data), foto.mimeType || 'image/jpeg', nombreArchivo);
+      const archivo = carpetaMes.createFile(blob);
+      archivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      urls.push(archivo.getUrl());
+    }
+    return { ok: true, urls };
+  } catch (err) {
+    return { ok: false, error: 'Error al subir fotos a Drive: ' + err.message };
+  }
+}
+
+// Busca una subcarpeta por nombre dentro de 'parent'; la crea si no existe.
+function obtenerOCrearSubcarpeta_(parent, nombre) {
+  const it = parent.getFoldersByName(nombre);
+  if (it.hasNext()) return it.next();
+  return parent.createFolder(nombre);
+}
+
+// Convierte un nombre de colaborador en un fragmento seguro para nombre de archivo.
+function sanitizarNombreArchivo_(texto) {
+  return String(texto)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quita acentos
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-+|-+$)/g, '') || 'colab';
+}
+
+function extraerExtension_(nombreOriginal, mimeType) {
+  if (nombreOriginal && nombreOriginal.indexOf('.') > -1) {
+    return '.' + nombreOriginal.split('.').pop().toLowerCase();
+  }
+  const porMime = { 'image/jpeg':'.jpg', 'image/png':'.png', 'image/webp':'.webp', 'image/heic':'.heic' };
+  return porMime[mimeType] || '.jpg';
+}
+
+// ══════════════════════════════════════════════════════════════
 // REPORTES
 // ══════════════════════════════════════════════════════════════
 function guardarReporte(payload) {
@@ -245,21 +408,67 @@ function guardarReporte(payload) {
     const ss   = SpreadsheetApp.openById(SHEETS.reportes);
     const tipo = payload.tipo || '';
     const dept = payload.departamento || '';
+    const datos = payload.datos || {};
 
-    // Reunión de Operaciones → pestaña propia independiente del departamento
+    const ts     = new Date();
+    const ts_str = Utilities.formatDate(ts, 'America/Costa_Rica', 'yyyy-MM-dd HH:mm:ss');
+
+    // Categoría de carpeta para las fotos (Drive): agrupa por tipo de reporte
+    // antes que por departamento, para que averías/checklists/piscina queden
+    // juntas sin importar quién las reportó.
+    let categoriaFotos;
+    if (tipo === 'checklist') categoriaFotos = 'Checklists';
+    else if (tipo === 'averia' || tipo === 'averia-cluster') categoriaFotos = 'Averias';
+    else if (tipo === 'piscina') categoriaFotos = 'Piscina';
+    else if (dept === 'mantenimiento') categoriaFotos = 'Mantenimiento';
+    else if (dept === 'limpieza') categoriaFotos = 'Limpieza';
+    else if (dept === 'seguridad') categoriaFotos = 'Seguridad';
+    else if (dept === 'proveeduria') categoriaFotos = 'Proveeduria';
+    else categoriaFotos = 'General';
+
+    // Procesa fotos ANTES de escribir cualquier fila. Si falla, se aborta
+    // todo el guardado y se informa el error real (no se marca éxito parcial).
+    const fotosRes = procesarFotos_(datos.fotos, categoriaFotos, datos.colaborador);
+    if (!fotosRes.ok) return { ok: false, error: fotosRes.error };
+    const fotosUrls = fotosRes.urls.join(', ');
+
+    // Checklists de inspección por cluster (mantenimiento) — hoja dedicada.
+    // NOTA: en la versión anterior el payload de checklist no viajaba dentro
+    // de "datos", por lo que guardarReporte() escribía filas casi vacías.
+    // Se corrigió en el frontend (portal-ops.js) y aquí se maneja explícitamente.
+    if (tipo === 'checklist') {
+      let hojaCl = ss.getSheetByName('CHECKLISTS MANTENIMIENTO');
+      if (!hojaCl) hojaCl = ss.insertSheet('CHECKLISTS MANTENIMIENTO');
+      if (hojaCl.getLastRow() === 0) {
+        hojaCl.appendRow(['Timestamp','Usuario','Departamento','Colaborador','Área','Fecha','Total Items','Completados','Observaciones','Items (JSON)','Fotos']);
+      }
+      hojaCl.appendRow([
+        ts_str,
+        payload.usuario      || '',
+        payload.departamento || '',
+        datos.colaborador    || '',
+        datos.area           || '',
+        datos.fecha          || '',
+        datos.total          || 0,
+        datos.completados    || 0,
+        datos.observaciones  || '',
+        datos.items ? JSON.stringify(datos.items) : '',
+        fotosUrls,
+      ]);
+      return { ok: true };
+    }
+
     let nombreHoja;
     if (tipo === 'reunion') {
       nombreHoja = 'REUNION DE OPERACIONES';
     } else if (tipo === 'averia' || tipo === 'averia-cluster') {
-      // Las averías siempre van a la misma pestaña, sin importar quién las reporta
       nombreHoja = 'MANTENIMIENTO - REPORTE DE AVERÍA';
     } else if (dept === 'mantenimiento') {
-      // Cada tipo de reporte de mantenimiento tiene su propia pestaña
       const mantoMap = {
         'trabajo':    'MANTENIMIENTO - REPORTE TRABAJO',
         'agua':       'MANTENIMIENTO - REPORTE DE AGUA',
         'piscina':    'MANTENIMIENTO - PISCINA',
-        'materiales': 'MANTENIMIENTO - REPORTE TRABAJO', // solicitud va junto a trabajo
+        'materiales': 'MANTENIMIENTO - REPORTE TRABAJO',
       };
       nombreHoja = mantoMap[tipo] || 'INSPECCION CLUSTER';
     } else {
@@ -274,15 +483,9 @@ function guardarReporte(payload) {
     let hoja = ss.getSheetByName(nombreHoja);
     if (!hoja) hoja = ss.insertSheet(nombreHoja);
 
-    const ts    = new Date();
-    const datos = payload.datos || {};
-    const ts_str = Utilities.formatDate(ts, 'America/Costa_Rica', 'yyyy-MM-dd HH:mm:ss');
-
-    // ── Inspección de Cluster: una avería por fila, mismo tab que el reporte individual ──
     if (tipo === 'averia-cluster') {
-      // 1. Cada avería encontrada → MANTENIMIENTO - REPORTE DE AVERÍA (misma hoja que el reporte individual)
       if (hoja.getLastRow() === 0) {
-        hoja.appendRow(['Timestamp','Usuario','Colaborador','Fecha','Avería','Prioridad','Área','Cluster','Descripción','Estado','ID']);
+        hoja.appendRow(['Timestamp','Usuario','Colaborador','Fecha','Avería','Prioridad','Área','Cluster','Descripción','Estado','ID','Fotos']);
       }
       const items = datos.items || [];
       items.forEach((item, i) => {
@@ -299,10 +502,10 @@ function guardarReporte(payload) {
           item.descripcion  || '',
           'Pendiente',
           idUnico,
+          fotosUrls,
         ]);
       });
 
-      // 2. Registro de que la inspección se realizó → INSPECCION CLUSTER (log de auditoría, una fila por inspección)
       let hojaLog = ss.getSheetByName('INSPECCION CLUSTER');
       if (!hojaLog) hojaLog = ss.insertSheet('INSPECCION CLUSTER');
       if (hojaLog.getLastRow() === 0) {
@@ -320,10 +523,9 @@ function guardarReporte(payload) {
       return { ok: true, registradas: items.length };
     }
 
-    // ── Fila específica según pestaña ──
     if (nombreHoja === 'MANTENIMIENTO - REPORTE TRABAJO') {
       if (hoja.getLastRow() === 0) {
-        hoja.appendRow(['Timestamp','Usuario','Departamento','Tipo','Colaborador','Fecha','Area','Estado','Prioridad','Descripcion','Materiales','Observaciones']);
+        hoja.appendRow(['Timestamp','Usuario','Departamento','Tipo','Colaborador','Fecha','Area','Estado','Prioridad','Descripcion','Materiales','Observaciones','Fotos']);
       }
       hoja.appendRow([
         ts_str,
@@ -338,11 +540,12 @@ function guardarReporte(payload) {
         datos.desc           || '',
         datos.mat            || '',
         datos.obs            || '',
+        fotosUrls,
       ]);
 
     } else if (nombreHoja === 'MANTENIMIENTO - REPORTE DE AGUA') {
       if (hoja.getLastRow() === 0) {
-        hoja.appendRow(['Timestamp','Usuario','Area','Fecha','Reporte','Colaborador','M1','M2','M3','M4','M5','M6','M7','Observaciones']);
+        hoja.appendRow(['Timestamp','Usuario','Area','Fecha','Reporte','Colaborador','M1','M2','M3','M4','M5','M6','M7','Observaciones','Fotos']);
       }
       hoja.appendRow([
         ts_str,
@@ -354,11 +557,12 @@ function guardarReporte(payload) {
         datos.m1 || '', datos.m2 || '', datos.m3 || '', datos.m4 || '',
         datos.m5 || '', datos.m6 || '', datos.m7 || '',
         datos.obs            || '',
+        fotosUrls,
       ]);
 
     } else if (nombreHoja === 'MANTENIMIENTO - REPORTE DE AVERÍA') {
       if (hoja.getLastRow() === 0) {
-        hoja.appendRow(['Timestamp','Usuario','Colaborador','Fecha','Avería','Prioridad','Área','Cluster','Descripción','Estado','ID']);
+        hoja.appendRow(['Timestamp','Usuario','Colaborador','Fecha','Avería','Prioridad','Área','Cluster','Descripción','Estado','ID','Fotos']);
       }
       const idUnico = 'AV-' + ts.getTime();
       hoja.appendRow([
@@ -373,6 +577,7 @@ function guardarReporte(payload) {
         datos.desc           || '',
         'Pendiente',
         idUnico,
+        fotosUrls,
       ]);
 
     } else if (nombreHoja === 'MANTENIMIENTO - PISCINA') {
@@ -381,9 +586,8 @@ function guardarReporte(payload) {
           'pH','ORP','Sal PPM',
           'PH Manual','Alcalinidad Total','Dureza Cálcica',
           'Sal','Clarificante','Alguicida GLB','Ácido Muriático','Cloro granulado',
-          'Alertas','Observaciones']);
+          'Alertas','Observaciones','Fotos']);
       }
-      // Parse insumos array sent as JSON string
       let ins = [];
       try { ins = JSON.parse(datos.insumos || '[]'); } catch(e) {}
       const getIns = (nombre) => {
@@ -408,6 +612,7 @@ function guardarReporte(payload) {
         getIns('Cloro granulado'),
         datos.alertas        || '',
         datos.obs            || '',
+        fotosUrls,
       ]);
 
     } else if (nombreHoja === 'REUNION DE OPERACIONES') {
@@ -428,7 +633,7 @@ function guardarReporte(payload) {
       if (hoja.getLastRow() === 0) {
         hoja.appendRow([
           'Timestamp','Usuario','Departamento','Tipo','Colaborador','Fecha',
-          'Turno','Rol','Área','Estado','Observaciones','Habitaciones'
+          'Turno','Rol','Área','Estado','Observaciones','Habitaciones','Fotos'
         ]);
       }
       hoja.appendRow([
@@ -444,6 +649,7 @@ function guardarReporte(payload) {
         datos.estado         || datos.estado_area     || '',
         datos.obs            || '',
         datos.habitaciones ? JSON.stringify(datos.habitaciones) : '',
+        fotosUrls,
       ]);
     }
 
@@ -531,6 +737,8 @@ function guardarInsumo(payload) {
     const ss         = SpreadsheetApp.openById(SHEETS.insumos);
     const dept       = payload.departamento || 'limpieza';
     const tipo       = payload.tipo || '';
+    const datos = payload.datos || {};
+    const items = datos.items   || [];
 
     let nombreHoja;
     if (tipo === 'herramientas') {
@@ -541,40 +749,46 @@ function guardarInsumo(payload) {
       nombreHoja = dept === 'mantenimiento' ? 'MANTENIMIENTO' : 'Limpieza';
     }
 
+    // NOTA: en la versión anterior estas fotos (adjuntadas en los formularios
+    // de materiales/cuadraciclo) se descartaban silenciosamente — nunca se
+    // procesaban aquí. Ahora sí se suben y se organizan igual que el resto.
+    const categoriaFotos = 'Insumos - ' + (tipo || 'solicitud');
+    const fotosRes = procesarFotos_(datos.fotos, categoriaFotos, datos.colaborador);
+    if (!fotosRes.ok) return { ok: false, error: fotosRes.error };
+    const fotosUrls = fotosRes.urls.join(', ');
+
     let hoja = ss.getSheetByName(nombreHoja);
     if (!hoja) hoja = ss.insertSheet(nombreHoja);
 
     const ts    = new Date();
-    const datos = payload.datos || {};
-    const items = datos.items   || [];
     const ts_str = Utilities.formatDate(ts, 'America/Costa_Rica', 'yyyy-MM-dd HH:mm:ss');
 
     if (tipo === 'herramientas') {
       if (hoja.getLastRow() === 0) {
-        hoja.appendRow(['Timestamp','Usuario','Colaborador','Fecha','Hora','Herramienta','Estado','Observaciones']);
+        hoja.appendRow(['Timestamp','Usuario','Colaborador','Fecha','Hora','Herramienta','Estado','Observaciones','Fotos']);
       }
       hoja.appendRow([
         ts_str, payload.usuario||'', datos.colaborador||'',
         datos.fecha||'', datos.hora||'', datos.area||'',
-        datos.estado||'', datos.obs||'',
+        datos.estado||'', datos.obs||'', fotosUrls,
       ]);
     } else if (tipo === 'cuadraciclo') {
       if (hoja.getLastRow() === 0) {
-        hoja.appendRow(['Timestamp','Usuario','Colaborador','Fecha','Hora','Cuadraciclo','Kilometraje Inicial','Observaciones']);
+        hoja.appendRow(['Timestamp','Usuario','Colaborador','Fecha','Hora','Cuadraciclo','Kilometraje Inicial','Observaciones','Fotos']);
       }
       hoja.appendRow([
         ts_str, payload.usuario||'', datos.colaborador||'',
         datos.fecha||'', datos.hora||'', datos.area||'',
-        datos.desc||'', datos.obs||'',
+        datos.desc||'', datos.obs||'', fotosUrls,
       ]);
     } else {
       if (hoja.getLastRow() === 0) {
-        hoja.appendRow(['Timestamp','Usuario','Departamento','Colaborador','Fecha','Prioridad','Observaciones','Items (JSON)','Cant. Items']);
+        hoja.appendRow(['Timestamp','Usuario','Departamento','Colaborador','Fecha','Prioridad','Observaciones','Items (JSON)','Cant. Items','Fotos']);
       }
       hoja.appendRow([
         ts_str, payload.usuario||'', dept,
         datos.colaborador||'', datos.fecha||'', datos.prior||'',
-        datos.obs||'', JSON.stringify(items), items.length,
+        datos.obs||'', JSON.stringify(items), items.length, fotosUrls,
       ]);
     }
 
@@ -584,8 +798,6 @@ function guardarInsumo(payload) {
   }
 }
 
-// ══════════════════════════════════════════════════════════════
-// INVENTARIOS
 // ══════════════════════════════════════════════════════════════
 // GUEST REPORTS
 // ══════════════════════════════════════════════════════════════
@@ -599,8 +811,9 @@ function guardarGuestReport(payload) {
     const ts_str = Utilities.formatDate(ts, 'America/Costa_Rica', 'yyyy-MM-dd HH:mm:ss');
     const idUnico = 'GR-' + ts.getTime();
     const datos  = payload.datos || {};
+    // El huésped elige el departamento (Limpieza o Mantenimiento) en el guest portal.
+    const departamento = (datos.departamento || 'Mantenimiento').toString().trim();
 
-    // Translate description and area to Spanish on arrival
     let descEs = datos.descripcion || '';
     let areaEs = datos.area        || '';
     try {
@@ -608,14 +821,35 @@ function guardarGuestReport(payload) {
       if (areaEs) areaEs = LanguageApp.translate(areaEs, 'en', 'es');
     } catch(e) {}
 
-    hoja.appendRow([
-      ts_str,
-      descEs,
-      areaEs,
-      'Pendiente',
-      idUnico,
-      '',
-    ]);
+    // Escribe CADA VALOR EN LA COLUMNA QUE LE CORRESPONDE POR NOMBRE, no por
+    // posición fija. Así no importa si "Departamento" quedó en la columna G
+    // o en otra distinta — nunca queda desalineado con "Área"/"Estado"/etc.
+    const headerRow = hoja.getLastRow() > 0 ? hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0] : [];
+    const headers   = headerRow.map(h => h.toString().trim());
+    const valoresPorNombre = {
+      'Timestamp':    ts_str,
+      'Descripción':  descEs, 'Descripcion': descEs,
+      'Área':         areaEs, 'Area': areaEs,
+      'Estado':       'Pendiente',
+      'ID':           idUnico,
+      'Colaborador':  '',
+      'Departamento': departamento,
+    };
+
+    let fila;
+    if (headers.length) {
+      fila = headers.map(h => (h in valoresPorNombre) ? valoresPorNombre[h] : '');
+      // Si la hoja todavía no tiene columna "Departamento" (no se agregó el
+      // encabezado), se agrega el valor al final para no perderlo — pero
+      // recomendamos agregar el encabezado "Departamento" para que quede
+      // ordenado y responderGuestReports() lo encuentre siempre por nombre.
+      if (headers.indexOf('Departamento') === -1) fila.push(departamento);
+    } else {
+      // Hoja completamente vacía (sin encabezados): usa el orden esperado por defecto.
+      fila = [ts_str, descEs, areaEs, 'Pendiente', idUnico, '', departamento];
+    }
+
+    hoja.appendRow(fila);
     return { ok: true, id: idUnico };
   } catch (err) {
     return { ok: false, error: err.message };
@@ -629,7 +863,7 @@ function responderGuestReports() {
     if (!hoja || hoja.getLastRow() < 2) return { ok: true, reportes: [] };
 
     const datos   = hoja.getDataRange().getValues();
-    const headers = datos[0];
+    const headers = datos[0].map(h => h.toString().trim());
     const idx = {};
     headers.forEach((h, i) => {
       idx[h] = i;
@@ -638,13 +872,16 @@ function responderGuestReports() {
     });
 
     const col = (names, fallback) => { for (const n of names) { if (idx[n] !== undefined) return idx[n]; } return fallback; };
-    // Timestamp(0) Descripción(1) Área(2) Estado(3) ID(4) Colaborador(5)
     const cTs    = col(['Timestamp'],                   0);
     const cDesc  = col(['Descripción','Descripcion'],   1);
     const cArea  = col(['Área','Area'],                 2);
     const cEst   = col(['Estado'],                      3);
     const cId    = col(['ID'],                          4);
     const cColab = col(['Colaborador'],                 5);
+    // Si no existe un encabezado "Departamento" con ese nombre exacto, se
+    // asume que quedó en la última columna (así es como guardarGuestReport
+    // la agrega cuando el encabezado no existe todavía en la hoja).
+    const cDept  = col(['Departamento'],                headers.length);
 
     const reportes = datos.slice(1)
       .map(row => ({
@@ -654,6 +891,10 @@ function responderGuestReports() {
         area:        String(row[cArea]  || ''),
         estado:      String(row[cEst]   || 'Pendiente'),
         colaborador: String(row[cColab] || ''),
+        // Reportes guardados antes de este cambio no tienen Departamento —
+        // se asumen de Mantenimiento (comportamiento original) para no
+        // perderlos ni mostrarlos mal clasificados.
+        departamento: String(row[cDept] || 'Mantenimiento').trim() || 'Mantenimiento',
       }))
       .filter(r => r.id && r.estado !== 'Completada');
 
@@ -684,14 +925,13 @@ function completarGuestReport(payload) {
         hoja.getRange(r + 1, colEst   + 1).setValue('Completada');
         hoja.getRange(r + 1, colColab + 1).setValue(colaborador);
 
-        // Also log to MANTENIMIENTO - REPORTE DE AVERÍA
         const hojaAv = ss.getSheetByName('MANTENIMIENTO - REPORTE DE AVERÍA');
         if (hojaAv) {
           const ts     = new Date();
           const ts_str = Utilities.formatDate(ts, 'America/Costa_Rica', 'yyyy-MM-dd HH:mm:ss');
           const idAv   = 'AV-GR-' + ts.getTime();
           if (hojaAv.getLastRow() === 0) {
-            hojaAv.appendRow(['Timestamp','Usuario','Colaborador','Fecha','Avería','Prioridad','Área','Cluster','Descripción','Estado','ID']);
+            hojaAv.appendRow(['Timestamp','Usuario','Colaborador','Fecha','Avería','Prioridad','Área','Cluster','Descripción','Estado','ID','Fotos']);
           }
           hojaAv.appendRow([
             ts_str,
@@ -705,6 +945,7 @@ function completarGuestReport(payload) {
             datos[r][headers.indexOf('Descripción')] || '',
             'Completada',
             idAv,
+            '',
           ]);
         }
         return { ok: true };
@@ -716,12 +957,18 @@ function completarGuestReport(payload) {
   }
 }
 
-
+// ══════════════════════════════════════════════════════════════
+// INVENTARIOS
 // ══════════════════════════════════════════════════════════════
 function guardarInventario(payload) {
   try {
     const ss   = SpreadsheetApp.openById(SHEETS.inventarios);
     const tipo = payload.tipo || '';
+
+    const categoriaFotos = 'Inventarios - ' + (tipo || 'general');
+    const fotosRes = procesarFotos_(payload.fotos, categoriaFotos, payload.colaborador);
+    if (!fotosRes.ok) return { ok: false, error: fotosRes.error };
+    const fotosUrls = fotosRes.urls.join(', ');
 
     const hojaMap = {
       'ropa-cama':      'Ropa de Cama',
@@ -738,21 +985,189 @@ function guardarInventario(payload) {
 
     if (hoja.getLastRow() === 0) {
       hoja.appendRow([
-        'Timestamp','Usuario','Tipo','Fecha','Observaciones',
-        ...items.map(i => i.item)
+        'Timestamp','Usuario','Colaborador','Tipo','Fecha','Observaciones',
+        ...items.map(i => i.item), 'Fotos'
       ]);
     }
 
     hoja.appendRow([
       Utilities.formatDate(ts, 'America/Costa_Rica', 'yyyy-MM-dd HH:mm:ss'),
       payload.usuario       || '',
+      payload.colaborador   || '',
       tipo,
       payload.fecha         || '',
       payload.observaciones || '',
       ...items.map(i => i.cantidad || 0),
+      fotosUrls,
     ]);
 
     return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// GUEST PORTAL — contenido informativo (solo lectura)
+// Today at the Farm · Menu · Tours · Emergency Contacts
+// Todas las pestañas usan columnas *_EN / *_ES para bilingüe; el frontend
+// decide cuál mostrar según el idioma seleccionado, sin traducción en vivo.
+// ══════════════════════════════════════════════════════════════
+
+// Lee una hoja completa como lista de objetos usando la fila 1 como headers
+// (normaliza espacios/acentos en las llaves para tolerar variaciones).
+function leerHojaComoObjetos_(nombreHoja) {
+  const ss   = SpreadsheetApp.openById(SHEETS.reportes);
+  const hoja = ss.getSheetByName(nombreHoja);
+  if (!hoja || hoja.getLastRow() < 2) return [];
+  const datos   = hoja.getDataRange().getValues();
+  const headers = datos[0].map(h => h.toString().trim());
+  return datos.slice(1)
+    .filter(row => row.some(v => v !== '' && v !== null))
+    .map(row => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = row[i] !== undefined && row[i] !== null ? row[i] : ''; });
+      return obj;
+    });
+}
+
+function responderTodayFarm() {
+  try {
+    const filas = leerHojaComoObjetos_('TODAY AT THE FARM');
+    return { ok: true, items: filas };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+function responderMenu() {
+  try {
+    const filas = leerHojaComoObjetos_('MENU');
+    return { ok: true, items: filas };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+function responderTours() {
+  try {
+    const filas = leerHojaComoObjetos_('TOURS')
+      .filter(f => String(f['Activo']).toUpperCase() !== 'FALSE');
+    return { ok: true, items: filas };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+function responderEmergencyContacts() {
+  try {
+    const filas = leerHojaComoObjetos_('EMERGENCY CONTACTS');
+    return { ok: true, items: filas };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// GUEST PORTAL — solicitudes (Tour / Lavandería / Transporte)
+// Funciones genéricas: mismas 3 hojas comparten el mismo patrón de
+// guardar / listar pendientes / marcar como completada.
+// ══════════════════════════════════════════════════════════════
+
+// Guarda una solicitud en la hoja indicada. `headers` define el orden de
+// columnas (debe terminar siempre en Estado, ID). `payload.datos` trae los
+// campos del formulario con llaves ya en español simple (ver cada caso en
+// doPost). `prefijo` identifica el tipo de solicitud dentro del ID único.
+function guardarSolicitud_(nombreHoja, headers, payload, prefijo) {
+  try {
+    const ss = SpreadsheetApp.openById(SHEETS.reportes);
+    let hoja = ss.getSheetByName(nombreHoja);
+    if (!hoja) hoja = ss.insertSheet(nombreHoja);
+    if (hoja.getLastRow() === 0) hoja.appendRow(headers);
+
+    const ts     = new Date();
+    const ts_str = Utilities.formatDate(ts, 'America/Costa_Rica', 'yyyy-MM-dd HH:mm:ss');
+    const idUnico = prefijo + '-' + ts.getTime();
+    const datos = payload.datos || {};
+
+    let fila;
+    if (nombreHoja === 'TOUR REQUESTS') {
+      fila = [ts_str, datos.nombre || '', datos.habitacion || '', datos.tour || '', datos.fecha || '', datos.personas || '', datos.notas || '', 'Pendiente', idUnico];
+    } else if (nombreHoja === 'LAVANDERIA') {
+      fila = [ts_str, datos.nombre || '', datos.habitacion || '', datos.hora || '', datos.detalles || '', 'Pendiente', idUnico];
+    } else if (nombreHoja === 'TRANSPORTE') {
+      fila = [ts_str, datos.nombre || '', datos.habitacion || '', datos.destino || '', datos.fecha || '', datos.hora || '', datos.personas || '', datos.idaYVuelta || '', datos.notas || '', 'Pendiente', idUnico];
+    } else {
+      return { ok: false, error: 'Hoja de solicitud no reconocida: ' + nombreHoja };
+    }
+
+    hoja.appendRow(fila);
+    return { ok: true, id: idUnico };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+// Lee las solicitudes pendientes (Estado !== 'Completada') de cualquiera de
+// las 3 hojas de solicitudes, normalizando a un mismo formato de salida.
+function responderSolicitudes_(nombreHoja) {
+  try {
+    const ss   = SpreadsheetApp.openById(SHEETS.reportes);
+    const hoja = ss.getSheetByName(nombreHoja);
+    if (!hoja || hoja.getLastRow() < 2) return { ok: true, solicitudes: [] };
+
+    const datos   = hoja.getDataRange().getValues();
+    const headers = datos[0].map(h => h.toString().trim());
+    const idxOf = (nombre) => headers.indexOf(nombre);
+
+    const cId  = idxOf('ID');
+    const cEst = idxOf('Estado');
+
+    const solicitudes = datos.slice(1)
+      .map(row => {
+        const obj = {};
+        headers.forEach((h, i) => { obj[h] = row[i] !== undefined && row[i] !== null ? row[i] : ''; });
+        obj.id     = String(row[cId]  || '');
+        obj.estado = String(row[cEst] || 'Pendiente');
+        return obj;
+      })
+      .filter(r => r.id && r.estado !== 'Completada');
+
+    return { ok: true, solicitudes };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+// Marca una solicitud (Tour/Lavandería/Transporte) como completada.
+// payload debe incluir { hoja: 'TOUR REQUESTS' | 'LAVANDERIA' | 'TRANSPORTE', id: '...' }
+function completarSolicitud_(payload) {
+  try {
+    const hojasValidas = ['TOUR REQUESTS', 'LAVANDERIA', 'TRANSPORTE'];
+    const nombreHoja = payload.hoja || '';
+    if (hojasValidas.indexOf(nombreHoja) === -1) {
+      return { ok: false, error: 'Hoja de solicitud no válida: ' + nombreHoja };
+    }
+    const ss   = SpreadsheetApp.openById(SHEETS.reportes);
+    const hoja = ss.getSheetByName(nombreHoja);
+    if (!hoja) return { ok: false, error: 'Pestaña ' + nombreHoja + ' no encontrada' };
+
+    const idBuscado = payload.id || '';
+    if (!idBuscado) return { ok: false, error: 'ID no especificado' };
+
+    const datos   = hoja.getDataRange().getValues();
+    const headers = datos[0].map(h => h.toString().trim());
+    const colId  = headers.indexOf('ID');
+    const colEst = headers.indexOf('Estado');
+    if (colId < 0 || colEst < 0) return { ok: false, error: 'Columnas ID/Estado no encontradas en ' + nombreHoja };
+
+    for (let r = 1; r < datos.length; r++) {
+      if (String(datos[r][colId]) === idBuscado) {
+        hoja.getRange(r + 1, colEst + 1).setValue('Completada');
+        return { ok: true };
+      }
+    }
+    return { ok: false, error: 'Solicitud no encontrada: ' + idBuscado };
   } catch (err) {
     return { ok: false, error: err.message };
   }
