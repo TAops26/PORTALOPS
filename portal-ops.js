@@ -2390,13 +2390,13 @@ const MANUAL_MT_CONTENT={
   'casitas-madera-mt':(function(){
     const cas=[{id:'toensmeier-mt',nombre:'Toensmeier',m2:60,cama:'King',cap:2},{id:'hemenway-mt',nombre:'Hemenway',m2:60,cama:'King',cap:2},{id:'primavesi-mt',nombre:'Primavesi',m2:60,cama:'King',cap:4},{id:'salatin-mt',nombre:'Salatin',m2:60,cama:'King',cap:4},{id:'shiva-mt',nombre:'Shiva',m2:60,cama:'King',cap:2},{id:'savory-mt',nombre:'Savory',m2:50,cama:'Twin',cap:2},{id:'yeomans-mt',nombre:'Yeomans',m2:50,cama:'Twin',cap:2},{id:'fukuoka-mt',nombre:'Fukuoka',m2:50,cama:'Twin',cap:2},{id:'mollison-mt',nombre:'Mollison',m2:50,cama:'Twin',cap:2},{id:'lancaster-mt',nombre:'Lancaster',m2:50,cama:'Dorm',cap:4},{id:'gotsch-mt',nombre:'Götsch',m2:50,cama:'Twin',cap:2},{id:'holzer-mt',nombre:'Holzer',m2:50,cama:'Twin',cap:2},{id:'ingham-mt',nombre:'Ingham',m2:50,cama:'Twin',cap:2},{id:'carson-mt',nombre:'Carson',m2:50,cama:'Twin',cap:2}];
     window._casitasMaderaMT=cas;
-    return `<div style="font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.4);font-style:italic;margin-bottom:1rem;">Selecciona la casita a inspeccionar</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">${cas.map(x=>`<div class="gcard" onclick="openCasitaDetalleMT('madera','${x.id}')" style="padding:.85rem .8rem;"><div class="ct" style="font-size:.9rem;">${x.nombre}</div><div class="cd">${x.cama} · ${x.m2}m² · ${x.cap} huéspedes</div></div>`).join('')}</div>`;
+    return `<div style="font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.4);font-style:italic;margin-bottom:1rem;">Selecciona la casita para ver sus características</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.25rem;">${cas.map(x=>`<div class="gcard" onclick="openCasitaPopupMT('madera','${x.id}')" style="padding:.85rem .8rem;"><div class="ct" style="font-size:.9rem;">${x.nombre}</div><div class="cd">${x.cama} · ${x.m2}m² · ${x.cap} huéspedes</div></div>`).join('')}</div>${renderChecklistCasitaMT_()}`;
   })(),
 
   'casitas-bah-mt':(function(){
     const cas=[{id:'starhawk-mt',nombre:'Starhawk',m2:50,cama:'Queen',cap:2},{id:'crawford-mt',nombre:'Crawford',m2:50,cama:'Queen',cap:2},{id:'einsestein-mt',nombre:'Einsestein',m2:50,cama:'Queen',cap:2},{id:'doherty-mt',nombre:'Doherty',m2:50,cama:'Queen',cap:2},{id:'macy-mt',nombre:'Macy',m2:50,cama:'Queen',cap:2}];
     window._casitasBahMT=cas;
-    return `<div style="font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.4);font-style:italic;margin-bottom:1rem;">Selecciona la casita a inspeccionar</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">${cas.map(x=>`<div class="gcard" onclick="openCasitaDetalleMT('bah','${x.id}')" style="padding:.85rem .8rem;"><div class="ct" style="font-size:.9rem;">${x.nombre}</div><div class="cd">${x.cama} · ${x.m2}m² · ${x.cap} huéspedes</div></div>`).join('')}</div>`;
+    return `<div style="font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.4);font-style:italic;margin-bottom:1rem;">Selecciona la casita para ver sus características</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.25rem;">${cas.map(x=>`<div class="gcard" onclick="openCasitaPopupMT('bah','${x.id}')" style="padding:.85rem .8rem;"><div class="ct" style="font-size:.9rem;">${x.nombre}</div><div class="cd">${x.cama} · ${x.m2}m² · ${x.cap} huéspedes</div></div>`).join('')}</div>${renderChecklistCasitaMT_()}`;
   })(),
 };
 
@@ -2425,26 +2425,36 @@ function renderManualManto(){
   return html;
 }
 
-function openCasitaDetalleMT(tipo, casitaId) {
+// Checklist de inspección de casitas (Mantenimiento) — es el mismo listado
+// para todas las casitas de un tipo, así que se muestra UNA sola vez debajo
+// del listado de habitaciones, en vez de repetirse dentro de cada una.
+const CHECKLIST_CASITA_MT_ITEMS = ['Conexión eléctrica principal funcionando','Funcionamiento de outlets eléctricos','Funcionamiento de luces (internas y externas)','Funcionamiento de abanico(s) / ventilador(es)','Funcionamiento de llavines y cerraduras','Funcionamiento de ventanas (abren, cierran, traban correctamente)','Daños visibles en estructura (paredes, cielo raso, piso, puertas)','Presencia de humedad, manchas de agua o filtraciones','Presencia de plagas o nidos de insectos','Estado de basureros (limpios, con bolsa, tapados)','Funcionamiento de ducha (presión y temperatura de agua)','Estado del mosquitero (sin roturas ni separaciones)','Estado del colchón y textiles (sin manchas, sin humedad)','Funcionamiento de cerrojo interior de privacidad','Estado de repisas, mesa y mobiliario','Visibilidad desde exterior (privacidad del huésped)'];
+
+function renderChecklistCasitaMT_() {
+  return `<div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(232,226,209,0.5);font-family:var(--font-sans);margin-bottom:.75rem;">Checklist de Inspección</div>
+    ${CHECKLIST_CASITA_MT_ITEMS.map(item=>`<div class="cl-item" style="border-bottom:1px solid rgba(232,226,209,0.06);padding:.5rem 0;"><div style="width:20px;height:20px;border:1.5px solid rgba(153,92,68,.3);border-radius:5px;flex-shrink:0;margin-top:.1rem;"></div><div style="font-size:.82rem;font-family:var(--font-sans);color:rgba(232,226,209,0.85);line-height:1.4;margin-left:.75rem;">${escapeHtml(item)}</div></div>`).join('')}
+    <div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">URGENTE · PRIORIDAD · PROGRAMAR</div></div>`;
+}
+
+// Popup ligero con las características de la casita (tipo de cama, m²,
+// capacidad). Ya no navega a una pantalla completa — el checklist se ve una
+// sola vez debajo del listado, no dentro de cada casita.
+function openCasitaPopupMT(tipo, casitaId) {
   const allCasitas = tipo === 'madera' ? window._casitasMaderaMT : window._casitasBahMT;
   const casita = allCasitas.find(c => c.id === casitaId);
   if (!casita) return;
-  const backTitle = tipo === 'madera' ? 'Casitas de Madera' : 'Casitas de Bahareque';
-  const backKey   = tipo === 'madera' ? 'casitas-madera-mt' : 'casitas-bah-mt';
-  const items = ['Conexión eléctrica principal funcionando','Funcionamiento de outlets eléctricos','Funcionamiento de luces (internas y externas)','Funcionamiento de abanico(s) / ventilador(es)','Funcionamiento de llavines y cerraduras','Funcionamiento de ventanas (abren, cierran, traban correctamente)','Daños visibles en estructura (paredes, cielo raso, piso, puertas)','Presencia de humedad, manchas de agua o filtraciones','Presencia de plagas o nidos de insectos','Estado de basureros (limpios, con bolsa, tapados)','Funcionamiento de ducha (presión y temperatura de agua)','Estado del mosquitero (sin roturas ni separaciones)','Estado del colchón y textiles (sin manchas, sin humedad)','Funcionamiento de cerrojo interior de privacidad','Estado de repisas, mesa y mobiliario','Visibilidad desde exterior (privacidad del huésped)'];
-  const html = `
-    <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:1rem;">
-      <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);font-family:sans-serif;margin-bottom:.75rem;">Características</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;">
-        ${[['Tipo de cama',casita.cama],['Metros cuadrados',casita.m2+' m²'],['Capacidad',casita.cap+' huéspedes']].map(([lbl,val])=>`<div style="background:#faf8f4;border-radius:8px;padding:.65rem .7rem;text-align:center;"><div style="font-size:.62rem;font-family:sans-serif;color:var(--tm);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.3rem;">${lbl}</div><div style="font-size:.88rem;font-family:sans-serif;font-weight:600;color:var(--brown);">${val}</div></div>`).join('')}
-      </div>
+  document.getElementById('casita-popup-title').textContent = casita.nombre;
+  document.getElementById('casita-popup-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:1rem;">
+      ${[['Tipo de cama',casita.cama],['Metros cuadrados',casita.m2+' m²'],['Capacidad',casita.cap+' huéspedes']].map(([lbl,val])=>`<div style="background:rgba(255,255,255,0.06);border-radius:8px;padding:.65rem .5rem;text-align:center;"><div style="font-size:.56rem;font-family:var(--font-sans);color:rgba(232,226,209,0.45);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">${lbl}</div><div style="font-size:.82rem;font-family:var(--font-sans);font-weight:600;color:var(--cream);">${escapeHtml(String(val))}</div></div>`).join('')}
     </div>
-    <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);font-family:sans-serif;margin-bottom:.75rem;">Checklist de inspección</div>
-    ${items.map(item=>`<div class="cl-item" style="border-bottom:1px solid rgba(84,66,54,.06);padding:.5rem 0;"><div style="width:20px;height:20px;border:1.5px solid rgba(153,92,68,.3);border-radius:5px;flex-shrink:0;margin-top:.1rem;"></div><div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);line-height:1.4;margin-left:.75rem;">${item}</div></div>`).join('')}
-    <div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row"> URGENTE ·  PRIORIDAD ·  PROGRAMAR</div></div>`;
-  setConScreen(casita.nombre,
-    () => openManualSection('manto', backKey, backTitle),
-    `<div class="doc-viewer">${html}</div>`);
+    <div style="background:rgba(255,255,255,0.05);border:1.5px dashed rgba(153,92,68,.3);border-radius:10px;padding:1.1rem;text-align:center;">
+      <div style="font-size:.75rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);">Foto próximamente disponible</div>
+    </div>`;
+  document.getElementById('casita-popup-modal').classList.add('show');
+}
+function closeCasitaPopupMT() {
+  document.getElementById('casita-popup-modal').classList.remove('show');
 }
 
 function openCasitaDetalle(tipo, casitaId) {
