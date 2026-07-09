@@ -288,6 +288,14 @@ function closeAveriaModal() {
   document.getElementById('averia-modal').classList.remove('show');
 }
 
+// Popup de "Reportes" (Mantenimiento): Proyecto / Consumo de Agua / Avería / Piscina.
+function openReportesPopup() {
+  document.getElementById('reportes-popup-modal').classList.add('show');
+}
+function closeReportesPopup() {
+  document.getElementById('reportes-popup-modal').classList.remove('show');
+}
+
 async function marcarAveriaCompletada(id) {
   const row = document.getElementById('av-row-' + id);
   if (row) row.style.opacity = '0.5';
@@ -779,6 +787,7 @@ function renderDeptHome() {
         </div>
         <div class="pub-icon">
           <a href="https://app.talentify.cr/" target="_blank" class="actl">Talentify</a>
+          ${(d === 'limpieza' || d === 'mantenimiento' || d === 'proveeduria') ? `<button class="actl actl-blue" onclick="openForm('reunion')">Reunión</button>` : ''}
           <button class="sico" onclick="logout()">Salir</button>
         </div>
       </div>
@@ -869,7 +878,6 @@ const DEPTS = {
       { label:'Reporte de Área',        form:'reporte-area', cls:'' },
       { label:'Repaso de Habitaciones', form:'repaso-hab',   cls:'' },
       { label:'Reporte de Avería',      form:'averia',       cls:'averia' },
-      { label:'Reunión de Operaciones', form:'reunion',      cls:'' },
     ]
   },
   mantenimiento: {
@@ -877,16 +885,12 @@ const DEPTS = {
     resources: [
       { id:'manual-prev',       title:'Manual de Mantenimiento', desc:'Estándares y procedimientos',   type:'doc' },
       { id:'mapa-propiedad',    title:'Mapa de la Propiedad',    desc:'Vista aérea · Clusters y zonas', type:'mapa' },
-      { id:'operacion-piscina', title:'Operación de Piscina',    desc:'Checklist y parámetros',        type:'piscina' },
       { id:'cal-manto-multi',   title:'Calendarios de Mantenimiento', desc:'Tareas programadas y eventos', type:'cal-multi' },
     ],
     reports: [
       { label:'Inspección de Cluster',   form:'averia-cluster', cls:'' },
-      { label:'Reporte de Trabajo',      form:'trabajo',    cls:'' },
-      { label:'Reporte de Agua',         form:'agua',       cls:'' },
-      { label:'Reporte de Avería',       form:'averia',     cls:'averia' },
+      { label:'Reportes',                form:'reportes-popup', cls:'' },
       { label:'Solicitud de Materiales', form:'materiales', cls:'materiales' },
-      { label:'Reunión de Operaciones',  form:'reunion',    cls:'' },
     ]
   },
   proveeduria: {
@@ -899,7 +903,6 @@ const DEPTS = {
       { label:'Solicitud de Herramientas', form:'herramientas',  cls:'' },
       { label:'Uso de Cuadraciclo',        form:'cuadraciclo',   cls:'' },
       { label:'Reporte de Avería',         form:'averia',        cls:'averia' },
-      { label:'Reunión de Operaciones',    form:'reunion',       cls:'' },
     ]
   },
   seguridad: {
@@ -963,7 +966,6 @@ function openResource(id, title, type) {
   if (type === 'mapa')        { openMapaTierramor(); return; }
   if (type === 'inventarios') { openInventarios(); return; }
   if (type === 'proveedores') { openProveedores(); return; }
-  if (type === 'piscina')     { openOperacionPiscina(); return; }
   if (type === 'insumos')     { openInsumosLimp(); return; }
   if (type === 'schedule')    { openScheduleDelDia(); return; }
   if (id === 'frases-en') {
@@ -1407,12 +1409,6 @@ function updatePhotoLabel(groupId, minPhotos) {
 
 // ── PISCINA ──
 
-function openOperacionPiscina() {
-  setConScreen('Operación de Piscina', () => goBack(),
-    `<div style="font-size:.78rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:1.2rem;">Selecciona la acción a realizar</div>
-     <div class="gcard" onclick="openChecklistPiscina()"><div class="ct">Checklist de Parámetros</div><div class="cd">pH · ORP · Sal PPM · Fotos</div></div>`);
-}
-
 // Convierte la fecha/hora actual a formato local compatible con
 // <input type="datetime-local">, evitando el desfase de toISOString() (UTC).
 function nowLocalDatetime() {
@@ -1433,7 +1429,7 @@ function openChecklistPiscina() {
   const inputStyle = 'color:var(--cream);background:rgba(255,255,255,0.07);border:1px solid rgba(232,226,209,0.14);border-radius:8px;padding:.6rem .75rem;font-size:.85rem;font-family:var(--font-sans);outline:none;width:100%;';
 
   document.getElementById('con-title').textContent = 'Parámetros de Piscina';
-  document.getElementById('con-back').onclick = () => openOperacionPiscina();
+  document.getElementById('con-back').onclick = () => goBack();
   document.getElementById('conbody').innerHTML = `
     ${!scheduled ? `<div class="doc-note"> Hoy es ${dayNames[day]}. El checklist de piscina se realiza Lunes, Martes, Jueves y Viernes.</div>` : ''}
 
@@ -1620,6 +1616,10 @@ const FORM_REQUIRED = {
 
 function openForm(formId) {
   stopRec();
+  // El checklist de piscina tiene una pantalla propia (parámetros, insumos,
+  // fotos) fuera del mecanismo genérico de FORMS.
+  if (formId === 'piscina-checklist') { openChecklistPiscina(); return; }
+  if (formId === 'reportes-popup') { openReportesPopup(); return; }
   if (!window._photos) window._photos = {};
   window._photos['form-photos'] = [];
   const today = todayLocal();
@@ -2337,10 +2337,10 @@ const MANUAL_MT_SECS = [
   { id:'prep-seg-rep',   title:'Preparación, Seguridad y Reportes' },
   { divider:'Áreas Comunes' },
   { id:'organizacion-mt', title:'Organización de la Propiedad' },
-  { id:'inspeccion-areas-mt', title:'Inspección Áreas Comunes' },
   { id:'bridge-mt',      title:'Hanging Bridge' },
   { id:'banos-mt',       title:'Baños' },
   { id:'agua',           title:'Sistemas de Agua' },
+  { id:'operacion-piscina-manual', title:'Operación de Piscina' },
   { divider:'Habitaciones' },
   { id:'casitas-madera-mt', title:'Casitas de Madera' },
   { id:'casitas-bah-mt',    title:'Casitas de Bahareque' },
@@ -2383,6 +2383,8 @@ const MANUAL_MT_CONTENT={
   'duchas-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Ducha y agua','Funcionamiento de ducha (presión y temperatura), grifo del lavatorio. Fugas o taponamientos.'],['Baño seco','Estado de la caja de aserrín, funcionamiento del inodoro. Espejos y accesorios.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row"> URGENTE ·  PRIORIDAD ·  PROGRAMAR</div></div>`,
   'banos-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Ducha y agua','Funcionamiento de ducha, grifo del lavatorio. Fugas o taponamientos.'],['Baño seco','Estado de la caja de aserrín, funcionamiento del inodoro. Espejos y accesorios.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row"> URGENTE ·  PRIORIDAD ·  PROGRAMAR</div></div>`,
   agua:`<div class="doc-note" style="margin-bottom:.8rem;"> Ante cualquier anomalía en sistemas de agua, reportar de inmediato.</div>${[['M1','Pozo Principal','Salida del tanque a la par del pozo — envía agua a las casitas'],['M2','Tanques Ojoche','Entrada de los tanques en la loma'],['M4','Tanque Potable','Entrada del tanque a la par de la bodega'],['M5','Tanques Piscina Izq.','Tanques de la piscina, mano izquierda'],['M6','Tanques Piscina Der.','Tanques de la piscina, mano derecha'],['M7','Tubería Principal Piscina','Tubería de abastecimiento del pozo hacia tanques de piscina']].map(([m,n,d])=>`<div style="background:rgba(255,255,255,0.055);border:1px solid rgba(232,226,209,0.09);border-radius:8px;padding:.7rem;margin-bottom:.45rem;display:flex;gap:.7rem;align-items:flex-start;"><span style="font-size:.68rem;font-family:sans-serif;font-weight:600;color:var(--clay);min-width:28px;">${m}</span><div><div style="font-size:.8rem;font-family:sans-serif;color:var(--cream);font-weight:500;">${n}</div><div style="font-size:.7rem;font-family:sans-serif;color:rgba(232,226,209,0.5);">${d}</div></div></div>`).join('')}<div class="doc-note" style="margin-top:.5rem;"> Sin medidor activo: Tanques Pozo Principal · Tanques Bahareque · Pozo Maloca — registro visual.</div>`,
+
+  'operacion-piscina-manual': `<div class="cs"><div class="csi"></div><h3>Manual de la Piscina</h3><p>Próximamente disponible.</p></div>`,
 
   'casitas-madera-mt':(function(){
     const cas=[{id:'toensmeier-mt',nombre:'Toensmeier',m2:60,cama:'King',cap:2},{id:'hemenway-mt',nombre:'Hemenway',m2:60,cama:'King',cap:2},{id:'primavesi-mt',nombre:'Primavesi',m2:60,cama:'King',cap:4},{id:'salatin-mt',nombre:'Salatin',m2:60,cama:'King',cap:4},{id:'shiva-mt',nombre:'Shiva',m2:60,cama:'King',cap:2},{id:'savory-mt',nombre:'Savory',m2:50,cama:'Twin',cap:2},{id:'yeomans-mt',nombre:'Yeomans',m2:50,cama:'Twin',cap:2},{id:'fukuoka-mt',nombre:'Fukuoka',m2:50,cama:'Twin',cap:2},{id:'mollison-mt',nombre:'Mollison',m2:50,cama:'Twin',cap:2},{id:'lancaster-mt',nombre:'Lancaster',m2:50,cama:'Dorm',cap:4},{id:'gotsch-mt',nombre:'Götsch',m2:50,cama:'Twin',cap:2},{id:'holzer-mt',nombre:'Holzer',m2:50,cama:'Twin',cap:2},{id:'ingham-mt',nombre:'Ingham',m2:50,cama:'Twin',cap:2},{id:'carson-mt',nombre:'Carson',m2:50,cama:'Twin',cap:2}];
