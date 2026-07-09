@@ -415,6 +415,8 @@ function startGuestReportAlerts() {
   // Solo Mantenimiento (quienes atienden las averías) y administradores.
   if (CU.departamento !== 'mantenimiento' && CU.rol !== 'admin') return;
 
+  requestNotificationPermission_();
+
   _guestAlertSeenIds = null;
   pollGuestReportsForAlert(); // primera pasada: solo establece la base, sin alertar
   _guestAlertTimer = setInterval(pollGuestReportsForAlert, GUEST_ALERT_POLL_MS);
@@ -480,6 +482,65 @@ function showGuestReportAlertBanner(reporte) {
   document.body.appendChild(banner);
   setTimeout(cerrar, 10000);
   playGuestAlertSound_();
+  fireNativeNotification_(reporte);
+}
+
+// ── Notificaciones nativas del sistema (requieren permiso del navegador) ──
+//
+// A diferencia del banner (que solo se ve con la pestaña abierta y activa),
+// una notificación nativa puede aparecer aunque Chrome esté en segundo plano
+// (no cerrado). En celular esto depende del sistema operativo y puede no
+// llegar si Chrome fue suspendido — sigue sin ser tan confiable como un
+// correo, pero es un paso mejor que solo el banner.
+
+function notificationsSupported_() {
+  return typeof Notification !== 'undefined';
+}
+
+// Se llama tras un login exitoso (gesto real del usuario: el clic en
+// "Ingresar"), que es cuando los navegadores permiten mostrar el diálogo
+// de permiso de forma más confiable.
+function requestNotificationPermission_() {
+  if (!notificationsSupported_()) return;
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().then(() => { updateNotifPermButton_(); });
+  }
+}
+
+function fireNativeNotification_(reporte) {
+  if (!notificationsSupported_() || Notification.permission !== 'granted') return;
+  try {
+    const n = new Notification('🔴 Nueva avería reportada por un huésped', {
+      body: (reporte.descripcion || 'Sin descripción') + ' — ' + (reporte.area || ''),
+      icon: './Tierramor_Logomark_Stamp.png',
+      tag: 'guest-averia-' + (reporte.id || Date.now()), // evita duplicados de la misma avería
+    });
+    n.onclick = () => {
+      try { window.focus(); } catch(e) {}
+      if (CU && CU.rol === 'admin') { renderHome(); } else { renderDeptHome(); }
+      show('home');
+      n.close();
+    };
+  } catch (e) { /* algunos navegadores/SO pueden bloquearlo silenciosamente */ }
+}
+
+// Botón manual "Activar notificaciones", por si el usuario no respondió el
+// permiso durante el login (o entró con una sesión ya guardada, donde no
+// hay un gesto de clic fresco para pedirlo automáticamente). Se inserta en
+// la tarjeta de perfil solo para Mantenimiento/admin, y solo si aplica.
+function notifPermButtonHtml_() {
+  if (!CU || (CU.departamento !== 'mantenimiento' && CU.rol !== 'admin')) return '';
+  if (!notificationsSupported_()) return '';
+  if (Notification.permission === 'granted') return '';
+  if (Notification.permission === 'denied') {
+    return `<div style="font-size:.6rem;color:rgba(232,226,209,0.35);margin-top:.3rem;">🔕 Notificaciones bloqueadas — actívalas desde la configuración del navegador</div>`;
+  }
+  return `<button id="notif-perm-btn" onclick="requestNotificationPermission_()" style="margin-top:.4rem;background:none;border:1px solid rgba(232,226,209,0.18);border-radius:8px;padding:.3rem .65rem;color:rgba(232,226,209,0.6);font-family:var(--font-sans);font-size:.65rem;cursor:pointer;">🔔 Activar notificaciones de averías</button>`;
+}
+
+function updateNotifPermButton_() {
+  const holder = document.getElementById('notif-perm-holder');
+  if (holder) holder.innerHTML = notifPermButtonHtml_();
 }
 
 // Beep corto generado por audio, sin depender de ningún archivo externo.
@@ -529,6 +590,7 @@ function renderHome() {
           <button class="sico" onclick="logout()">Salir</button>
         </div>
       </div>
+      <div id="notif-perm-holder">${notifPermButtonHtml_()}</div>
     </div>
     <div class="swrap">
       <img src="./Tierramor_Logomark_Stamp.png" alt="Tierramor" style="height:14px;opacity:0.28;filter:brightness(2);">&nbsp;<span class="mst" style="vertical-align:middle;">·&nbsp; Portal Operativo</span>
@@ -630,6 +692,7 @@ function renderDeptHome() {
           <button class="sico" onclick="logout()">Salir</button>
         </div>
       </div>
+      <div id="notif-perm-holder">${notifPermButtonHtml_()}</div>
     </div>
     <div class="swrap">
       <img src="./Tierramor_Logomark_Stamp.png" alt="Tierramor" style="height:14px;opacity:0.28;filter:brightness(2);">&nbsp;<span class="mst" style="vertical-align:middle;">·&nbsp; Portal Operativo</span>
