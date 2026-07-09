@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Tierramor — Guest Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --cream:  #E8E2D1;
+  --clay:   #995C44;
+  --blue:   #717F7E;
+  --green:  #76724E;
+  --brown:  #3d2f26;
+  --tm:     #a08070;
+}
+body {
+  font-family: 'Jost', sans-serif;
+  background: var(--cream);
+  min-height: 100vh;
+  color: var(--brown);
+}
+.screen { display: none; min-height: 100vh; flex-direction: column; }
+.screen.active { display: flex; }
+
+.header {
+  background: var(--blue);
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  border-bottom: 3px solid rgba(84,66,54,0.15);
+  position: sticky; top: 0; z-index: 50;
+}
+.header .btn-bk {
+  background: none; border: none; color: var(--cream); font-size: 1.2rem;
+  cursor: pointer; padding: .2rem; flex-shrink: 0; opacity: .85;
+}
+.header-text { flex: 1; }
+.header-text h1 { font-family: 'Cormorant', serif; font-style: italic; font-size: 1.1rem; color: var(--cream); font-weight: 400; }
+.header-text p { font-size: .6rem; letter-spacing: .16em; text-transform: uppercase; color: rgba(232,226,209,0.65); }
+.btn-lang {
+  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 20px;
+  color: var(--cream); font-family: 'Jost', sans-serif; font-size: .68rem; font-weight: 500;
+  padding: .4rem .8rem; cursor: pointer; flex-shrink: 0;
+}
+
+.main { max-width: 520px; margin: 0 auto; width: 100%; padding: 1.5rem 1.25rem 3rem; flex: 1; }
+
+/* HOME MENU BUTTONS */
+.mod-btn {
+  width: 100%; background: white; border: none; border-radius: 16px;
+  padding: 1.1rem 1.2rem; margin-bottom: .75rem; display: flex; align-items: center; gap: 1rem;
+  cursor: pointer; text-align: left; box-shadow: 0 3px 14px rgba(84,66,54,0.08);
+  border-left: 4px solid var(--clay); transition: transform .12s;
+}
+.mod-btn:active { transform: scale(0.98); }
+.mod-btn .ico { font-size: 1.5rem; flex-shrink: 0; }
+.mod-btn h3 { font-family: 'Cormorant', serif; font-style: italic; font-weight: 500; font-size: 1.15rem; color: var(--brown); }
+.mod-btn p { font-size: .72rem; color: var(--tm); margin-top: 2px; }
+.mod-btn .arr { margin-left: auto; color: var(--tm); font-size: 1rem; }
+
+/* GENERIC CARD */
+.card {
+  background: white; border-radius: 14px; padding: 1.1rem 1.2rem; margin-bottom: .8rem;
+  box-shadow: 0 3px 14px rgba(84,66,54,0.08);
+}
+.card h3 { font-family: 'Cormorant', serif; font-style: italic; font-weight: 500; font-size: 1.15rem; color: var(--brown); margin-bottom: .35rem; }
+.card p { font-size: .85rem; color: rgba(61,47,38,0.72); line-height: 1.55; }
+.card .meta { font-size: .68rem; color: var(--tm); letter-spacing: .04em; margin-top: .5rem; }
+.intro-note {
+  background: var(--blue); color: var(--cream); border-radius: 14px; padding: 1.1rem 1.2rem;
+  margin-bottom: 1.1rem; font-size: .85rem; line-height: 1.55;
+}
+.intro-note b { display: block; font-family: 'Cormorant', serif; font-style: italic; font-size: 1.1rem; margin-bottom: .35rem; font-weight: 500; }
+.sec-lbl { font-size: .65rem; letter-spacing: .16em; text-transform: uppercase; color: var(--tm); margin: 1.1rem 0 .6rem 0.1rem; }
+.sec-lbl:first-child { margin-top: 0; }
+
+/* FORM */
+.fg { margin-bottom: 1.1rem; }
+.fg label { display: block; font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; color: rgba(84,66,54,0.55); margin-bottom: .4rem; }
+.fg input, .fg select, .fg textarea {
+  width: 100%; background: #F5F2EC; border: 1.5px solid rgba(84,66,54,0.15); border-radius: 10px;
+  padding: .78rem 1rem; font-family: 'Jost', sans-serif; font-size: .9rem; color: var(--brown); outline: none;
+}
+.fg textarea { min-height: 90px; resize: vertical; line-height: 1.5; }
+.btn-submit {
+  width: 100%; background: var(--blue); border: none; border-radius: 12px; padding: 1rem;
+  color: var(--cream); font-family: 'Jost', sans-serif; font-size: .92rem; font-weight: 500;
+  cursor: pointer; box-shadow: 0 3px 14px rgba(113,127,126,0.3); margin-top: .3rem;
+}
+.btn-submit:disabled { background: rgba(84,66,54,0.2); color: rgba(84,66,54,0.4); box-shadow: none; }
+.err-msg, .ok-msg {
+  border-radius: 10px; padding: .8rem 1rem; font-size: .8rem; margin-top: .75rem; display: none; line-height: 1.4;
+}
+.err-msg { background: rgba(224,122,95,0.1); border: 1px solid rgba(224,122,95,0.3); color: #C05A3A; }
+.ok-msg { background: rgba(118,114,78,0.1); border: 1px solid rgba(118,114,78,0.3); color: var(--green); }
+
+/* EMERGENCY */
+.em-cat { font-family: 'Cormorant', serif; font-style: italic; font-size: 1.15rem; color: var(--clay); margin: 1.1rem 0 .6rem; }
+.em-cat:first-child { margin-top: 0; }
+.em-row { border-left: 3px solid var(--clay); }
+.em-row .lbl { font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: var(--tm); }
+.em-row .nm { font-family: 'Cormorant', serif; font-weight: 600; font-size: 1.05rem; color: var(--brown); margin: 2px 0; }
+.em-row a { color: var(--blue); font-size: .9rem; text-decoration: none; }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 999; background: rgba(61,47,38,0.55);
+  display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.modal-overlay.show { opacity: 1; pointer-events: all; }
+.modal-box { background: white; border-radius: 18px; padding: 1.6rem 1.4rem; max-width: 320px; width: 90%; text-align: center; }
+.modal-box h3 { font-family: 'Cormorant', serif; font-style: italic; font-size: 1.3rem; margin-bottom: 1rem; }
+.modal-opt {
+  width: 100%; background: #F5F2EC; border: none; border-radius: 10px; padding: .9rem;
+  font-family: 'Jost', sans-serif; font-size: .9rem; color: var(--brown); margin-bottom: .6rem; cursor: pointer; text-align: left;
+}
+.modal-close { background: none; border: none; color: var(--tm); font-size: .8rem; margin-top: .3rem; cursor: pointer; }
+
+.cs { text-align: center; padding: 2.5rem 1.5rem; }
+.cs .i { font-size: 2.2rem; margin-bottom: .6rem; opacity: .5; }
+.cs p { font-size: .82rem; color: var(--tm); }
+.page-footer { text-align: center; padding: 1.5rem 0 .5rem; }
+.page-footer img { height: 30px; opacity: .2; }
+[data-es] { display: none; }
+.lang-es [data-en] { display: none; }
+.lang-es [data-es] { display: inline; }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="view-home" class="screen active">
+  <div class="header">
+    <div class="header-text">
+      <h1>Tierramor</h1>
+      <p><span data-en>Guest Portal</span><span data-es>Portal del Huésped</span></p>
+    </div>
+    <button class="btn-lang" onclick="toggleLang()" id="lang-btn">ES</button>
+  </div>
+  <div class="main">
+    <button class="mod-btn" onclick="show('view-farm')" style="border-left-color:var(--blue);">
+      <div><h3><span data-en>Today at the Farm</span><span data-es>Hoy en la Finca</span></h3><p><span data-en>What's happening today</span><span data-es>Qué está pasando hoy</span></p></div>
+      <span class="arr">›</span>
+    </button>
+    <button class="mod-btn" onclick="show('view-menu')" style="border-left-color:var(--green);">
+      <div><h3>Menu</h3><p><span data-en>Today's meals</span><span data-es>Comidas de hoy</span></p></div>
+      <span class="arr">›</span>
+    </button>
+    <button class="mod-btn" onclick="show('view-tours')" style="border-left-color:var(--clay);">
+      <div><h3><span data-en>Book a Tour</span><span data-es>Reservar un Tour</span></h3><p><span data-en>Explore Tierramor</span><span data-es>Explora Tierramor</span></p></div>
+      <span class="arr">›</span>
+    </button>
+    <button class="mod-btn" onclick="openServiceModal()" style="border-left-color:#8FACA9;">
+      <div><h3><span data-en>Request a Service</span><span data-es>Solicitar un Servicio</span></h3><p><span data-en>Laundry · Transportation</span><span data-es>Lavandería · Transporte</span></p></div>
+      <span class="arr">›</span>
+    </button>
+    <button class="mod-btn" onclick="show('view-guest-report')" style="border-left-color:#E07A5F;">
+      <div><h3><span data-en>Report an Issue</span><span data-es>Reportar un Problema</span></h3><p><span data-en>Maintenance or housekeeping</span><span data-es>Mantenimiento o limpieza</span></p></div>
+      <span class="arr">›</span>
+    </button>
+    <button class="mod-btn" onclick="show('view-emergency')" style="border-left-color:#735145;">
+      <div><h3><span data-en>Emergency Contacts</span><span data-es>Contactos de Emergencia</span></h3></div>
+      <span class="arr">›</span>
+    </button>
+    <div class="page-footer"><img src="./Tierramor_Emblem-Brown.png" alt="Tierramor"></div>
+  </div>
+</div>
+
+<!-- TODAY AT THE FARM -->
+<div id="view-farm" class="screen">
+  <div class="header">
+    <button class="btn-bk" onclick="show('view-home')">←</button>
+    <div class="header-text"><h1><span data-en>Today at the Farm</span><span data-es>Hoy en la Finca</span></h1></div>
+    <button class="btn-lang" onclick="toggleLang()">ES</button>
+  </div>
+  <div class="main" id="farm-body">
+    <div class="cs"><div class="i">⏳</div><p><span data-en>Loading...</span><span data-es>Cargando...</span></p></div>
+  </div>
+</div>
+
+<!-- MENU -->
+<div id="view-menu" class="screen">
+  <div class="header">
+    <button class="btn-bk" onclick="show('view-home')">←</button>
+    <div class="header-text"><h1>Menu</h1></div>
+    <button class="btn-lang" onclick="toggleLang()">ES</button>
+  </div>
+  <div class="main" id="menu-body">
+    <div class="cs"><div class="i">⏳</div><p><span data-en>Loading...</span><span data-es>Cargando...</span></p></div>
+  </div>
+</div>
+
+<!-- TOURS -->
+<div id="view-tours" class="screen">
+  <div class="header">
+    <button class="btn-bk" onclick="show('view-home')">←</button>
+    <div class="header-text"><h1><span data-en>Book a Tour</span><span data-es>Reservar un Tour</span></h1></div>
+    <button class="btn-lang" onclick="toggleLang()">ES</button>
+  </div>
+  <div class="main" id="tours-body">
+    <div class="cs"><div class="i">⏳</div><p><span data-en>Loading...</span><span data-es>Cargando...</span></p></div>
+  </div>
+</div>
+
+<!-- TOUR REQUEST FORM -->
+<div id="view-tour-form" class="screen">
+  <div class="header">
+    <button class="btn-bk" onclick="show('view-tours')">←</button>
+    <div class="header-text"><h1><span data-en>Request Tour</span><span data-es>Solicitar Tour</span></h1></div>
+    <button class="btn-lang" onclick="toggleLang()">ES</button>
+  </div>
+  <div class="main">
+    <div class="fg"><label><span data-en>Tour</span><span data-es>Tour</span></label><input type="text" id="tr-tour" readonly></div>
+    <div class="fg"><label><span data-en>Your Name</span><span data-es>Tu Nombre</span></label><input type="text" id="tr-nombre" placeholder="John Smith"></div>
+    <div class="fg"><label><span data-en>Room</span><span data-es>Habitación</span></label><input type="text" id="tr-habitacion" placeholder="Toensmeier"></div>
+    <div class="fg"><label><span data-en>Preferred Date</span><span data-es>Fecha Preferida</span></label><input type="date" id="tr-fecha"></div>
+    <div class="fg"><label><span data-en>Number of People</span><span data-es>Cantidad de Personas</span></label><input type="number" id="tr-personas" min="1" value="1"></div>
+    <div class="fg"><label><span data-en>Notes</span><span data-es>Notas</span></label><textarea id="tr-notas" placeholder="..."></textarea></div>
+    <button class="btn-submit" id="tr-btn" onclick="submitTourRequest()"><span data-en>Send Request</span><span data-es>Enviar Solicitud</span></button>
+    <div class="err-msg" id="tr-err"></div>
+    <div class="ok-msg" id="tr-ok"><span data-en> Request sent! Our team will confirm with you shortly.</span><span data-es> ¡Solicitud enviada! Nuestro equipo confirmará contigo pronto.</span></div>
+  </div>
+</div>
+
+<!-- LAUNDRY FORM -->
+<div id="view-laundry" class="screen">
+  <div class="header">
+    <button class="btn-bk" onclick="show('view-home')">←</button>
+    <div class="header-text"><h1>Laundry</h1></div>
+    <button class="btn-lang" onclick="toggleLang()">ES</button>
+  </div>
+  <div class="main">
+    <div class="fg"><label><span data-en>Your Name</span><span data-es>Tu Nombre</span></label><input type="text" id="lv-nombre" placeholder="John Smith"></div>
+    <div class="fg"><label><span data-en>Room</span><span data-es>Habitación</span></label><input type="text" id="lv-habitacion" placeholder="Toensmeier"></div>
+    <div class="fg"><label><span data-en>Pickup Time</span><span data-es>Hora de Recogida</span></label><input type="time" id="lv-hora"></div>
+    <div class="fg"><label><span data-en>Details</span><span data-es>Detalles</span></label><textarea id="lv-detalles" placeholder="Number of items, special instructions..."></textarea></div>
+    <button class="btn-submit" id="lv-btn" onclick="submitLaundryRequest()"><span data-en>Send Request</span><span data-es>Enviar Solicitud</span></button>
+    <div class="err-msg" id="lv-err"></div>
+    <div class="ok-msg" id="lv-ok"><span data-en> Request sent! Our team will pick up your laundry soon.</span><span data-es> ¡Solicitud enviada! Nuestro equipo recogerá tu ropa pronto.</span></div>
+  </div>
+</div>
+
+<!-- TRANSPORTATION FORM -->
+<div id="view-transport" class="screen">
+  <div class="header">
+    <button class="btn-bk" onclick="show('view-home')">←</button>
+    <div class="header-text"><h1>Transportation</h1></div>
+    <button class="btn-lang" onclick="toggleLang()">ES</button>
+  </div>
+  <div class="main">
+    <div class="fg"><label><span data-en>Your Name</span><span data-es>Tu Nombre</span></label><input type="text" id="tp-nombre" placeholder="John Smith"></div>
+    <div class="fg"><label><span data-en>Room</span><span data-es>Habitación</span></label><input type="text" id="tp-habitacion" placeholder="Toensmeier"></div>
+    <div class="fg"><label><span data-en>Destination</span><span data-es>Destino</span></label><input type="text" id="tp-destino" placeholder="Nosara"></div>
+    <div class="frow" style="display:flex;gap:.65rem;">
+      <div class="fg" style="flex:1;"><label><span data-en>Date</span><span data-es>Fecha</span></label><input type="date" id="tp-fecha"></div>
+      <div class="fg" style="flex:1;"><label><span data-en>Time</span><span data-es>Hora</span></label><input type="time" id="tp-hora"></div>
+    </div>
+    <div class="fg"><label><span data-en>Number of People</span><span data-es>Cantidad de Personas</span></label><input type="number" id="tp-personas" min="1" value="1"></div>
+    <div class="fg">
+      <label><span data-en>Round Trip?</span><span data-es>¿Ida y Vuelta?</span></label>
+      <select id="tp-idayvuelta">
+        <option value="Sí"><span data-en>Yes</span></option>
+        <option value="No">No</option>
+      </select>
+    </div>
+    <div class="fg"><label><span data-en>Notes</span><span data-es>Notas</span></label><textarea id="tp-notas" placeholder="..."></textarea></div>
+    <button class="btn-submit" id="tp-btn" onclick="submitTransportRequest()"><span data-en>Send Request</span><span data-es>Enviar Solicitud</span></button>
+    <div class="err-msg" id="tp-err"></div>
+    <div class="ok-msg" id="tp-ok"><span data-en> Request sent! Our team will confirm with you shortly.</span><span data-es> ¡Solicitud enviada! Nuestro equipo confirmará contigo pronto.</span></div>
+  </div>
+</div>
+
+<!-- GUEST REPORT (issue) -->
+<div id="view-guest-report" class="screen">
+  <div class="header">
+    <button class="btn-bk" onclick="show('view-home')">←</button>
+    <div class="header-text"><h1><span data-en>Report an Issue</span><span data-es>Reportar un Problema</span></h1></div>
+    <button class="btn-lang" onclick="toggleLang()">ES</button>
+  </div>
+  <div class="main">
+    <div class="fg">
+      <label><span data-en>Which team should handle this?</span><span data-es>¿Qué equipo debe atenderlo?</span></label>
+      <select id="g-depto">
+        <option value="Mantenimiento" id="opt-manto">Maintenance</option>
+        <option value="Limpieza" id="opt-limp">Housekeeping</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label><span data-en>Description of the issue</span><span data-es>Descripción del problema</span></label>
+      <textarea id="g-desc" placeholder="Please describe the issue in as much detail as possible..."></textarea>
+    </div>
+    <div class="fg">
+      <label><span data-en>Location / Area</span><span data-es>Ubicación / Área</span></label>
+      <select id="g-area" onchange="toggleRoomSelect()">
+        <option value="">— Select the area —</option>
+        <option value="My room">My room</option>
+        <option>Main bathrooms</option>
+        <option>Showers</option>
+        <option>Juice Bar</option>
+        <option>Kitchen / Dining area</option>
+        <option>Swimming pool</option>
+        <option>Lounge</option>
+        <option>Movement Studio</option>
+        <option>Maloca</option>
+        <option>Trails</option>
+        <option>Outdoor area</option>
+        <option>Other area</option>
+      </select>
+    </div>
+    <div class="fg" id="room-select-wrapper" style="display:none;">
+      <label><span data-en>Room name</span><span data-es>Nombre de la habitación</span></label>
+      <select id="g-room">
+        <option value="">— Select your room —</option>
+        <option>Toensmeier</option><option>Hemenway</option><option>Primavesi</option><option>Salatin</option>
+        <option>Shiva</option><option>Savory</option><option>Yeomans</option><option>Fukuoka</option>
+        <option>Mollison</option><option>Götsch</option><option>Holzer</option><option>Ingham</option><option>Carson</option>
+      </select>
+    </div>
+    <button class="btn-submit" id="g-btn" onclick="submitGuestReport()"><span data-en>Submit Report</span><span data-es>Enviar Reporte</span></button>
+    <div class="err-msg" id="g-err"></div>
+    <div class="ok-msg" id="g-ok"><span data-en> Report submitted! Thank you for letting us know.</span><span data-es> ¡Reporte enviado! Gracias por avisarnos.</span></div>
+  </div>
+</div>
+
+<!-- EMERGENCY CONTACTS -->
+<div id="view-emergency" class="screen">
+  <div class="header">
+    <button class="btn-bk" onclick="show('view-home')">←</button>
+    <div class="header-text"><h1><span data-en>Emergency Contacts</span><span data-es>Contactos de Emergencia</span></h1></div>
+    <button class="btn-lang" onclick="toggleLang()">ES</button>
+  </div>
+  <div class="main" id="emergency-body">
+    <div class="cs"><div class="i">⏳</div><p><span data-en>Loading...</span><span data-es>Cargando...</span></p></div>
+  </div>
+</div>
+
+<!-- SERVICE MODAL -->
+<div class="modal-overlay" id="service-modal" onclick="if(event.target===this) closeServiceModal()">
+  <div class="modal-box">
+    <h3><span data-en>Request a Service</span><span data-es>Solicitar un Servicio</span></h3>
+    <button class="modal-opt" onclick="closeServiceModal(); show('view-laundry')"> <span data-en>Laundry</span><span data-es>Lavandería</span></button>
+    <button class="modal-opt" onclick="closeServiceModal(); show('view-transport')"> <span data-en>Transportation</span><span data-es>Transporte</span></button>
+    <button class="modal-close" onclick="closeServiceModal()"><span data-en>Cancel</span><span data-es>Cancelar</span></button>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──
+const WEBHOOK = 'https://script.google.com/macros/s/AKfycbzGws5rH9g8si9f6efuqIBVrLE6TMQY6D1g8VlMXod43aWMxarDCd1JaxvDA5sOFn1T/exec';
+
+// ── STATE ──
+let lang = 'en'; // 'en' | 'es'
+let _farmData = null, _menuData = null, _toursData = null, _emergencyData = null;
+
+// ── UTILS ──
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function todayLocal() {
+  const d = new Date(); const off = d.getTimezoneOffset();
+  return new Date(d.getTime() - off*60000).toISOString().split('T')[0];
+}
+function fieldByLang(obj, base) {
+  // Busca Base_EN / Base_ES; si falta el idioma actual, cae al otro; si no hay ninguno, ''.
+  const key = base + '_' + (lang === 'es' ? 'ES' : 'EN');
+  const alt = base + '_' + (lang === 'es' ? 'EN' : 'ES');
+  return (obj[key] || obj[alt] || '').toString();
+}
+
+// ── NAV ──
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  if (id === 'view-farm' && !_farmData) loadFarm();
+  if (id === 'view-menu' && !_menuData) loadMenu();
+  if (id === 'view-tours' && !_toursData) loadTours();
+  if (id === 'view-emergency' && !_emergencyData) loadEmergency();
+}
+
+function toggleLang() {
+  lang = lang === 'en' ? 'es' : 'en';
+  document.body.classList.toggle('lang-es', lang === 'es');
+  document.querySelectorAll('.btn-lang').forEach(b => b.textContent = lang === 'en' ? 'ES' : 'EN');
+  const optManto = document.getElementById('opt-manto');
+  const optLimp  = document.getElementById('opt-limp');
+  if (optManto) optManto.textContent = lang === 'es' ? 'Mantenimiento' : 'Maintenance';
+  if (optLimp)  optLimp.textContent  = lang === 'es' ? 'Limpieza' : 'Housekeeping';
+  // Re-renderiza el contenido bilingüe ya cargado (sin volver a pedirlo al servidor)
+  if (_farmData) renderFarm();
+  if (_menuData) renderMenu();
+  if (_toursData) renderTours();
+  if (_emergencyData) renderEmergency();
+}
+
+function openServiceModal() { document.getElementById('service-modal').classList.add('show'); }
+function closeServiceModal() { document.getElementById('service-modal').classList.remove('show'); }
+
+// ── API ──
+async function apiGet(action) {
+  try {
+    const res = await fetch(WEBHOOK + '?action=' + action);
+    return await res.json();
+  } catch (e) {
+    return { ok: false, error: 'network' };
+  }
+}
+async function apiPost(payload) {
+  try {
+    const res = await fetch(WEBHOOK, { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'text/plain'} });
+    let data = null;
+    try { data = await res.json(); } catch(e) {}
+    if (data && data.ok) return Object.assign({ ok: true }, data);
+    return { ok: false, error: (data && data.error) ? data.error : 'Could not send. Please try again.' };
+  } catch (e) {
+    return { ok: false, error: 'Could not connect. Please check your connection and try again.' };
+  }
+}
+
+// ── TODAY AT THE FARM ──
+async function loadFarm() {
+  const res = await apiGet('get_today_farm');
+  _farmData = (res.ok && res.items) ? res.items : [];
+  renderFarm();
+}
+function renderFarm() {
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dayNamesEs = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const todayKeyEn = dayNames[new Date().getDay()];
+  const general = _farmData.filter(f => (f['Dia']||'').toString().trim().toLowerCase() === 'general');
+  const hoy = _farmData.filter(f => (f['Dia']||'').toString().trim().toLowerCase() === todayKeyEn.toLowerCase());
+  hoy.sort((a,b) => (parseInt(a['Orden'])||0) - (parseInt(b['Orden'])||0));
+
+  let html = '';
+  general.forEach(g => {
+    html += `<div class="intro-note"><b>${escapeHtml(fieldByLang(g,'Titulo'))}</b>${escapeHtml(fieldByLang(g,'Descripcion'))}</div>`;
+  });
+  html += `<div class="sec-lbl">${lang==='es' ? 'Hoy · '+dayNamesEs[new Date().getDay()] : 'Today · '+todayKeyEn}</div>`;
+  if (!hoy.length) {
+    html += `<div class="cs"><p>${lang==='es' ? 'No hay actividades programadas para hoy.' : 'No activities scheduled for today.'}</p></div>`;
+  } else {
+    hoy.forEach(item => {
+      html += `<div class="card"><h3>${escapeHtml(fieldByLang(item,'Titulo'))}</h3><p>${escapeHtml(fieldByLang(item,'Descripcion'))}</p>${item['Hora'] ? `<div class="meta"> ${escapeHtml(item['Hora'])}</div>` : ''}</div>`;
+    });
+  }
+  document.getElementById('farm-body').innerHTML = html;
+}
+
+// ── MENU ──
+async function loadMenu() {
+  const res = await apiGet('get_menu');
+  _menuData = (res.ok && res.items) ? res.items : [];
+  renderMenu();
+}
+function renderMenu() {
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const todayKeyEn = dayNames[new Date().getDay()];
+  const aplica = _menuData.filter(m => {
+    const d = (m['Dia']||'').toString().trim().toLowerCase();
+    return !d || d === 'todos los días' || d === 'every day' || d === todayKeyEn.toLowerCase();
+  });
+  const categorias = [...new Set(aplica.map(m => m['Categoria'] || 'Menu'))];
+  let html = '';
+  if (!aplica.length) {
+    html = `<div class="cs"><p>${lang==='es' ? 'El menú estará disponible pronto.' : 'Menu coming soon.'}</p></div>`;
+  } else {
+    categorias.forEach(cat => {
+      html += `<div class="sec-lbl">${escapeHtml(cat)}</div>`;
+      aplica.filter(m => (m['Categoria']||'Menu') === cat)
+        .sort((a,b) => (parseInt(a['Orden'])||0) - (parseInt(b['Orden'])||0))
+        .forEach(item => {
+          html += `<div class="card"><h3>${escapeHtml(fieldByLang(item,'Nombre'))}</h3><p>${escapeHtml(fieldByLang(item,'Descripcion'))}</p></div>`;
+        });
+    });
+  }
+  document.getElementById('menu-body').innerHTML = html;
+}
+
+// ── TOURS ──
+async function loadTours() {
+  const res = await apiGet('get_tours');
+  _toursData = (res.ok && res.items) ? res.items : [];
+  renderTours();
+}
+function renderTours() {
+  let html = '';
+  if (!_toursData.length) {
+    html = `<div class="cs"><p>${lang==='es' ? 'No hay tours disponibles por ahora.' : 'No tours available right now.'}</p></div>`;
+  } else {
+    _toursData.forEach(t => {
+      const nombre = escapeHtml(fieldByLang(t,'Nombre'));
+      html += `<div class="card">
+        <h3>${nombre}</h3>
+        <p>${escapeHtml(fieldByLang(t,'Descripcion'))}</p>
+        <div class="meta">${t['Duracion']?('⏱ '+escapeHtml(t['Duracion'])+'  '):''}${t['Horario']?(' '+escapeHtml(t['Horario'])):''}</div>
+        <button class="btn-submit" style="margin-top:.85rem;" onclick="openTourForm('${escapeHtml((t['ID']||'')).replace(/'/g,"\\'")}','${nombre.replace(/'/g,"\\'")}')">${lang==='es'?'Reservar':'Request this tour'}</button>
+      </div>`;
+    });
+  }
+  document.getElementById('tours-body').innerHTML = html;
+}
+function openTourForm(id, nombre) {
+  document.getElementById('tr-tour').value = nombre;
+  document.getElementById('tr-fecha').value = todayLocal();
+  document.getElementById('tr-err').style.display = 'none';
+  document.getElementById('tr-ok').style.display = 'none';
+  show('view-tour-form');
+}
+async function submitTourRequest() {
+  const nombre = document.getElementById('tr-nombre').value.trim();
+  const habitacion = document.getElementById('tr-habitacion').value.trim();
+  if (!nombre || !habitacion) { alert(lang==='es' ? 'Por favor completa tu nombre y habitación.' : 'Please fill in your name and room.'); return; }
+  const btn = document.getElementById('tr-btn'); btn.disabled = true;
+  const res = await apiPost({ type:'tour_request', datos: {
+    nombre, habitacion,
+    tour: document.getElementById('tr-tour').value,
+    fecha: document.getElementById('tr-fecha').value,
+    personas: document.getElementById('tr-personas').value,
+    notas: document.getElementById('tr-notas').value,
+  }});
+  btn.disabled = false;
+  if (res.ok) {
+    document.getElementById('tr-err').style.display = 'none';
+    document.getElementById('tr-ok').style.display = 'block';
+    document.getElementById('tr-nombre').value=''; document.getElementById('tr-habitacion').value='';
+    document.getElementById('tr-notas').value='';
+  } else {
+    document.getElementById('tr-err').textContent = (res.error || (lang==='es'?'Error al enviar.':'Could not send.'));
+    document.getElementById('tr-err').style.display = 'block';
+  }
+}
+
+// ── LAUNDRY ──
+async function submitLaundryRequest() {
+  const nombre = document.getElementById('lv-nombre').value.trim();
+  const habitacion = document.getElementById('lv-habitacion').value.trim();
+  if (!nombre || !habitacion) { alert(lang==='es' ? 'Por favor completa tu nombre y habitación.' : 'Please fill in your name and room.'); return; }
+  const btn = document.getElementById('lv-btn'); btn.disabled = true;
+  const res = await apiPost({ type:'laundry_request', datos: {
+    nombre, habitacion,
+    hora: document.getElementById('lv-hora').value,
+    detalles: document.getElementById('lv-detalles').value,
+  }});
+  btn.disabled = false;
+  if (res.ok) {
+    document.getElementById('lv-err').style.display = 'none';
+    document.getElementById('lv-ok').style.display = 'block';
+    document.getElementById('lv-nombre').value=''; document.getElementById('lv-habitacion').value=''; document.getElementById('lv-detalles').value='';
+  } else {
+    document.getElementById('lv-err').textContent = (res.error || (lang==='es'?'Error al enviar.':'Could not send.'));
+    document.getElementById('lv-err').style.display = 'block';
+  }
+}
+
+// ── TRANSPORTATION ──
+async function submitTransportRequest() {
+  const nombre = document.getElementById('tp-nombre').value.trim();
+  const habitacion = document.getElementById('tp-habitacion').value.trim();
+  const destino = document.getElementById('tp-destino').value.trim();
+  if (!nombre || !habitacion || !destino) { alert(lang==='es' ? 'Por favor completa nombre, habitación y destino.' : 'Please fill in name, room, and destination.'); return; }
+  const btn = document.getElementById('tp-btn'); btn.disabled = true;
+  const res = await apiPost({ type:'transport_request', datos: {
+    nombre, habitacion, destino,
+    fecha: document.getElementById('tp-fecha').value,
+    hora: document.getElementById('tp-hora').value,
+    personas: document.getElementById('tp-personas').value,
+    idaYVuelta: document.getElementById('tp-idayvuelta').value,
+    notas: document.getElementById('tp-notas').value,
+  }});
+  btn.disabled = false;
+  if (res.ok) {
+    document.getElementById('tp-err').style.display = 'none';
+    document.getElementById('tp-ok').style.display = 'block';
+    document.getElementById('tp-nombre').value=''; document.getElementById('tp-habitacion').value=''; document.getElementById('tp-destino').value=''; document.getElementById('tp-notas').value='';
+  } else {
+    document.getElementById('tp-err').textContent = (res.error || (lang==='es'?'Error al enviar.':'Could not send.'));
+    document.getElementById('tp-err').style.display = 'block';
+  }
+}
+
+// ── GUEST REPORT (issue) ──
+function toggleRoomSelect() {
+  const area = document.getElementById('g-area').value;
+  const wrapper = document.getElementById('room-select-wrapper');
+  wrapper.style.display = area === 'My room' ? 'block' : 'none';
+  if (area !== 'My room') document.getElementById('g-room').value = '';
+}
+async function submitGuestReport() {
+  const desc = document.getElementById('g-desc').value.trim();
+  const area = document.getElementById('g-area').value;
+  const depto = document.getElementById('g-depto').value;
+  const room = document.getElementById('g-room').value;
+  const err = document.getElementById('g-err');
+  err.style.display = 'none';
+  if (!desc) { alert(lang==='es' ? 'Por favor describe el problema.' : 'Please describe the issue.'); return; }
+  if (!area) { alert(lang==='es' ? 'Por favor selecciona el área.' : 'Please select the area.'); return; }
+  if (area === 'My room' && !room) { alert(lang==='es' ? 'Por favor selecciona tu habitación.' : 'Please select your room name.'); return; }
+  const areaFinal = area === 'My room' && room ? `My room — ${room}` : area;
+
+  const btn = document.getElementById('g-btn'); btn.disabled = true;
+  const res = await apiPost({ type:'guest_report', datos: {
+    descripcion: desc, area: areaFinal, departamento: depto, fecha: new Date().toISOString(),
+  }});
+  btn.disabled = false;
+  if (res.ok) {
+    document.getElementById('g-ok').style.display = 'block';
+    document.getElementById('g-desc').value = ''; document.getElementById('g-area').value = ''; toggleRoomSelect();
+  } else {
+    err.textContent = (res.error || (lang==='es'?'Error al enviar.':'Could not send.'));
+    err.style.display = 'block';
+  }
+}
+
+// ── EMERGENCY CONTACTS ──
+async function loadEmergency() {
+  const res = await apiGet('get_emergency_contacts');
+  _emergencyData = (res.ok && res.items) ? res.items : [];
+  renderEmergency();
+}
+function renderEmergency() {
+  if (!_emergencyData.length) {
+    document.getElementById('emergency-body').innerHTML = `<div class="cs"><p>${lang==='es' ? 'Contactos no disponibles.' : 'Contacts not available.'}</p></div>`;
+    return;
+  }
+  const categorias = [...new Set(_emergencyData.map(c => fieldByLang(c,'Categoria')))];
+  let html = '';
+  categorias.forEach(cat => {
+    html += `<div class="em-cat">${escapeHtml(cat)}</div>`;
+    _emergencyData.filter(c => fieldByLang(c,'Categoria') === cat)
+      .sort((a,b) => (parseInt(a['Orden'])||0) - (parseInt(b['Orden'])||0))
+      .forEach(c => {
+        const telefonos = (c['Telefono']||'').toString().split('·').map(t=>t.trim()).filter(Boolean);
+        const links = telefonos.map(t => `<a href="tel:${t.replace(/[^0-9+]/g,'')}">${escapeHtml(t)}</a>`).join(' · ');
+        html += `<div class="card em-row" style="margin-bottom:.6rem;">
+          <div class="lbl">${escapeHtml(fieldByLang(c,'Rol'))}</div>
+          <div class="nm">${escapeHtml(c['Nombre']||'')}</div>
+          <div>${links}</div>
+        </div>`;
+      });
+  });
+  document.getElementById('emergency-body').innerHTML = html;
+}
+</script>
+</body>
+</html>
