@@ -171,7 +171,7 @@ body::before {
   font-size: 0.56rem; letter-spacing: 0.16em;
   text-transform: uppercase; color: rgba(232,226,209,0.38);
 }
-.pub-icon { margin-left: auto; display: flex; gap: 0.4rem; align-items: center; }
+.pub-icon { margin-left: auto; display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .actl {
   background: var(--clay) !important; border: none !important;
   border-radius: 8px !important; color: var(--cream) !important;
@@ -181,6 +181,7 @@ body::before {
   display: inline-block !important;
   box-shadow: 0 2px 8px rgba(0,0,0,0.25) !important;
 }
+.actl.actl-blue { background: var(--blue) !important; }
 .sico {
   background: none; border: 1px solid rgba(232,226,209,0.18); border-radius: 8px;
   padding: 0.35rem 0.7rem; color: rgba(232,226,209,0.45);
@@ -646,6 +647,13 @@ body::before {
   font-family: var(--font-sans); font-size: 0.85rem; color: var(--cream);
   font-weight: 500; cursor: pointer;
 }
+.modal-opt {
+  width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(232,226,209,0.14);
+  border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 0.55rem; cursor: pointer;
+  font-family: var(--font-sans); font-size: 0.88rem; color: var(--cream); text-align: left;
+  transition: background 0.15s;
+}
+.modal-opt:hover { background: rgba(255,255,255,0.12); }
 
 /* LOADING */
 .loading-overlay {
@@ -1026,6 +1034,18 @@ input[style*="background:white"]::placeholder,
       <button class="mbtn-bk" onclick="closeGuestModal()">Cerrar</button>
       <button class="mbtn-ok" id="guest-modal-btn"> Completada</button>
     </div>
+  </div>
+</div>
+
+<!-- REPORTES POPUP (Mantenimiento) -->
+<div class="modal-overlay" id="reportes-popup-modal" onclick="if(event.target===this) closeReportesPopup()">
+  <div class="modal-box" style="text-align:left;max-width:320px;">
+    <div class="modal-title" style="text-align:center;">Reportes</div>
+    <button class="modal-opt" onclick="closeReportesPopup(); openForm('trabajo')">Proyecto</button>
+    <button class="modal-opt" onclick="closeReportesPopup(); openForm('agua')">Consumo de Agua</button>
+    <button class="modal-opt" onclick="closeReportesPopup(); openForm('averia')">Avería</button>
+    <button class="modal-opt" onclick="closeReportesPopup(); openForm('piscina-checklist')">Piscina</button>
+    <button class="mbtn-bk" style="width:100%;margin-top:.4rem;" onclick="closeReportesPopup()">Cancelar</button>
   </div>
 </div>
 
