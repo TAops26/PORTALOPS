@@ -1502,6 +1502,7 @@ function openChecklistPiscina() {
     <div class="ok-msg" id="pisc-ok"></div>
     <div class="err-msg" id="pisc-err"><p>Error al enviar. Intenta de nuevo.</p></div>
   `;
+  show('con-screen');
 }
 
 
