@@ -224,10 +224,6 @@ body {
           <option>Carson</option>
         </select>
       </div>
-      <div class="fg" id="other-area-wrapper" style="display:none;">
-        <label>Please describe the area</label>
-        <input type="text" id="g-other-area" placeholder="e.g. Near the reception, by the pool entrance...">
-      </div>
       <div class="fg">
         <label>Date &amp; Time</label>
         <div class="fecha-display" id="fecha-display"></div>
@@ -252,6 +248,23 @@ body {
 <script>
 const WEBHOOK = 'https://script.google.com/macros/s/AKfycbzGws5rH9g8si9f6efuqIBVrLE6TMQY6D1g8VlMXod43aWMxarDCd1JaxvDA5sOFn1T/exec';
 
+function todayLocal() {
+  const d = new Date();
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off * 60000);
+  return local.toISOString().split('T')[0];
+}
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 (function() {
   const now = new Date();
   const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' };
@@ -260,12 +273,9 @@ const WEBHOOK = 'https://script.google.com/macros/s/AKfycbzGws5rH9g8si9f6efuqIBV
 
 function toggleRoomSelect() {
   const area = document.getElementById('g-area').value;
-  const roomWrapper  = document.getElementById('room-select-wrapper');
-  const otherWrapper = document.getElementById('other-area-wrapper');
-  roomWrapper.style.display  = area === 'My room'    ? 'block' : 'none';
-  otherWrapper.style.display = area === 'Other area' ? 'block' : 'none';
-  if (area !== 'My room')    document.getElementById('g-room').value = '';
-  if (area !== 'Other area') document.getElementById('g-other-area').value = '';
+  const wrapper = document.getElementById('room-select-wrapper');
+  wrapper.style.display = area === 'My room' ? 'block' : 'none';
+  if (area !== 'My room') document.getElementById('g-room').value = '';
 }
 
 async function submitGuestReport() {
@@ -275,23 +285,19 @@ async function submitGuestReport() {
   const btn  = document.getElementById('btn-submit');
 
   err.style.display = 'none';
-  const room      = document.getElementById('g-room').value;
-  const otherArea = document.getElementById('g-other-area').value.trim();
+  err.textContent = '❌ Could not send the report. Please try again.';
+  const room = document.getElementById('g-room').value;
   if (!desc) { alert('Please describe the issue.'); return; }
   if (!area) { alert('Please select the area.'); return; }
-  if (area === 'My room'    && !room)      { alert('Please select your room name.'); return; }
-  if (area === 'Other area' && !otherArea) { alert('Please describe the area.'); return; }
-  const areaFinal = area === 'My room'    ? `My room — ${room}`
-                  : area === 'Other area' ? `Other — ${otherArea}`
-                  : area;
+  if (area === 'My room' && !room) { alert('Please select your room name.'); return; }
+  const areaFinal = area === 'My room' && room ? `My room — ${room}` : area;
 
   btn.disabled = true;
   btn.textContent = 'Sending...';
 
   try {
-    await fetch(WEBHOOK, {
+    const res = await fetch(WEBHOOK, {
       method: 'POST',
-      mode: 'no-cors',
       body: JSON.stringify({
         type: 'guest_report',
         datos: {
@@ -302,9 +308,20 @@ async function submitGuestReport() {
       }),
       headers: { 'Content-Type': 'text/plain' }
     });
-    document.getElementById('form-view').style.display = 'none';
-    document.getElementById('success-view').style.display = 'block';
+    let data = null;
+    try { data = await res.json(); } catch (e) { data = null; }
+
+    if (data && data.ok) {
+      document.getElementById('form-view').style.display = 'none';
+      document.getElementById('success-view').style.display = 'block';
+    } else {
+      err.textContent = '❌ ' + (data && data.error ? data.error : 'Could not send the report. Please try again.');
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Submit Report';
+    }
   } catch(e) {
+    err.textContent = '❌ Could not send the report. Please check your connection and try again.';
     err.style.display = 'block';
     btn.disabled = false;
     btn.textContent = 'Submit Report';
