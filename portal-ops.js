@@ -138,7 +138,7 @@ function hideLoading() {
 
 // ── GUEST REPORTS ──
 
-async function loadGuestReports() {
+async function loadGuestReports(deptFilter) {
   // Reintenta hasta que el elemento exista en el DOM (máx 10 intentos x 200ms)
   let el = null;
   for (let i = 0; i < 10; i++) {
@@ -150,7 +150,14 @@ async function loadGuestReports() {
   try {
     const res  = await fetch(WEBHOOK + '?action=get_guest_reports');
     const data = await res.json();
-    if (data.ok) renderGuestReports(data.reportes || []);
+    if (data.ok) {
+      let reportes = data.reportes || [];
+      // Cada colaborador (Limpieza/Mantenimiento) solo ve los reportes de
+      // huésped que le corresponden a su departamento. El admin ve todos
+      // (deptFilter no se pasa desde renderHome).
+      if (deptFilter) reportes = reportes.filter(r => (r.departamento || 'Mantenimiento') === deptFilter);
+      renderGuestReports(reportes);
+    }
   } catch(e) {}
 }
 
@@ -228,7 +235,7 @@ function renderAverias(averias) {
   const list = document.getElementById('averias-list');
   if (!list) return;
   if (!averias.length) {
-    list.innerHTML = `<div style="text-align:center;padding:1rem;font-size:.78rem;font-family:sans-serif;color:rgba(232,226,209,0.4);font-style:italic;">No hay averías pendientes 🎉</div>`;
+    list.innerHTML = `<div style="text-align:center;padding:1rem;font-size:.78rem;font-family:sans-serif;color:rgba(232,226,209,0.4);font-style:italic;">No hay averías pendientes </div>`;
     return;
   }
   window._averiasData = {};
@@ -256,7 +263,7 @@ function openAveriaModal(id) {
   if (!a) return;
   const prioColor = { 'Urgente':'#E07A5F', 'Prioridad':'#C17A5A', 'Programar':'#9A9560' };
   const prioBg    = { 'Urgente':'rgba(224,122,95,0.15)', 'Prioridad':'rgba(193,122,90,0.15)', 'Programar':'rgba(154,149,96,0.15)' };
-  const prioIcon  = { 'Urgente':'🔴', 'Prioridad':'🟡', 'Programar':'🟢' };
+  const prioIcon  = { 'Urgente':'', 'Prioridad':'', 'Programar':'' };
   const prior = a.prioridad || 'Programar';
 
   const priorEl = document.getElementById('averia-modal-prior');
@@ -290,6 +297,81 @@ async function marcarAveriaCompletada(id) {
   } else {
     if (row) row.style.opacity = '1';
     alert('No se pudo marcar la avería como completada: ' + (res.error || 'error desconocido') + '. Intenta de nuevo.');
+  }
+}
+
+// ── SOLICITUDES DE HUÉSPED (Lavandería / Transporte / Tours) ──
+// Vienen del guest-portal.html (mini-app del huésped) y usan el mismo patrón
+// que las averías: se listan pendientes y se marcan como completadas contra
+// el backend, sin asumir éxito hasta que este lo confirme.
+
+const SOLICITUD_CONFIG = {
+  'LAVANDERIA':     { action:'get_laundry_requests', color:'#8FACA9',
+    titulo:(s)=> s['Nombre Huésped'] || '—',
+    sub:(s)=> `Hab. ${s['Habitación']||'—'}${s['Hora de Recogida']?' · '+s['Hora de Recogida']:''}` },
+  'TRANSPORTE':     { action:'get_transport_requests', color:'#8FACA9',
+    titulo:(s)=> s['Destino'] || '—',
+    sub:(s)=> `${s['Nombre Huésped']||''} · Hab. ${s['Habitación']||''}${s['Fecha']?' · '+s['Fecha']:''}${s['Hora']?' '+s['Hora']:''}` },
+  'TOUR REQUESTS':  { action:'get_tour_requests', color:'#C17A5A',
+    titulo:(s)=> s['Tour'] || '—',
+    sub:(s)=> `${s['Nombre Huésped']||''} · Hab. ${s['Habitación']||''}${s['Fecha Preferida']?' · '+s['Fecha Preferida']:''}` },
+};
+
+async function loadSolicitudes(hoja, containerId) {
+  const cfg = SOLICITUD_CONFIG[hoja];
+  if (!cfg) return;
+  let el = null;
+  for (let i = 0; i < 10; i++) {
+    el = document.getElementById(containerId);
+    if (el) break;
+    await new Promise(r => setTimeout(r, 200));
+  }
+  if (!el) return;
+  try {
+    const res  = await fetch(WEBHOOK + '?action=' + cfg.action);
+    const data = await res.json();
+    if (data.ok) renderSolicitudes(hoja, containerId, data.solicitudes || []);
+    else el.innerHTML = `<div style="text-align:center;padding:.75rem;font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.4);">No se pudieron cargar.</div>`;
+  } catch (e) {
+    el.innerHTML = `<div style="text-align:center;padding:.75rem;font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.4);">No se pudieron cargar.</div>`;
+  }
+}
+
+function renderSolicitudes(hoja, containerId, items) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const cfg = SOLICITUD_CONFIG[hoja];
+  const prefix = 'sol-' + hoja.replace(/\s+/g,'') + '-';
+  window._solicitudesData = window._solicitudesData || {};
+  window._solicitudesData[hoja] = {};
+  items.forEach(s => { window._solicitudesData[hoja][s.id] = s; });
+
+  if (!items.length) {
+    el.innerHTML = `<div style="text-align:center;padding:.75rem;font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.35);font-style:italic;">Sin solicitudes pendientes</div>`;
+    return;
+  }
+  el.innerHTML = items.map(s => {
+    const idAttr = escapeHtml(s.id);
+    return `<div class="rbtn" style="border-left-color:${cfg.color};" id="${prefix}${idAttr}">
+      <div style="flex:1;">
+        <div style="font-size:.82rem;font-family:var(--font-sans);color:var(--cream);font-weight:500;margin-bottom:.15rem;">${escapeHtml(cfg.titulo(s))}</div>
+        <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);">${escapeHtml(cfg.sub(s))}</div>
+      </div>
+      <button onclick="marcarSolicitudCompletada('${hoja}','${idAttr}')" style="background:rgba(118,114,78,.2);border:1px solid rgba(118,114,78,.3);border-radius:8px;color:#A8A870;font-size:.65rem;padding:.35rem .65rem;cursor:pointer;flex-shrink:0;"></button>
+    </div>`;
+  }).join('');
+}
+
+async function marcarSolicitudCompletada(hoja, id) {
+  const rowId = 'sol-' + hoja.replace(/\s+/g,'') + '-' + id;
+  const row = document.getElementById(rowId);
+  if (row) row.style.opacity = '0.5';
+  const res = await sendToSheets({ type: 'completar_solicitud', hoja, id });
+  if (res.ok) {
+    if (row) row.remove();
+  } else {
+    if (row) row.style.opacity = '1';
+    alert('No se pudo marcar como completada: ' + (res.error || 'error desconocido') + '. Intenta de nuevo.');
   }
 }
 
@@ -341,7 +423,6 @@ function showCompletado(backFn, msg) {
   overlay.style.cssText = 'position:fixed;inset:0;background:var(--brown);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;padding:2rem;text-align:center;';
   const msgHtml = msg ? `<div style="color:var(--tm);font-size:.8rem;font-family:sans-serif;margin-bottom:1.5rem;line-height:1.5;">${escapeHtml(msg)}</div>` : '<div style="margin-bottom:1.5rem;"></div>';
   overlay.innerHTML = `
-    <div style="font-size:3rem;margin-bottom:1rem;">✅</div>
     <div style="color:var(--cream);font-size:1.4rem;font-style:italic;margin-bottom:.5rem;">Completado</div>
     ${msgHtml}
     <button style="background:var(--clay);border:none;border-radius:10px;padding:.85rem 2rem;color:var(--cream);font-size:.95rem;font-family:sans-serif;cursor:pointer;">
@@ -463,7 +544,7 @@ function showGuestReportAlertBanner(reporte) {
     + 'box-shadow:0 4px 14px rgba(0,0,0,0.3);cursor:pointer;'
     + 'animation:guestAlertSlideIn .25s ease-out;';
   banner.innerHTML = `
-    <span style="font-size:1.2rem;flex-shrink:0;">🔴</span>
+    <span style="font-size:1.2rem;flex-shrink:0;"></span>
     <div style="flex:1;line-height:1.35;">
       <div style="font-size:.82rem;font-weight:600;">Nueva avería reportada por un huésped</div>
       <div style="font-size:.75rem;opacity:.9;">${escapeHtml(reporte.descripcion || 'Sin descripción')} — ${escapeHtml(reporte.area || '')}</div>
@@ -510,7 +591,7 @@ function requestNotificationPermission_() {
 function fireNativeNotification_(reporte) {
   if (!notificationsSupported_() || Notification.permission !== 'granted') return;
   try {
-    const n = new Notification('🔴 Nueva avería reportada por un huésped', {
+    const n = new Notification(' Nueva avería reportada por un huésped', {
       body: (reporte.descripcion || 'Sin descripción') + ' — ' + (reporte.area || ''),
       icon: './Tierramor_Logomark_Stamp.png',
       tag: 'guest-averia-' + (reporte.id || Date.now()), // evita duplicados de la misma avería
@@ -533,9 +614,9 @@ function notifPermButtonHtml_() {
   if (!notificationsSupported_()) return '';
   if (Notification.permission === 'granted') return '';
   if (Notification.permission === 'denied') {
-    return `<div style="font-size:.6rem;color:rgba(232,226,209,0.35);margin-top:.3rem;">🔕 Notificaciones bloqueadas — actívalas desde la configuración del navegador</div>`;
+    return `<div style="font-size:.6rem;color:rgba(232,226,209,0.35);margin-top:.3rem;"> Notificaciones bloqueadas — actívalas desde la configuración del navegador</div>`;
   }
-  return `<button id="notif-perm-btn" onclick="requestNotificationPermission_()" style="margin-top:.4rem;background:none;border:1px solid rgba(232,226,209,0.18);border-radius:8px;padding:.3rem .65rem;color:rgba(232,226,209,0.6);font-family:var(--font-sans);font-size:.65rem;cursor:pointer;">🔔 Activar notificaciones de averías</button>`;
+  return `<button id="notif-perm-btn" onclick="requestNotificationPermission_()" style="margin-top:.4rem;background:none;border:1px solid rgba(232,226,209,0.18);border-radius:8px;padding:.3rem .65rem;color:rgba(232,226,209,0.6);font-family:var(--font-sans);font-size:.65rem;cursor:pointer;"> Activar notificaciones de averías</button>`;
 }
 
 function updateNotifPermButton_() {
@@ -606,10 +687,18 @@ function renderHome() {
   const showDepts = isAdmin ? ['limpieza','mantenimiento','proveeduria','seguridad'] : [CU.departamento];
   const GUEST_SECTION = `<div id="guest-reports-section" style="margin-bottom:1rem;">
     <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;padding:.45rem .7rem;background:rgba(113,127,126,0.15);border:1px solid rgba(113,127,126,0.25);border-radius:8px;">
-      <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#8FACA9;font-family:var(--font-sans);">🏠 Reportes de Huéspedes</span>
+      <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#8FACA9;font-family:var(--font-sans);"> Reportes de Huéspedes</span>
     </div>
     <div id="guest-reports-list"></div>
   </div>`;
+
+  // Solicitudes de Tour del guest-portal — solo Admin las gestiona.
+  const TOURS_SECTION = isAdmin ? `<div id="tours-section" style="margin-bottom:1rem;">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;padding:.45rem .7rem;background:rgba(193,122,90,0.15);border:1px solid rgba(193,122,90,0.25);border-radius:8px;">
+      <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#C17A5A;font-family:var(--font-sans);"> Solicitudes de Tours</span>
+    </div>
+    <div id="tour-requests-list"></div>
+  </div>` : '';
 
   const STAT_HTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.2rem;">
     <div class="stat-blue" style="background:rgba(255,255,255,0.055);border:1px solid rgba(232,226,209,0.09);border-radius:12px;padding:.9rem;text-align:center;">
@@ -624,7 +713,7 @@ function renderHome() {
     </div>
   </div>`;
 
-  let btns = GUEST_SECTION + STAT_HTML + `<div class="sec-lbl lbl-blue">${isAdmin ? 'Departamentos' : 'Tu área de trabajo'}</div>`;
+  let btns = GUEST_SECTION + TOURS_SECTION + STAT_HTML + `<div class="sec-lbl lbl-blue">${isAdmin ? 'Departamentos' : 'Tu área de trabajo'}</div>`;
 
   if (isAdmin) {
     btns += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem;">`;
@@ -663,7 +752,8 @@ function renderHome() {
   }
 
   document.getElementById('home-depts').innerHTML = btns + '<div class="tm-page-footer"><img src="./Tierramor_Emblem-Brown.png" alt="" style="height:36px;opacity:0.18;filter:brightness(2);"></div>';
-  setTimeout(() => loadGuestReports(), 300);
+  setTimeout(() => loadGuestReports(), 300); // admin ve reportes de huésped de ambos departamentos
+  if (isAdmin) setTimeout(() => loadSolicitudes('TOUR REQUESTS', 'tour-requests-list'), 300);
 }
 
 // ── DEPT HOME (no-admin) ──
@@ -699,14 +789,30 @@ function renderDeptHome() {
     </div>`;
 
   const dept = DEPTS[d];
-  const GUEST_BAND = `<div style="margin-bottom:.75rem;">
+  // El bloque de "Reportes de Huéspedes" ahora solo aplica a Limpieza y
+  // Mantenimiento (los únicos departamentos que el huésped puede elegir en
+  // el guest-portal). Seguridad y Proveeduría ya no lo ven.
+  const GUEST_BAND = (d === 'limpieza' || d === 'mantenimiento') ? `<div style="margin-bottom:.75rem;">
     <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;padding:.45rem .7rem;background:rgba(113,127,126,0.15);border:1px solid rgba(113,127,126,0.25);border-radius:8px;">
-      <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#8FACA9;font-family:var(--font-sans);">🏠 Reportes de Huéspedes</span>
+      <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#8FACA9;font-family:var(--font-sans);"> Reportes de Huéspedes</span>
     </div>
     <div id="guest-reports-list"><div style="text-align:center;padding:.5rem;font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.35);">Cargando...</div></div>
-  </div>`;
+  </div>` : '';
 
-  let btns = GUEST_BAND + `<div class="sec-lbl" style="margin-top:.5rem;">Tu área de trabajo</div>`;
+  // Solicitudes de servicio del guest-portal: Lavandería  Limpieza, Transporte  Proveeduría.
+  const SERVICE_BAND = (d === 'limpieza') ? `<div style="margin-bottom:.75rem;">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;padding:.45rem .7rem;background:rgba(143,172,169,0.15);border:1px solid rgba(143,172,169,0.25);border-radius:8px;">
+      <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#8FACA9;font-family:var(--font-sans);"> Solicitudes de Lavandería</span>
+    </div>
+    <div id="laundry-requests-list"><div style="text-align:center;padding:.5rem;font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.35);">Cargando...</div></div>
+  </div>` : (d === 'proveeduria') ? `<div style="margin-bottom:.75rem;">
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;padding:.45rem .7rem;background:rgba(143,172,169,0.15);border:1px solid rgba(143,172,169,0.25);border-radius:8px;">
+      <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#8FACA9;font-family:var(--font-sans);"> Solicitudes de Transporte</span>
+    </div>
+    <div id="transport-requests-list"><div style="text-align:center;padding:.5rem;font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.35);">Cargando...</div></div>
+  </div>` : '';
+
+  let btns = GUEST_BAND + SERVICE_BAND + `<div class="sec-lbl" style="margin-top:.5rem;">Tu área de trabajo</div>`;
 
   if (dept) {
     dept.resources.forEach(r => {
@@ -732,8 +838,15 @@ function renderDeptHome() {
   }
 
   document.getElementById('home-depts').innerHTML = btns + '<div class="tm-page-footer"><img src="./Tierramor_Emblem-Brown.png" alt="" style="height:36px;opacity:0.18;filter:brightness(2);"></div>';
-  loadGuestReports();
+  // Reportes de huésped filtrados por el departamento de este colaborador
+  // (Limpieza solo ve los suyos, Mantenimiento solo los suyos).
+  if (d === 'limpieza' || d === 'mantenimiento') {
+    const deptLabelReporte = d === 'limpieza' ? 'Limpieza' : 'Mantenimiento';
+    loadGuestReports(deptLabelReporte);
+  }
   if (d === 'mantenimiento') loadAverias();
+  if (d === 'limpieza') loadSolicitudes('LAVANDERIA', 'laundry-requests-list');
+  if (d === 'proveeduria') loadSolicitudes('TRANSPORTE', 'transport-requests-list');
 }
 
 const DEPTS = {
@@ -887,7 +1000,7 @@ function openResource(id, title, type) {
         <div style="background:rgba(255,255,255,0.055);border:1px solid rgba(232,226,209,0.09);border-radius:10px;padding:.8rem .9rem;margin-bottom:.5rem;">
           <div style="font-family:var(--font-serif);font-style:italic;font-size:1rem;color:var(--cream);margin-bottom:.3rem;">${en}</div>
           <div style="font-size:.78rem;font-family:var(--font-sans);color:rgba(232,226,209,0.65);margin-bottom:.2rem;">${es}</div>
-          <div style="font-size:.72rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);font-style:italic;">🔊 ${pron}</div>
+          <div style="font-size:.72rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);font-style:italic;"> ${pron}</div>
         </div>`).join('')}
     `).join('');
     setConScreen('Frases Comunes en Inglés', () => goBack(), html);
@@ -915,7 +1028,7 @@ function openRepasoHab(habitacion) {
      ${photoUploadWidget('rh-photos')}
      <button class="btn-sub" id="rh-btn" onclick="submitRepasoHab('${habitacion}')">Enviar Repaso</button>
      <div class="fnote">Los datos se guardarán en Google Sheets</div>
-     <div class="err-msg" id="rh-err"><p>❌ Error al enviar. Intenta de nuevo.</p></div>`
+     <div class="err-msg" id="rh-err"><p>Error al enviar. Intenta de nuevo.</p></div>`
   );
 }
 
@@ -927,7 +1040,7 @@ async function submitRepasoHab(habitacion) {
 
   const fotosRes = await getPhotosPayload('rh-photos');
   if (!fotosRes.ok) {
-    document.getElementById('rh-err').querySelector('p').textContent = '❌ ' + fotosRes.error;
+    document.getElementById('rh-err').querySelector('p').textContent = fotosRes.error;
     document.getElementById('rh-err').style.display = 'block';
     btn.disabled = false; btn.textContent = 'Enviar Repaso';
     return;
@@ -948,7 +1061,7 @@ async function submitRepasoHab(habitacion) {
     clearPhotoGroup('rh-photos');
     showCompletado(() => openForm('repaso-hab'));
   } else {
-    document.getElementById('rh-err').querySelector('p').textContent = '❌ ' + (res.error || 'Error al enviar. Intenta de nuevo.');
+    document.getElementById('rh-err').querySelector('p').textContent = (res.error || 'Error al enviar. Intenta de nuevo.');
     document.getElementById('rh-err').style.display = 'block';
     btn.disabled = false; btn.textContent = 'Enviar Repaso';
   }
@@ -973,14 +1086,14 @@ function avcRow(idx) {
     <div style="display:flex;gap:.4rem;align-items:flex-start;margin-bottom:.5rem;">
       <input type="text" id="avc-averia-${idx}" placeholder="Avería (ej: Fuga de agua)" style="flex:1;background:white;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .7rem;font-size:.85rem;font-family:sans-serif;color:var(--brown);outline:none;">
       <select id="avc-prior-${idx}" style="width:120px;background:white;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .4rem;font-size:.75rem;font-family:sans-serif;color:var(--brown);outline:none;appearance:none;">
-        <option value="Urgente">🔴 Urgente</option>
-        <option value="Prioridad">🟡 Prioridad</option>
-        <option value="Programar">🟢 Programar</option>
+        <option value="Urgente"> Urgente</option>
+        <option value="Prioridad"> Prioridad</option>
+        <option value="Programar"> Programar</option>
       </select>
       <button onclick="removeAvcRow(${idx})" style="width:32px;height:32px;flex-shrink:0;border-radius:50%;border:1.5px solid rgba(84,66,54,.2);background:none;color:var(--tm);font-size:1rem;cursor:pointer;line-height:1;${idx===0?'visibility:hidden;':''}">×</button>
     </div>
     <textarea id="avc-desc-${idx}" placeholder="Descripción de la avería..." style="width:100%;background:white;border:1px solid rgba(84,66,54,.2);border-radius:8px;padding:.6rem .7rem;font-size:.82rem;font-family:sans-serif;color:var(--brown);outline:none;resize:none;height:54px;line-height:1.4;margin-bottom:.5rem;"></textarea>
-    <div style="border:1.5px dashed rgba(84,66,54,.2);border-radius:8px;padding:.5rem;text-align:center;font-size:.68rem;font-family:sans-serif;color:rgba(84,66,54,.4);">📷 Foto de esta avería — próximamente</div>
+    <div style="border:1.5px dashed rgba(84,66,54,.2);border-radius:8px;padding:.5rem;text-align:center;font-size:.68rem;font-family:sans-serif;color:rgba(84,66,54,.4);"> Foto de esta avería — próximamente</div>
   </div>`;
 }
 function addAvcRow() { document.getElementById('avc-list').insertAdjacentHTML('beforeend', avcRow(avcCount)); avcCount++; }
@@ -1009,7 +1122,7 @@ function setConScreen(title, backFn, html) {
 function getDocContent(id, title) {
   if (id === 'manual-limp') return renderManualLimp();
   if (id === 'manual-prev') return renderManualManto();
-  return `<div class="cs"><div class="csi">📄</div><h3>${escapeHtml(title)}</h3><p>El contenido estará disponible aquí próximamente.</p></div>`;
+  return `<div class="cs"><div class="csi"></div><h3>${escapeHtml(title)}</h3><p>El contenido estará disponible aquí próximamente.</p></div>`;
 }
 
 const CAL_IDS = {
@@ -1087,8 +1200,8 @@ function openRopaCama() {
     <div class="fg" style="margin-top:1rem"><label>Observaciones</label>${aw('inv-obs','Artículos dañados, faltantes...')}</div>
     ${photoUploadWidget('inv-photos')}
     <button class="btn-sub" id="inv-sub" onclick="submitInventario('ropa-cama')">Guardar Inventario</button>
-    <div class="ok-msg" id="inv-ok"><p>✅ Inventario guardado correctamente.</p></div>
-    <div class="err-msg" id="inv-err"><p>❌ Error al guardar. Intenta de nuevo.</p></div>`;
+    <div class="ok-msg" id="inv-ok"><p>Inventario guardado correctamente.</p></div>
+    <div class="err-msg" id="inv-err"><p>Error al guardar. Intenta de nuevo.</p></div>`;
   show('con-screen');
 }
 
@@ -1123,8 +1236,8 @@ function openPropsForm(space) {
     <div class="fg" style="margin-top:1rem"><label>Observaciones</label>${aw('inv-obs','Artículos dañados, faltantes...')}</div>
     ${photoUploadWidget('inv-photos')}
     <button class="btn-sub" id="inv-sub" onclick="submitInventario('props-${space}')">Guardar Inventario</button>
-    <div class="ok-msg" id="inv-ok"><p>✅ Inventario guardado correctamente.</p></div>
-    <div class="err-msg" id="inv-err"><p>❌ Error al guardar. Intenta de nuevo.</p></div>`;
+    <div class="ok-msg" id="inv-ok"><p>Inventario guardado correctamente.</p></div>
+    <div class="err-msg" id="inv-err"><p>Error al guardar. Intenta de nuevo.</p></div>`;
   show('con-screen');
 }
 
@@ -1152,8 +1265,8 @@ function openCampamentoInv() {
     <div class="fg" style="margin-top:1rem"><label>Observaciones</label>${aw('inv-obs','Estado del equipo, piezas faltantes...')}</div>
     <button class="btn-sub" id="inv-btn" onclick="submitCampamentoInv()">Guardar Inventario</button>
     <div class="fnote">Los datos se guardarán en Google Sheets</div>
-    <div class="ok-msg" id="inv-ok"><p>✅ Inventario guardado correctamente.</p></div>
-    <div class="err-msg" id="inv-err"><p>❌ Error al guardar. Intenta de nuevo.</p></div>`;
+    <div class="ok-msg" id="inv-ok"><p>Inventario guardado correctamente.</p></div>
+    <div class="err-msg" id="inv-err"><p>Error al guardar. Intenta de nuevo.</p></div>`;
   show('con-screen');
 }
 
@@ -1174,7 +1287,7 @@ async function submitCampamentoInv() {
   });
   if (res.ok) { showCompletado(() => openInventarios()); }
   else {
-    document.getElementById('inv-err').querySelector('p').textContent = '❌ ' + (res.error || 'Error al guardar. Intenta de nuevo.');
+    document.getElementById('inv-err').querySelector('p').textContent = (res.error || 'Error al guardar. Intenta de nuevo.');
     document.getElementById('inv-err').style.display='block';
     btn.disabled=false; btn.textContent='Guardar Inventario';
   }
@@ -1194,7 +1307,7 @@ async function submitInventario(type) {
 
   const fotosRes = await getPhotosPayload('inv-photos');
   if (!fotosRes.ok) {
-    document.getElementById('inv-err').querySelector('p').textContent = '❌ ' + fotosRes.error;
+    document.getElementById('inv-err').querySelector('p').textContent = fotosRes.error;
     document.getElementById('inv-err').style.display = 'block';
     btn.disabled = false; btn.textContent = 'Guardar Inventario';
     return;
@@ -1211,7 +1324,7 @@ async function submitInventario(type) {
     clearPhotoGroup('inv-photos');
     showCompletado(() => goBack());
   } else {
-    document.getElementById('inv-err').querySelector('p').textContent = '❌ ' + (res.error || 'Error al guardar. Intenta de nuevo.');
+    document.getElementById('inv-err').querySelector('p').textContent = (res.error || 'Error al guardar. Intenta de nuevo.');
     document.getElementById('inv-err').style.display = 'block';
     btn.disabled=false;
     btn.textContent='Guardar Inventario';
@@ -1230,7 +1343,6 @@ function photoUploadWidget(groupId, minPhotos=3) {
     <label>Fotografías <span id="photo-lbl-${groupId}" style="font-size:.62rem;color:rgba(232,226,209,0.45);font-weight:normal;">— mínimo ${minPhotos} fotos</span></label>
     <div class="photo-upload-box" onclick="document.getElementById('file-${groupId}').click()">
       <input type="file" id="file-${groupId}" accept="image/*" multiple capture="environment" onchange="handlePhotoUpload(event,'${groupId}',${minPhotos})">
-      <div style="font-size:1.5rem;margin-bottom:.3rem;">📷</div>
       <div style="font-size:.82rem;font-family:var(--font-sans);color:rgba(232,226,209,0.6);">Toca para <strong style="color:var(--cream);">tomar o adjuntar fotos</strong></div>
       <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.35);margin-top:.2rem;">Se guardarán en Google Drive al enviar</div>
     </div>
@@ -1283,7 +1395,7 @@ function updatePhotoLabel(groupId, minPhotos) {
   const ok = count >= minPhotos;
   lbl.textContent = count === 0
     ? `— mínimo ${minPhotos} fotos`
-    : ok ? `— ${count} foto(s) ✅` : `— ${count}/${minPhotos} fotos`;
+    : ok ? `— ${count} foto(s) ` : `— ${count}/${minPhotos} fotos`;
   lbl.style.color = ok ? 'rgba(154,149,96,0.8)' : 'rgba(232,226,209,0.45)';
 }
 
@@ -1317,7 +1429,7 @@ function openChecklistPiscina() {
   document.getElementById('con-title').textContent = 'Parámetros de Piscina';
   document.getElementById('con-back').onclick = () => openOperacionPiscina();
   document.getElementById('conbody').innerHTML = `
-    ${!scheduled ? `<div class="doc-note">📅 Hoy es ${dayNames[day]}. El checklist de piscina se realiza Lunes, Martes, Jueves y Viernes.</div>` : ''}
+    ${!scheduled ? `<div class="doc-note"> Hoy es ${dayNames[day]}. El checklist de piscina se realiza Lunes, Martes, Jueves y Viernes.</div>` : ''}
 
     <div class="cl-header-info">
       <div class="cl-area-name">Parámetros de Piscina</div>
@@ -1386,7 +1498,7 @@ function openChecklistPiscina() {
     ${photoUploadWidget('pisc-photos')}
     <button class="btn-sub" id="pisc-sub" onclick="submitPiscina()">Enviar Reporte de Piscina</button>
     <div class="ok-msg" id="pisc-ok"></div>
-    <div class="err-msg" id="pisc-err"><p>❌ Error al enviar. Intenta de nuevo.</p></div>
+    <div class="err-msg" id="pisc-err"><p>Error al enviar. Intenta de nuevo.</p></div>
   `;
 }
 
@@ -1418,7 +1530,7 @@ async function submitPiscina() {
 
   const fotosRes = await getPhotosPayload('pisc-photos');
   if (!fotosRes.ok) {
-    document.getElementById('pisc-err').querySelector('p').textContent = '❌ ' + fotosRes.error;
+    document.getElementById('pisc-err').querySelector('p').textContent = fotosRes.error;
     document.getElementById('pisc-err').style.display = 'block';
     btn.disabled = false; btn.textContent = 'Enviar Reporte de Piscina';
     return;
@@ -1440,10 +1552,10 @@ async function submitPiscina() {
 
   if (res.ok) {
     clearPhotoGroup('pisc-photos');
-    const msg = alertas.length ? `Reporte enviado.\n⚠️ ${alertas.join('\n')}` : 'Reporte de piscina enviado correctamente.';
+    const msg = alertas.length ? `Reporte enviado.\n ${alertas.join('\n')}` : 'Reporte de piscina enviado correctamente.';
     showCompletado(() => goBack(), msg);
   } else {
-    document.getElementById('pisc-err').querySelector('p').textContent = '❌ ' + (res.error || 'Error al enviar. Intenta de nuevo.');
+    document.getElementById('pisc-err').querySelector('p').textContent = (res.error || 'Error al enviar. Intenta de nuevo.');
     document.getElementById('pisc-err').style.display = 'block';
     btn.disabled = false;
     btn.textContent = 'Enviar Reporte de Piscina';
@@ -1458,7 +1570,7 @@ function aw(id, ph) {
   return `<div class="aw">
     <textarea id="ta-${id}" placeholder="${ph}" style="width:100%;border:none;border-bottom:1px solid rgba(232,226,209,.1);padding:.7rem .85rem;font-size:.88rem;font-family:var(--font-sans);color:var(--cream);background:transparent;outline:none;resize:none;height:72px;line-height:1.5;"></textarea>
     <div class="bclr">
-      <button class="bmk" id="mic-${id}" onclick="toggleMic('${id}')">🎙</button>
+      <button class="bmk" id="mic-${id}" onclick="toggleMic('${id}')"></button>
       <span id="ms-${id}" style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,.4);flex:1;"></span>
     </div>
   </div>`;
@@ -1466,20 +1578,20 @@ function aw(id, ph) {
 function toggleMic(wid) { if (activeRec&&activeRec.wid===wid){stopRec();return;} stopRec(); startRec(wid); }
 function startRec(wid) {
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if (!SR){setMs(wid,'❌ Navegador no soporta dictado',false);return;}
+  if (!SR){setMs(wid,' Navegador no soporta dictado',false);return;}
   const rec=new SR(); rec.lang='es-CR'; rec.continuous=true; rec.interimResults=true;
   const btn=document.getElementById('mic-'+wid),ta=document.getElementById('ta-'+wid);
   if (!btn||!ta) return;
-  btn.classList.add('rec'); btn.innerHTML='Detener'; setMs(wid,'🔴 Grabando...',true);
+  btn.classList.add('rec'); btn.innerHTML='Detener'; setMs(wid,' Grabando...',true);
   let base=ta.value;
   rec.onresult=e=>{let fi='',in2='';for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)fi+=e.results[i][0].transcript+' ';else in2+=e.results[i][0].transcript;}if(fi)base+=fi;ta.value=base+in2;};
   rec.onerror=()=>{setMs(wid,'Error al grabar.',false);cleanMic(wid);activeRec=null;};
-  rec.onend=()=>{ta.value=base.trim();setMs(wid,'✅ Guardado.',false);cleanMic(wid);activeRec=null;};
+  rec.onend=()=>{ta.value=base.trim();setMs(wid,' Guardado.',false);cleanMic(wid);activeRec=null;};
   rec.start(); activeRec={rec,wid}; btn.onclick=()=>stopRec();
 }
 function stopRec(){if(activeRec){try{activeRec.rec.stop();}catch(e){}cleanMic(activeRec.wid);activeRec=null;}}
 function setMs(wid,msg,on){const el=document.getElementById('ms-'+wid);if(!el)return;el.textContent=msg;on?el.classList.add('on'):el.classList.remove('on');}
-function cleanMic(wid){const b=document.getElementById('mic-'+wid);if(!b)return;b.classList.remove('rec');b.innerHTML='🎙';b.onclick=()=>toggleMic(wid);}
+function cleanMic(wid){const b=document.getElementById('mic-'+wid);if(!b)return;b.classList.remove('rec');b.innerHTML='';b.onclick=()=>toggleMic(wid);}
 
 // ── FORMULARIOS GENÉRICOS (openForm / submitForm) ──
 
@@ -1524,9 +1636,9 @@ function openForm(formId) {
          <option>Lavandería</option><option>Terralab y Bodega</option><option>Oficina</option>
        </select></div>
        <div class="fg"><label>Estado del área</label><select id="f-estado">
-         <option value="Completada">✓ Completada</option>
-         <option value="Incidencia">⚠ Incidencia</option>
-         <option value="No completada">✗ No completada</option>
+         <option value="Completada"> Completada</option>
+         <option value="Incidencia"> Incidencia</option>
+         <option value="No completada"> No completada</option>
        </select></div>
        <div class="fg"><label>Observaciones</label>${aw('obs','Describe incidencias o situaciones relevantes...')}</div>
        ${photoUploadWidget('form-photos')}` },
@@ -1551,7 +1663,7 @@ function openForm(formId) {
        ${photoUploadWidget('form-photos')}` },
 
     'averia-cluster': { title:'Inspección de Cluster', dept:'mantenimiento', btnCls:'', html:
-      `<div class="doc-note" style="margin-bottom:1rem;">🔍 Inspecciona un cluster y registra las averías encontradas. Puedes enviar sin novedades.</div>
+      `<div class="doc-note" style="margin-bottom:1rem;"> Inspecciona un cluster y registra las averías encontradas. Puedes enviar sin novedades.</div>
        <div class="fg"><label>Colaborador</label>${manto}</div>
        <div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
        <div class="fg"><label>Cluster</label><select id="f-cluster">
@@ -1582,11 +1694,11 @@ function openForm(formId) {
        <div class="fg"><label>Observaciones</label>${aw('obs','Anomalías, fugas o situaciones a reportar...')}</div>
        ${photoUploadWidget('form-photos')}` },
     averia: { title:'Reporte de Avería', dept: CD||'mantenimiento', btnCls:'averia', html:
-      `<div class="doc-note" style="margin-bottom:1rem;">🔴 Reporta averías o fallas que requieren atención.</div>
+      `<div class="doc-note" style="margin-bottom:1rem;"> Reporta averías o fallas que requieren atención.</div>
        <div class="fg"><label>Colaborador</label>${all}</div>
        <div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
        <div class="fg"><label>Avería</label><input type="text" id="f-averia" placeholder="Ej: Fuga de agua, llave dañada..."></div>
-       <div class="fg"><label>Prioridad</label><select id="f-prior"><option value="Urgente">🔴 Urgente — Riesgo inmediato</option><option value="Prioridad">🟡 Prioridad — Resolver en 24h</option><option value="Programar">🟢 Programar — Deterioro menor</option></select></div>
+       <div class="fg"><label>Prioridad</label><select id="f-prior"><option value="Urgente"> Urgente — Riesgo inmediato</option><option value="Prioridad"> Prioridad — Resolver en 24h</option><option value="Programar"> Programar — Deterioro menor</option></select></div>
        <div class="fg"><label>Área o ubicación</label><input type="text" id="f-area" placeholder="¿Dónde ocurre la avería?"></div>
        <div class="fg"><label>Descripción</label>${aw('desc','Describe la avería con el mayor detalle posible...')}</div>
        ${photoUploadWidget('form-photos')}` },
@@ -1640,7 +1752,7 @@ function openForm(formId) {
        ${photoUploadWidget('form-photos')}` },
 
     reunion: { title:'Reunión de Operaciones', dept: CD||'limpieza', btnCls:'', html:
-      `<div class="doc-note" style="margin-bottom:1rem;">📋 Confirmación de asistencia · Reunión semanal de operaciones</div>
+      `<div class="doc-note" style="margin-bottom:1rem;"> Confirmación de asistencia · Reunión semanal de operaciones</div>
        <div class="fg"><label>Colaborador</label>${all}</div>
        <div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
        <div class="fg"><label>Hora</label><input type="time" id="f-hora" value="${new Date().toTimeString().slice(0,5)}"></div></div>
@@ -1649,7 +1761,7 @@ function openForm(formId) {
          <div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);">Al enviar quedará registrada tu asistencia</div>
        </div>` },
     incidencia: { title:'Reporte de Incidencia', dept:'seguridad', btnCls:'red', html:
-      `<div class="doc-note" style="margin-bottom:1rem;">🔴 Reporta cualquier incidencia de seguridad de inmediato</div>
+      `<div class="doc-note" style="margin-bottom:1rem;"> Reporta cualquier incidencia de seguridad de inmediato</div>
        <div class="frow"><div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
        <div class="fg"><label>Hora</label><input type="time" id="f-hora"></div></div>
        <div class="fg"><label>Reportado por</label>
@@ -1712,8 +1824,8 @@ function openForm(formId) {
     ${f.html}
     <button class="btn-sub ${f.btnCls}" id="btn-sub" onclick="submitForm('${formId}','${f.dept}')">Enviar</button>
     <div class="fnote">Los datos se guardarán en Google Sheets</div>
-    <div class="ok-msg" id="ok-msg"><p>✅ Enviado correctamente.</p></div>
-    <div class="err-msg" id="err-msg"><p>❌ Error al enviar. Intenta de nuevo.</p></div>`;
+    <div class="ok-msg" id="ok-msg"><p>Enviado correctamente.</p></div>
+    <div class="err-msg" id="err-msg"><p>Error al enviar. Intenta de nuevo.</p></div>`;
   show('fs');
 }
 
@@ -1738,7 +1850,7 @@ async function submitForm(formId, dept) {
 
   const fotosRes = await getPhotosPayload('form-photos');
   if (!fotosRes.ok) {
-    document.getElementById('err-msg').querySelector('p').textContent = '❌ ' + fotosRes.error;
+    document.getElementById('err-msg').querySelector('p').textContent = fotosRes.error;
     document.getElementById('err-msg').style.display = 'block';
     btn.disabled = false; btn.textContent = 'Enviar';
     return;
@@ -1770,7 +1882,7 @@ async function submitForm(formId, dept) {
       if (item) items.push({ item, qty: qty || '1', unit });
     }
     if (!items.length) {
-      document.getElementById('err-msg').querySelector('p').textContent = '❌ Agrega al menos un material antes de enviar.';
+      document.getElementById('err-msg').querySelector('p').textContent = 'Agrega al menos un material antes de enviar.';
       document.getElementById('err-msg').style.display = 'block';
       btn.disabled = false; btn.textContent = 'Enviar';
       return;
@@ -1810,7 +1922,7 @@ async function submitForm(formId, dept) {
     clearPhotoGroup('form-photos');
     showCompletado(() => goBack());
   } else {
-    document.getElementById('err-msg').querySelector('p').textContent = '❌ ' + (res.error || 'Error al enviar. Intenta de nuevo.');
+    document.getElementById('err-msg').querySelector('p').textContent = (res.error || 'Error al enviar. Intenta de nuevo.');
     document.getElementById('err-msg').style.display='block';
     btn.disabled=false;
     btn.textContent='Enviar';
@@ -1826,7 +1938,7 @@ const iCasita= [...iBasico,'Funcionamiento de ducha (presión y temperatura de a
 
 const CL_MANTO_CLUSTERS = [
   { id:'transito', name:'Tránsito Constante', sub:'Oficina · Juice Bar · Salón de Cocina y Recepción — Inspección mensual',
-    note:'⚠️ Las áreas de tránsito constante tienen inspecciones de mantenimiento mensuales.',
+    note:' Las áreas de tránsito constante tienen inspecciones de mantenimiento mensuales.',
     areas:[
       { id:'oficina',   name:'Oficina',   items:[...iBasico,'Funcionamiento de equipos de cómputo','Estado de router / conectividad','Funcionamiento del aire acondicionado (si aplica)','Estado de impresora y periféricos','Cables organizados, sin riesgos de tropiezo'] },
       { id:'juicebar',  name:'Juice Bar', items:[...iBasico,'Funcionamiento de licuadora / extractor','Estado de refrigeradora o nevera de bebidas','Funcionamiento del grifo / toma de agua','Estado de barra exterior','Stock visible de insumos (reportar faltantes)'] },
@@ -1836,7 +1948,7 @@ const CL_MANTO_CLUSTERS = [
     areas:[
       { id:'storage',    name:'Storage / Bodega', items:[...iBasico,'Organización visible del almacenamiento','Estado de estantes y anclajes','Presencia de plagas en productos almacenados','Insumos críticos en stock adecuado'] },
       { id:'terralab',   name:'Terralab', items:[...iBasico,'Estado de equipos y herramientas de laboratorio','Funcionamiento de equipos de refrigeración (si aplica)','Organización y etiquetado de insumos','Ventilación adecuada'] },
-      { id:'bridge',     name:'Hanging Bridge', note:'⚠️ Estructura de seguridad crítica.', items:['Estado de cables o estructura de soporte','Estado de tablones o superficie de paso','Barandas firmes y sin daños','Sin presencia de humedad excesiva','Iluminación del puente funcionando (si aplica)'] },
+      { id:'bridge',     name:'Hanging Bridge', note:' Estructura de seguridad crítica.', items:['Estado de cables o estructura de soporte','Estado de tablones o superficie de paso','Barandas firmes y sin daños','Sin presencia de humedad excesiva','Iluminación del puente funcionando (si aplica)'] },
       { id:'movement',   name:'Movement Studio', items:[...iBasico,'Estado del piso','Estado de espejos','Funcionamiento de equipo de sonido','Estado de colchonetas / props','Espacio libre de obstáculos'] },
       { id:'lounge',     name:'Lounge / Deck', items:[...iBasico,'Estado de muebles y tapizado','Estado de hamacas o mobiliario exterior','Estado del deck (sin tablas sueltas, astillas o daños)','Iluminación exterior funcionando'] },
       { id:'duchas-main',name:'Duchas Principales', items:iBano },
@@ -1861,7 +1973,7 @@ const CL_MANTO_CLUSTERS = [
       { id:'doherty', name:'Doherty', items:iCasita }, { id:'macy', name:'Macy', items:iCasita },
       { id:'bah-bath', name:'Baños de Bahareque', note:'Únicos baños de habitaciones con ducha.', items:[...iBano,'Paredes de bahareque sin grietas ni humedad penetrante'] },
       { id:'wex-camp', name:'Wex Camp', items:[...iBasico,'Estado de carpa o estructura temporal','Estado de tarima o base elevada','Ventilación e iluminación adecuadas','Funcionamiento del sistema sanitario asociado'] },
-      { id:'maloca-ev', name:'Maloca', note:'⚠️ Espacio de alta significancia cultural.', items:[...iBasico,'Estado de estructura de techo','Estado de bambú o madera estructural expuesta','Estado del piso','Funcionamiento de sistema de audio','Estado del baño y bodega asociados'] },
+      { id:'maloca-ev', name:'Maloca', note:' Espacio de alta significancia cultural.', items:[...iBasico,'Estado de estructura de techo','Estado de bambú o madera estructural expuesta','Estado del piso','Funcionamiento de sistema de audio','Estado del baño y bodega asociados'] },
       { id:'maloca-bath', name:'Maloca Bathroom', items:iBano },
       { id:'maloca-st', name:'Maloca Storage', items:[...iBasico,'Organización visible del almacenamiento','Estado de estantes y anclajes','Presencia de plagas en productos almacenados','Insumos críticos en stock adecuado'] },
     ]},
@@ -1949,8 +2061,8 @@ function startChecklist(id, dept) {
     ${photoUploadWidget('cl-photos')}
     <button class="btn-sub" id="cl-submit" onclick="submitChecklist('${id}','${dept}')">Enviar Reporte de Inspección</button>
     <div class="fnote">Los datos se guardarán en Google Sheets</div>
-    <div class="ok-msg" id="cl-ok"><p>✅ Reporte de inspección enviado correctamente.</p></div>
-    <div class="err-msg" id="cl-err"><p>❌ Error al enviar. Intenta de nuevo.</p></div>`;
+    <div class="ok-msg" id="cl-ok"><p>Reporte de inspección enviado correctamente.</p></div>
+    <div class="err-msg" id="cl-err"><p>Error al enviar. Intenta de nuevo.</p></div>`;
   show('cl-screen');
 }
 
@@ -1970,7 +2082,7 @@ async function submitChecklist(id,dept){
 
   const fotosRes = await getPhotosPayload('cl-photos');
   if (!fotosRes.ok) {
-    document.getElementById('cl-err').querySelector('p').textContent = '❌ ' + fotosRes.error;
+    document.getElementById('cl-err').querySelector('p').textContent = fotosRes.error;
     document.getElementById('cl-err').style.display = 'block';
     btn.disabled = false; btn.textContent = 'Enviar Reporte de Inspección';
     return;
@@ -1993,7 +2105,7 @@ async function submitChecklist(id,dept){
     clearPhotoGroup('cl-photos');
     showCompletado(() => goBack());
   } else {
-    document.getElementById('cl-err').querySelector('p').textContent = '❌ ' + (res.error || 'Error al enviar. Intenta de nuevo.');
+    document.getElementById('cl-err').querySelector('p').textContent = (res.error || 'Error al enviar. Intenta de nuevo.');
     document.getElementById('cl-err').style.display='block';
     btn.disabled=false;
     btn.textContent='Enviar Reporte de Inspección';
@@ -2066,7 +2178,7 @@ function openReports(){
 // ── MANUALES (contenido estático de referencia) ──
 
 function mkStepsMT(steps){return steps.map(([t,d],i)=>`<div style="display:flex;gap:.75rem;margin-bottom:.85rem;align-items:flex-start;"><div style="width:26px;height:26px;background:var(--clay);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:.72rem;font-family:sans-serif;font-weight:600;flex-shrink:0;margin-top:.1rem;">${i+1}</div><div><div style="font-size:.82rem;font-family:sans-serif;font-weight:600;color:var(--cream);margin-bottom:.25rem;">${t}</div><div style="font-size:.78rem;font-family:sans-serif;color:rgba(232,226,209,0.7);line-height:1.5;">${d}</div></div></div>`).join('');}
-function mkAreaLimp(sub,steps,criterios){return `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">${sub}</div>`+mkStepsMT(steps)+`<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Criterios de limpieza esperada</div>${criterios.map(cr=>`<div class="crit-row">✓ ${cr}</div>`).join('')}</div>`;}
+function mkAreaLimp(sub,steps,criterios){return `<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">${sub}</div>`+mkStepsMT(steps)+`<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Criterios de limpieza esperada</div>${criterios.map(cr=>`<div class="crit-row"> ${cr}</div>`).join('')}</div>`;}
 function mkRolTable(rows){return `<div style="border-radius:8px;overflow:hidden;border:1px solid rgba(232,226,209,0.1);">${rows.map(([day,t1,a1,t2,a2],i)=>`<div style="background:${i%2===0?'rgba(255,255,255,0.05)':'rgba(255,255,255,0.03)'};padding:.65rem .8rem;border-bottom:1px solid rgba(232,226,209,0.06);"><div style="font-size:.75rem;font-family:sans-serif;font-weight:600;color:var(--cream);margin-bottom:.35rem;">${day}</div><div style="display:flex;gap:.5rem;flex-wrap:wrap;"><span style="font-size:.65rem;font-family:sans-serif;background:rgba(113,127,126,0.2);color:#8FACA9;padding:.15rem .45rem;border-radius:20px;">${t1}</span><span style="font-size:.7rem;font-family:sans-serif;color:rgba(232,226,209,0.7);flex:1;line-height:1.4;">${a1}</span></div>${t2?`<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.3rem;"><span style="font-size:.65rem;font-family:sans-serif;background:rgba(153,92,68,0.2);color:#C17A5A;padding:.15rem .45rem;border-radius:20px;">${t2}</span><span style="font-size:.7rem;font-family:sans-serif;color:rgba(232,226,209,0.7);flex:1;line-height:1.4;">${a2}</span></div>`:''}</div>`).join('')}</div>`;}
 
 const SHARED_CONTENT={
@@ -2081,19 +2193,19 @@ const MANUAL_LMP_CONTENT={
 
   'criterios-todo':`<div style="font-size:.82rem;font-family:sans-serif;color:rgba(232,226,209,0.8);font-weight:600;margin-bottom:.6rem;">Criterios de Housekeeping</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.2rem;">${[['OBSERVABLE','Cualquier persona puede verificar el resultado.'],['REPETIBLE','No depende de quién limpió.'],['SUFICIENTE','Efectivo sin obsesión.'],['SOSTENIBLE','Se mantiene sin agotar al equipo.']].map(([t,d])=>`<div style="background:rgba(255,255,255,0.055);border:1px solid rgba(232,226,209,0.09);border-radius:10px;padding:.85rem .8rem;"><div style="font-size:.72rem;font-weight:600;font-family:sans-serif;color:var(--clay);letter-spacing:.06em;margin-bottom:.25rem;">${t}</div><div style="font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.65);line-height:1.4;">${d}</div></div>`).join('')}</div>${mkStepsMT([['Revisión del Rol','Llegar puntualmente y revisar la asignación de áreas del día.'],['Preparación Personal','Uniforme limpio, zapatos cerrados, cabello recogido.'],['Revisión del Equipo','Trapos limpios, escoba, trapeador, guantes, desinfectante, bolsas de basura.'],['Inspección Visual','Pasar por las áreas asignadas e identificar zonas prioritarias.'],['Coordinación','Comunicar si se necesita apoyo o falta algún insumo.']])}`,
 
-  oficina:mkAreaLimp('Área administrativa',[['Revisión Previa','Confirmar sin reuniones. Anunciarse al entrar.'],['Superficies','Quitar polvo de escritorios, repisas y lámparas. Desinfectar teléfonos e interruptores.'],['Pisos','Barrer y trapear con desinfectante suave.'],['Basureros','Vaciar cuando el área lo requiera.'],['Revisión Final','Luces y aires apagados si no se usan.']],['Ninguna superficie con polvo ni manchas','Pisos secos y sin marcas','Escritorios libres de residuos','Basureros vacíos','Olor neutro'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Ninguna superficie con polvo ni manchas</div><div class="crit-row">✓ Pisos secos y sin marcas</div><div class="crit-row">✓ Escritorios libres de residuos</div><div class="crit-row">✓ Basureros vacíos</div></div>`,
-  juicebar:mkAreaLimp('Área exterior de servicio',[['Revisión Inicial','Confirmar sin huéspedes.'],['Superficies','Limpiar mesas y barra. Desinfectar zonas de alto contacto.'],['Pisos','Barrer y trapear. Retirar hojas del exterior.'],['Basureros','Vaciar cuando el área lo requiera.'],['Presentación','Alinear mesas y sillas.']],['Ningún residuo visible','Mobiliario alineado y seco','Basureros limpios y tapados','Área fresca y lista'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Ningún residuo visible</div><div class="crit-row">✓ Mobiliario alineado y seco</div><div class="crit-row">✓ Basureros limpios y tapados</div></div>`,
-  recepcion:mkAreaLimp('Punto de bienvenida',[['Revisión Inicial','Confirmar sin check-in en proceso.'],['Superficies','Quitar polvo del mostrador, mesas y sillas. Desinfectar áreas de alto contacto.'],['Pisos','Barrer y trapear con desinfectante neutro.'],['Revisión Final','Alinear sillas, cerrar cajones.']],['Ningún rastro de polvo ni basura','Mobiliario ordenado y seco','Olor agradable y fresco','Área lista para recibir huéspedes'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Ningún rastro de polvo ni basura</div><div class="crit-row">✓ Mobiliario ordenado y seco</div><div class="crit-row">✓ Área lista para recibir huéspedes</div></div>`,
-  comedor:mkAreaLimp('Área de alimentación',[['Revisión Inicial','Verificar sin personas. Retirar platos olvidados.'],['Superficies','Limpiar mesas y sillas con paño húmedo y desinfectante.'],['Pisos','Barrer restos de comida. Trapear con desinfectante.'],['Basureros','Vaciar cuando el área lo requiera.']],['Mesas sin residuos, secas y desinfectadas','Sillas limpias y alineadas','Piso sin restos ni humedad','Basureros vacíos'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Mesas sin residuos, secas y desinfectadas</div><div class="crit-row">✓ Sillas limpias y alineadas</div><div class="crit-row">✓ Piso sin restos ni humedad</div></div>`,
-  templo:`<div class="doc-note" style="margin-bottom:.9rem;">⚠️ Espacio de alta sensibilidad. Limpiar con discreción.</div>`+mkAreaLimp('Estudio de Movimiento',[['Revisión Inicial','Confirmar sin actividades. Verificar velas encendidas.'],['Superficies','Quitar polvo suavemente. No mover objetos de altar.'],['Piso','Barrer con escoba suave. Trapear con desinfectante neutro.'],['Revisión Final','Verificar que todo esté en su lugar.']],['Superficies libres de polvo','Piso limpio y seco','Cojines alineados, altares intactos','Olor natural y fresco'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Superficies libres de polvo</div><div class="crit-row">✓ Piso limpio y seco</div><div class="crit-row">✓ Cojines alineados, altares intactos</div></div>`,
-  lounge:mkAreaLimp('Lounge',[['Revisión Inicial','Verificar si hay personas.'],['Superficies','Quitar polvo de mesas, repisas. Desinfectar superficies de alto contacto.'],['Pisos','Barrer incluyendo debajo de escritorios. Trapear con desinfectante.'],['Basureros','Vaciar cuando el área lo requiera.']],['Superficies libres de polvo y manchas','Pisos secos sin residuos','Mobiliario alineado y ordenado','Basureros vacíos'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Superficies libres de polvo y manchas</div><div class="crit-row">✓ Pisos secos sin residuos</div><div class="crit-row">✓ Mobiliario alineado y ordenado</div></div>`,
-  maloca:mkAreaLimp('Espacio ceremonial y de eventos',[['Revisión Inicial','Confirmar sin actividades. Verificar objetos ceremoniales.'],['Superficies','Limpiar postes y vigas accesibles con paño seco. Retirar telarañas.'],['Piso','Barrer completamente incluyendo bordes y esquinas.'],['Alrededores','Recoger hojas y ramas del área exterior inmediata.']],['Espacio libre de residuos y hojas','Piso barrido y en buen estado','Sin telarañas visibles','Área lista para uso o ceremonia'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Espacio libre de residuos y hojas</div><div class="crit-row">✓ Piso barrido y en buen estado</div><div class="crit-row">✓ Sin telarañas visibles</div></div>`,
-  'duchas-limp':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Duchas Principales</div><div class="doc-note" style="margin-bottom:.9rem;">⚠️ Confirmar sin personas antes de limpiar.</div>${mkStepsMT([['Revisión Inicial','Confirmar sin personas. Verificar agua caliente y buena presión.'],['Limpieza de ducha','Limpiar paredes, grifos y desagüe. Retirar residuos de jabón y cabello.'],['Suelo y drenaje','Barrer y trapear el área. Verificar que el drenaje no esté tapado.'],['Aserrín e inodoro','Verificar capa de aserrín. Limpiar área del inodoro.'],['Reposición','Reponer papel higiénico, jabón y toallas.'],['Revisión Final','Espejos limpios, área seca y con buen olor.']])}<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Ducha limpia y sin residuos</div><div class="crit-row">✓ Piso seco y sin agua estancada</div><div class="crit-row">✓ Aserrín suficiente, área sin olores</div><div class="crit-row">✓ Papel, jabón y toallas abastecidos</div></div>`,
-  'banos-limp':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Baños Principales</div><div class="doc-note" style="margin-bottom:.9rem;">⚠️ Confirmar sin personas antes de limpiar.</div>${mkStepsMT([['Revisión Inicial','Confirmar sin personas. Identificar zonas que requieren atención.'],['Lavamanos','Limpiar lavamanos, grifos, espejos y repisas. Desinfectar manijas.'],['Aserrín e inodoro','Verificar capa de aserrín. Limpiar área del inodoro.'],['Piso','Barrer completamente. Trapear con agua y desinfectante.'],['Reposición','Reponer papel higiénico, jabón y toallas.']])}<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row">✓ Aserrín suficiente, área sin olores</div><div class="crit-row">✓ Lavamanos y espejos limpios</div><div class="crit-row">✓ Piso seco y sin residuos</div><div class="crit-row">✓ Papel, jabón y toallas abastecidos</div></div>`,
+  oficina:mkAreaLimp('Área administrativa',[['Revisión Previa','Confirmar sin reuniones. Anunciarse al entrar.'],['Superficies','Quitar polvo de escritorios, repisas y lámparas. Desinfectar teléfonos e interruptores.'],['Pisos','Barrer y trapear con desinfectante suave.'],['Basureros','Vaciar cuando el área lo requiera.'],['Revisión Final','Luces y aires apagados si no se usan.']],['Ninguna superficie con polvo ni manchas','Pisos secos y sin marcas','Escritorios libres de residuos','Basureros vacíos','Olor neutro'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row"> Ninguna superficie con polvo ni manchas</div><div class="crit-row"> Pisos secos y sin marcas</div><div class="crit-row"> Escritorios libres de residuos</div><div class="crit-row"> Basureros vacíos</div></div>`,
+  juicebar:mkAreaLimp('Área exterior de servicio',[['Revisión Inicial','Confirmar sin huéspedes.'],['Superficies','Limpiar mesas y barra. Desinfectar zonas de alto contacto.'],['Pisos','Barrer y trapear. Retirar hojas del exterior.'],['Basureros','Vaciar cuando el área lo requiera.'],['Presentación','Alinear mesas y sillas.']],['Ningún residuo visible','Mobiliario alineado y seco','Basureros limpios y tapados','Área fresca y lista'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row"> Ningún residuo visible</div><div class="crit-row"> Mobiliario alineado y seco</div><div class="crit-row"> Basureros limpios y tapados</div></div>`,
+  recepcion:mkAreaLimp('Punto de bienvenida',[['Revisión Inicial','Confirmar sin check-in en proceso.'],['Superficies','Quitar polvo del mostrador, mesas y sillas. Desinfectar áreas de alto contacto.'],['Pisos','Barrer y trapear con desinfectante neutro.'],['Revisión Final','Alinear sillas, cerrar cajones.']],['Ningún rastro de polvo ni basura','Mobiliario ordenado y seco','Olor agradable y fresco','Área lista para recibir huéspedes'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row"> Ningún rastro de polvo ni basura</div><div class="crit-row"> Mobiliario ordenado y seco</div><div class="crit-row"> Área lista para recibir huéspedes</div></div>`,
+  comedor:mkAreaLimp('Área de alimentación',[['Revisión Inicial','Verificar sin personas. Retirar platos olvidados.'],['Superficies','Limpiar mesas y sillas con paño húmedo y desinfectante.'],['Pisos','Barrer restos de comida. Trapear con desinfectante.'],['Basureros','Vaciar cuando el área lo requiera.']],['Mesas sin residuos, secas y desinfectadas','Sillas limpias y alineadas','Piso sin restos ni humedad','Basureros vacíos'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row"> Mesas sin residuos, secas y desinfectadas</div><div class="crit-row"> Sillas limpias y alineadas</div><div class="crit-row"> Piso sin restos ni humedad</div></div>`,
+  templo:`<div class="doc-note" style="margin-bottom:.9rem;"> Espacio de alta sensibilidad. Limpiar con discreción.</div>`+mkAreaLimp('Estudio de Movimiento',[['Revisión Inicial','Confirmar sin actividades. Verificar velas encendidas.'],['Superficies','Quitar polvo suavemente. No mover objetos de altar.'],['Piso','Barrer con escoba suave. Trapear con desinfectante neutro.'],['Revisión Final','Verificar que todo esté en su lugar.']],['Superficies libres de polvo','Piso limpio y seco','Cojines alineados, altares intactos','Olor natural y fresco'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row"> Superficies libres de polvo</div><div class="crit-row"> Piso limpio y seco</div><div class="crit-row"> Cojines alineados, altares intactos</div></div>`,
+  lounge:mkAreaLimp('Lounge',[['Revisión Inicial','Verificar si hay personas.'],['Superficies','Quitar polvo de mesas, repisas. Desinfectar superficies de alto contacto.'],['Pisos','Barrer incluyendo debajo de escritorios. Trapear con desinfectante.'],['Basureros','Vaciar cuando el área lo requiera.']],['Superficies libres de polvo y manchas','Pisos secos sin residuos','Mobiliario alineado y ordenado','Basureros vacíos'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row"> Superficies libres de polvo y manchas</div><div class="crit-row"> Pisos secos sin residuos</div><div class="crit-row"> Mobiliario alineado y ordenado</div></div>`,
+  maloca:mkAreaLimp('Espacio ceremonial y de eventos',[['Revisión Inicial','Confirmar sin actividades. Verificar objetos ceremoniales.'],['Superficies','Limpiar postes y vigas accesibles con paño seco. Retirar telarañas.'],['Piso','Barrer completamente incluyendo bordes y esquinas.'],['Alrededores','Recoger hojas y ramas del área exterior inmediata.']],['Espacio libre de residuos y hojas','Piso barrido y en buen estado','Sin telarañas visibles','Área lista para uso o ceremonia'])+`<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row"> Espacio libre de residuos y hojas</div><div class="crit-row"> Piso barrido y en buen estado</div><div class="crit-row"> Sin telarañas visibles</div></div>`,
+  'duchas-limp':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Duchas Principales</div><div class="doc-note" style="margin-bottom:.9rem;"> Confirmar sin personas antes de limpiar.</div>${mkStepsMT([['Revisión Inicial','Confirmar sin personas. Verificar agua caliente y buena presión.'],['Limpieza de ducha','Limpiar paredes, grifos y desagüe. Retirar residuos de jabón y cabello.'],['Suelo y drenaje','Barrer y trapear el área. Verificar que el drenaje no esté tapado.'],['Aserrín e inodoro','Verificar capa de aserrín. Limpiar área del inodoro.'],['Reposición','Reponer papel higiénico, jabón y toallas.'],['Revisión Final','Espejos limpios, área seca y con buen olor.']])}<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row"> Ducha limpia y sin residuos</div><div class="crit-row"> Piso seco y sin agua estancada</div><div class="crit-row"> Aserrín suficiente, área sin olores</div><div class="crit-row"> Papel, jabón y toallas abastecidos</div></div>`,
+  'banos-limp':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Baños Principales</div><div class="doc-note" style="margin-bottom:.9rem;"> Confirmar sin personas antes de limpiar.</div>${mkStepsMT([['Revisión Inicial','Confirmar sin personas. Identificar zonas que requieren atención.'],['Lavamanos','Limpiar lavamanos, grifos, espejos y repisas. Desinfectar manijas.'],['Aserrín e inodoro','Verificar capa de aserrín. Limpiar área del inodoro.'],['Piso','Barrer completamente. Trapear con agua y desinfectante.'],['Reposición','Reponer papel higiénico, jabón y toallas.']])}<div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Antes de salir, verifica:</div><div class="crit-row"> Aserrín suficiente, área sin olores</div><div class="crit-row"> Lavamanos y espejos limpios</div><div class="crit-row"> Piso seco y sin residuos</div><div class="crit-row"> Papel, jabón y toallas abastecidos</div></div>`,
 
   'casitas-madera':(function(){
     const cas=[{id:'toensmeier',nombre:'Toensmeier',m2:60,cama:'King',cap:2},{id:'hemenway',nombre:'Hemenway',m2:60,cama:'King',cap:2},{id:'primavesi',nombre:'Primavesi',m2:60,cama:'King',cap:4},{id:'salatin',nombre:'Salatin',m2:60,cama:'King',cap:4},{id:'shiva',nombre:'Shiva',m2:60,cama:'King',cap:2},{id:'savory',nombre:'Savory',m2:50,cama:'Twin',cap:2},{id:'yeomans',nombre:'Yeomans',m2:50,cama:'Twin',cap:2},{id:'fukuoka',nombre:'Fukuoka',m2:50,cama:'Twin',cap:2},{id:'mollison',nombre:'Mollison',m2:50,cama:'Twin',cap:2},{id:'lancaster',nombre:'Lancaster',m2:50,cama:'Dorm',cap:4},{id:'gotsch',nombre:'Götsch',m2:50,cama:'Twin',cap:2},{id:'holzer',nombre:'Holzer',m2:50,cama:'Twin',cap:2},{id:'ingham',nombre:'Ingham',m2:50,cama:'Twin',cap:2},{id:'carson',nombre:'Carson',m2:50,cama:'Twin',cap:2}];
-    const pasos=[['Ingreso y Protocolo','Consultar lista de habitaciones ocupadas. Tocar 3 veces y anunciarse.'],['Ventilación Inicial','Abrir puertas y ventanas. Revisar humedad u olores inusuales.'],['Cama y Textiles','Retirar sábanas solo si checkout. Forro ajustado → sábana → duvet centrado. ⚠️ NO colocar toallas sobre la cama.'],['Superficies','Quitar polvo. Desinfectante neutro. No usar cloro sobre madera.'],['Piso','Barrer completamente. Trapear sin exceso de humedad.'],['Revisión Final','Cama perfectamente hecha. Mobiliario alineado. Olor fresco.']];
+    const pasos=[['Ingreso y Protocolo','Consultar lista de habitaciones ocupadas. Tocar 3 veces y anunciarse.'],['Ventilación Inicial','Abrir puertas y ventanas. Revisar humedad u olores inusuales.'],['Cama y Textiles','Retirar sábanas solo si checkout. Forro ajustado  sábana  duvet centrado.  NO colocar toallas sobre la cama.'],['Superficies','Quitar polvo. Desinfectante neutro. No usar cloro sobre madera.'],['Piso','Barrer completamente. Trapear sin exceso de humedad.'],['Revisión Final','Cama perfectamente hecha. Mobiliario alineado. Olor fresco.']];
     const criterios=['Olor fresco y natural','Piso limpio y seco','Cama impecablemente presentada','Área lista para recibir huésped'];
     window._casitasMadera={casitas:cas,pasos,criterios};
     return `<div style="font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.4);font-style:italic;margin-bottom:1rem;">Selecciona la casita a preparar</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">${cas.map(x=>`<div class="gcard" onclick="openCasitaDetalle('madera','${x.id}')" style="padding:.85rem .8rem;"><div class="ct" style="font-size:.9rem;">${x.nombre}</div><div class="cd">${x.cama} · ${x.m2}m² · ${x.cap} huéspedes</div></div>`).join('')}</div>`;
@@ -2101,7 +2213,7 @@ const MANUAL_LMP_CONTENT={
 
   'casitas-bah':(function(){
     const cas=[{id:'starhawk',nombre:'Starhawk',m2:50,cama:'Queen',cap:2},{id:'crawford',nombre:'Crawford',m2:50,cama:'Queen',cap:2},{id:'einsestein',nombre:'Einsestein',m2:50,cama:'Queen',cap:2},{id:'doherty',nombre:'Doherty',m2:50,cama:'Queen',cap:2},{id:'macy',nombre:'Macy',m2:50,cama:'Queen',cap:2}];
-    const pasos=[['Ingreso y Protocolo','Consultar lista. Tocar 3 veces y anunciarse.'],['Ventilación Inicial','Abrir puertas y ventanas. Cuidado con humedad en bahareque.'],['Cama y Textiles','Retirar sábanas solo si checkout. ⚠️ NO colocar toallas sobre la cama.'],['Superficies','No usar cloro. Cuidado en superficies de barro.'],['Piso','Barrer completamente. Trapear sin exceso de humedad.'],['Revisión Final','Cama perfectamente hecha. Materiales sin daños por humedad.']];
+    const pasos=[['Ingreso y Protocolo','Consultar lista. Tocar 3 veces y anunciarse.'],['Ventilación Inicial','Abrir puertas y ventanas. Cuidado con humedad en bahareque.'],['Cama y Textiles','Retirar sábanas solo si checkout.  NO colocar toallas sobre la cama.'],['Superficies','No usar cloro. Cuidado en superficies de barro.'],['Piso','Barrer completamente. Trapear sin exceso de humedad.'],['Revisión Final','Cama perfectamente hecha. Materiales sin daños por humedad.']];
     const criterios=['Olor fresco y natural','Piso limpio y seco','Cama impecablemente presentada','Materiales naturales sin daños'];
     window._casitasBah={casitas:cas,pasos,criterios};
     return `<div style="font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.4);font-style:italic;margin-bottom:1rem;">Selecciona la casita a preparar</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">${cas.map(x=>`<div class="gcard" onclick="openCasitaDetalle('bah','${x.id}')" style="padding:.85rem .8rem;"><div class="ct" style="font-size:.9rem;">${x.nombre}</div><div class="cd">${x.cama} · ${x.m2}m² · ${x.cap} huéspedes</div></div>`).join('')}</div>`;
@@ -2177,8 +2289,8 @@ function openSolicitudInsumos(){
     <div class="fg"><label>Observaciones</label>${aw('ins-obs','Urgencia, uso específico, notas adicionales...')}</div>
     <button class="btn-sub" id="ins-sub" onclick="submitSolicitudInsumos()">Enviar Solicitud</button>
     <div class="fnote">La solicitud se enviará a administración</div>
-    <div class="ok-msg" id="ins-ok"><p>✅ Solicitud enviada correctamente.</p></div>
-    <div class="err-msg" id="ins-err"><p>❌ Error al enviar. Intenta de nuevo.</p></div>`;
+    <div class="ok-msg" id="ins-ok"><p>Solicitud enviada correctamente.</p></div>
+    <div class="err-msg" id="ins-err"><p>Error al enviar. Intenta de nuevo.</p></div>`;
   show('con-screen');
 }
 
@@ -2204,7 +2316,7 @@ async function submitSolicitudInsumos(){
     insCount=1;
     showCompletado(() => goBack());
   } else {
-    document.getElementById('ins-err').querySelector('p').textContent = '❌ ' + (res.error || 'Error al enviar. Intenta de nuevo.');
+    document.getElementById('ins-err').querySelector('p').textContent = (res.error || 'Error al enviar. Intenta de nuevo.');
     document.getElementById('ins-err').style.display='block';
     btn.disabled=false;
     btn.textContent='Enviar Solicitud';
@@ -2231,7 +2343,7 @@ const MANUAL_MT_SECS = [
 
 const MANUAL_MT_CONTENT={
   intro:`<p style="font-size:.82rem;font-family:sans-serif;color:rgba(232,226,209,0.8);line-height:1.6;margin-bottom:.8rem;">Este manual establece los estándares de mantenimiento para Tierramor.</p>`,
-  'prep-seg-rep':`<div style="font-size:.82rem;font-family:sans-serif;color:rgba(232,226,209,0.8);font-weight:600;margin-bottom:.6rem;">Criterios Generales</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.2rem;">${[['PREVENTIVO','Identificar problemas antes de que se conviertan en fallas.'],['DOCUMENTADO','Toda anomalía se registra. Lo que no se escribe no existe.'],['OPORTUNO','Una intervención a tiempo evita daños mayores.'],['SEGURO','No intervenir en sistemas mayores sin autorización.']].map(([t,d])=>`<div style="background:rgba(255,255,255,0.055);border:1px solid rgba(232,226,209,0.09);border-radius:10px;padding:.85rem .8rem;"><div style="font-size:.72rem;font-weight:600;font-family:sans-serif;color:var(--clay);letter-spacing:.06em;margin-bottom:.25rem;">${t}</div><div style="font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.65);line-height:1.4;">${d}</div></div>`).join('')}</div>${mkStepsMT([['Preparación Personal','Uniforme limpio, calzado cerrado y equipo de protección disponible.'],['Revisión del Equipo','Kit de herramientas: llaves, destornilladores, linterna, cinta métrica.'],['Inspección Visual Inicial','Al llegar a cada área: observar antes de tocar. Detectar anomalías.'],['Registro y Comunicación','Toda anomalía debe registrarse. Clasificar: URGENTE / PRIORIDAD / PROGRAMAR.']])}<div class="crit-box" style="margin-top:1rem;"><div class="crit-lbl">Clasificación de Anomalías</div><div class="crit-row">🔴 URGENTE — Riesgo para personas o falla crítica. Reportar de inmediato.</div><div class="crit-row">🟡 PRIORIDAD — Falla sin riesgo inmediato. Resolver en 24h.</div><div class="crit-row">🟢 PROGRAMAR — Deterioro menor. Incluir en lista semanal.</div></div>`,
+  'prep-seg-rep':`<div style="font-size:.82rem;font-family:sans-serif;color:rgba(232,226,209,0.8);font-weight:600;margin-bottom:.6rem;">Criterios Generales</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.2rem;">${[['PREVENTIVO','Identificar problemas antes de que se conviertan en fallas.'],['DOCUMENTADO','Toda anomalía se registra. Lo que no se escribe no existe.'],['OPORTUNO','Una intervención a tiempo evita daños mayores.'],['SEGURO','No intervenir en sistemas mayores sin autorización.']].map(([t,d])=>`<div style="background:rgba(255,255,255,0.055);border:1px solid rgba(232,226,209,0.09);border-radius:10px;padding:.85rem .8rem;"><div style="font-size:.72rem;font-weight:600;font-family:sans-serif;color:var(--clay);letter-spacing:.06em;margin-bottom:.25rem;">${t}</div><div style="font-size:.75rem;font-family:sans-serif;color:rgba(232,226,209,0.65);line-height:1.4;">${d}</div></div>`).join('')}</div>${mkStepsMT([['Preparación Personal','Uniforme limpio, calzado cerrado y equipo de protección disponible.'],['Revisión del Equipo','Kit de herramientas: llaves, destornilladores, linterna, cinta métrica.'],['Inspección Visual Inicial','Al llegar a cada área: observar antes de tocar. Detectar anomalías.'],['Registro y Comunicación','Toda anomalía debe registrarse. Clasificar: URGENTE / PRIORIDAD / PROGRAMAR.']])}<div class="crit-box" style="margin-top:1rem;"><div class="crit-lbl">Clasificación de Anomalías</div><div class="crit-row"> URGENTE — Riesgo para personas o falla crítica. Reportar de inmediato.</div><div class="crit-row"> PRIORIDAD — Falla sin riesgo inmediato. Resolver en 24h.</div><div class="crit-row"> PROGRAMAR — Deterioro menor. Incluir en lista semanal.</div></div>`,
   'organizacion-mt':`<div class="sec-lbl" style="margin-top:0;">Clusters de Inspección</div>${[
     ['Tránsito Constante','Oficina · Juice Bar · Salón de Cocina y Recepción — Inspección mensual'],
     ['Cluster 1','Bodega · Terralab · Puente · Movement Studio · Lounge · Duchas · Baños Principales'],
@@ -2253,18 +2365,18 @@ const MANUAL_MT_CONTENT={
     <div class="crit-lbl">Esta guía aplica a las siguientes áreas</div>
     ${['Oficina','Juice Bar','Cocina','Estudio de Movimiento','Storage / Bodega','Terralab','Lounge','Duchas'].map(a=>`<div class="crit-row">• ${a}</div>`).join('')}
   </div>
-  <div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'oficina-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Detectar humedad, plagas o daños.'],['Equipos','Funcionamiento de equipos de cómputo, router, aire acondicionado, impresora.'],['Organización','Cables organizados sin riesgos de tropiezo. Basureros limpios con bolsa.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'juicebar-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas.'],['Equipos','Funcionamiento de licuadora/extractor, refrigeradora, grifo.'],['Estado general','Estado de barra exterior. Stock visible — reportar faltantes.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'cocina-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Equipos de cocina','Funcionamiento de quemadores, extractor, refrigeradora, lavaplatos y grifo.'],['Estado general','Estado de mostrador. Estado de filtro de agua. Fugas bajo el fregadero.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'estudio-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Equipos y mobiliario','Estado del piso, espejos, equipo de sonido, colchonetas y props.'],['Espacio','Libre de obstáculos. Ventilación adecuada.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'storage-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Almacenamiento','Organización visible, estado de estantes. Presencia de plagas en productos.'],['Stock','Insumos críticos en nivel adecuado.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'terralab-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Equipos','Estado de equipos de laboratorio, refrigeración, organización.'],['Ventilación','Ventilación adecuada del espacio.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'bridge-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección · Cluster 1 · ⚠️ Estructura de seguridad crítica</div><div class="doc-note" style="margin-bottom:.75rem;">⚠️ Inspeccionar con atención. Cualquier anomalía estructural es URGENTE.</div>${mkStepsMT([['Estructura de soporte','Estado de cables o estructura. Barandas firmes y sin daños.'],['Superficie de paso','Estado de tablones. Sin deterioro, astillas o piezas sueltas.'],['Condiciones','Sin humedad excesiva. Iluminación del puente funcionando.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'lounge-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Mobiliario','Estado de muebles, tapizado, hamacas o mobiliario exterior.'],['Deck','Estado del deck: sin tablas sueltas ni astillas. Iluminación exterior.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'duchas-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Ducha y agua','Funcionamiento de ducha (presión y temperatura), grifo del lavatorio. Fugas o taponamientos.'],['Baño seco','Estado de la caja de aserrín, funcionamiento del inodoro. Espejos y accesorios.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  'banos-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Ducha y agua','Funcionamiento de ducha, grifo del lavatorio. Fugas o taponamientos.'],['Baño seco','Estado de la caja de aserrín, funcionamiento del inodoro. Espejos y accesorios.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`,
-  agua:`<div class="doc-note" style="margin-bottom:.8rem;">⚠️ Ante cualquier anomalía en sistemas de agua, reportar de inmediato.</div>${[['M1','Pozo Principal','Salida del tanque a la par del pozo — envía agua a las casitas'],['M2','Tanques Ojoche','Entrada de los tanques en la loma'],['M4','Tanque Potable','Entrada del tanque a la par de la bodega'],['M5','Tanques Piscina Izq.','Tanques de la piscina, mano izquierda'],['M6','Tanques Piscina Der.','Tanques de la piscina, mano derecha'],['M7','Tubería Principal Piscina','Tubería de abastecimiento del pozo hacia tanques de piscina']].map(([m,n,d])=>`<div style="background:rgba(255,255,255,0.055);border:1px solid rgba(232,226,209,0.09);border-radius:8px;padding:.7rem;margin-bottom:.45rem;display:flex;gap:.7rem;align-items:flex-start;"><span style="font-size:.68rem;font-family:sans-serif;font-weight:600;color:var(--clay);min-width:28px;">${m}</span><div><div style="font-size:.8rem;font-family:sans-serif;color:var(--cream);font-weight:500;">${n}</div><div style="font-size:.7rem;font-family:sans-serif;color:rgba(232,226,209,0.5);">${d}</div></div></div>`).join('')}<div class="doc-note" style="margin-top:.5rem;">📌 Sin medidor activo: Tanques Pozo Principal · Tanques Bahareque · Pozo Maloca — registro visual.</div>`,
+  <div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row"> URGENTE ·  PRIORIDAD ·  PROGRAMAR</div></div>`,
+  'oficina-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Detectar humedad, plagas o daños.'],['Equipos','Funcionamiento de equipos de cómputo, router, aire acondicionado, impresora.'],['Organización','Cables organizados sin riesgos de tropiezo. Basureros limpios con bolsa.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row"> URGENTE ·  PRIORIDAD ·  PROGRAMAR</div></div>`,
+  'juicebar-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas. Humedad, plagas.'],['Equipos','Funcionamiento de licuadora/extractor, refrigeradora, grifo.'],['Estado general','Estado de barra exterior. Stock visible — reportar faltantes.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row"> URGENTE ·  PRIORIDAD ·  PROGRAMAR</div></div>`,
+  'cocina-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección mensual · Tránsito Constante</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Equipos de cocina','Funcionamiento de quemadores, extractor, refrigeradora, lavaplatos y grifo.'],['Estado general','Estado de mostrador. Estado de filtro de agua. Fugas bajo el fregadero.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row"> URGENTE ·  PRIORIDAD ·  PROGRAMAR</div></div>`,
+  'estudio-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Equipos y mobiliario','Estado del piso, espejos, equipo de sonido, colchonetas y props.'],['Espacio','Libre de obstáculos. Ventilación adecuada.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row"> URGENTE ·  PRIORIDAD ·  PROGRAMAR</div></div>`,
+  'storage-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Almacenamiento','Organización visible, estado de estantes. Presencia de plagas en productos.'],['Stock','Insumos críticos en nivel adecuado.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row"> URGENTE ·  PRIORIDAD ·  PROGRAMAR</div></div>`,
+  'terralab-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Equipos','Estado de equipos de laboratorio, refrigeración, organización.'],['Ventilación','Ventilación adecuada del espacio.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row"> URGENTE ·  PRIORIDAD ·  PROGRAMAR</div></div>`,
+  'bridge-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección · Cluster 1 ·  Estructura de seguridad crítica</div><div class="doc-note" style="margin-bottom:.75rem;"> Inspeccionar con atención. Cualquier anomalía estructural es URGENTE.</div>${mkStepsMT([['Estructura de soporte','Estado de cables o estructura. Barandas firmes y sin daños.'],['Superficie de paso','Estado de tablones. Sin deterioro, astillas o piezas sueltas.'],['Condiciones','Sin humedad excesiva. Iluminación del puente funcionando.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row"> URGENTE ·  PRIORIDAD ·  PROGRAMAR</div></div>`,
+  'lounge-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Mobiliario','Estado de muebles, tapizado, hamacas o mobiliario exterior.'],['Deck','Estado del deck: sin tablas sueltas ni astillas. Iluminación exterior.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row"> URGENTE ·  PRIORIDAD ·  PROGRAMAR</div></div>`,
+  'duchas-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Ducha y agua','Funcionamiento de ducha (presión y temperatura), grifo del lavatorio. Fugas o taponamientos.'],['Baño seco','Estado de la caja de aserrín, funcionamiento del inodoro. Espejos y accesorios.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row"> URGENTE ·  PRIORIDAD ·  PROGRAMAR</div></div>`,
+  'banos-mt':`<div style="font-size:.75rem;font-family:sans-serif;font-style:italic;color:rgba(232,226,209,0.4);margin-bottom:1rem;">Inspección · Cluster 1</div>${mkStepsMT([['Eléctrico y estructura','Conexión eléctrica, outlets, luces, ventiladores, llavines, ventanas.'],['Ducha y agua','Funcionamiento de ducha, grifo del lavatorio. Fugas o taponamientos.'],['Baño seco','Estado de la caja de aserrín, funcionamiento del inodoro. Espejos y accesorios.']])}<div class="crit-box" style="margin-top:.5rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row"> URGENTE ·  PRIORIDAD ·  PROGRAMAR</div></div>`,
+  agua:`<div class="doc-note" style="margin-bottom:.8rem;"> Ante cualquier anomalía en sistemas de agua, reportar de inmediato.</div>${[['M1','Pozo Principal','Salida del tanque a la par del pozo — envía agua a las casitas'],['M2','Tanques Ojoche','Entrada de los tanques en la loma'],['M4','Tanque Potable','Entrada del tanque a la par de la bodega'],['M5','Tanques Piscina Izq.','Tanques de la piscina, mano izquierda'],['M6','Tanques Piscina Der.','Tanques de la piscina, mano derecha'],['M7','Tubería Principal Piscina','Tubería de abastecimiento del pozo hacia tanques de piscina']].map(([m,n,d])=>`<div style="background:rgba(255,255,255,0.055);border:1px solid rgba(232,226,209,0.09);border-radius:8px;padding:.7rem;margin-bottom:.45rem;display:flex;gap:.7rem;align-items:flex-start;"><span style="font-size:.68rem;font-family:sans-serif;font-weight:600;color:var(--clay);min-width:28px;">${m}</span><div><div style="font-size:.8rem;font-family:sans-serif;color:var(--cream);font-weight:500;">${n}</div><div style="font-size:.7rem;font-family:sans-serif;color:rgba(232,226,209,0.5);">${d}</div></div></div>`).join('')}<div class="doc-note" style="margin-top:.5rem;"> Sin medidor activo: Tanques Pozo Principal · Tanques Bahareque · Pozo Maloca — registro visual.</div>`,
 
   'casitas-madera-mt':(function(){
     const cas=[{id:'toensmeier-mt',nombre:'Toensmeier',m2:60,cama:'King',cap:2},{id:'hemenway-mt',nombre:'Hemenway',m2:60,cama:'King',cap:2},{id:'primavesi-mt',nombre:'Primavesi',m2:60,cama:'King',cap:4},{id:'salatin-mt',nombre:'Salatin',m2:60,cama:'King',cap:4},{id:'shiva-mt',nombre:'Shiva',m2:60,cama:'King',cap:2},{id:'savory-mt',nombre:'Savory',m2:50,cama:'Twin',cap:2},{id:'yeomans-mt',nombre:'Yeomans',m2:50,cama:'Twin',cap:2},{id:'fukuoka-mt',nombre:'Fukuoka',m2:50,cama:'Twin',cap:2},{id:'mollison-mt',nombre:'Mollison',m2:50,cama:'Twin',cap:2},{id:'lancaster-mt',nombre:'Lancaster',m2:50,cama:'Dorm',cap:4},{id:'gotsch-mt',nombre:'Götsch',m2:50,cama:'Twin',cap:2},{id:'holzer-mt',nombre:'Holzer',m2:50,cama:'Twin',cap:2},{id:'ingham-mt',nombre:'Ingham',m2:50,cama:'Twin',cap:2},{id:'carson-mt',nombre:'Carson',m2:50,cama:'Twin',cap:2}];
@@ -2320,7 +2432,7 @@ function openCasitaDetalleMT(tipo, casitaId) {
     </div>
     <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);font-family:sans-serif;margin-bottom:.75rem;">Checklist de inspección</div>
     ${items.map(item=>`<div class="cl-item" style="border-bottom:1px solid rgba(84,66,54,.06);padding:.5rem 0;"><div style="width:20px;height:20px;border:1.5px solid rgba(153,92,68,.3);border-radius:5px;flex-shrink:0;margin-top:.1rem;"></div><div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);line-height:1.4;margin-left:.75rem;">${item}</div></div>`).join('')}
-    <div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row">🔴 URGENTE · 🟡 PRIORIDAD · 🟢 PROGRAMAR</div></div>`;
+    <div class="crit-box" style="margin-top:.75rem;"><div class="crit-lbl">Registrar anomalías como</div><div class="crit-row"> URGENTE ·  PRIORIDAD ·  PROGRAMAR</div></div>`;
   setConScreen(casita.nombre,
     () => openManualSection('manto', backKey, backTitle),
     `<div class="doc-viewer">${html}</div>`);
@@ -2333,7 +2445,7 @@ function openCasitaDetalle(tipo, casitaId) {
   const backTitle = tipo === 'madera' ? 'Casitas de Madera' : 'Casitas de Bahareque';
   const backKey   = tipo === 'madera' ? 'casitas-madera' : 'casitas-bah';
   const html = `
-    <div class="doc-note" style="margin-bottom:.9rem;">⚠️ Privacidad del huésped: tocar 3 veces y anunciarse. Nunca entrar sin verificar ocupación.</div>
+    <div class="doc-note" style="margin-bottom:.9rem;"> Privacidad del huésped: tocar 3 veces y anunciarse. Nunca entrar sin verificar ocupación.</div>
     <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(232,226,209,0.1);border-radius:10px;padding:1rem;margin-bottom:1rem;">
       <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);font-family:sans-serif;margin-bottom:.75rem;">Características</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;">
@@ -2341,14 +2453,13 @@ function openCasitaDetalle(tipo, casitaId) {
       </div>
     </div>
     <div style="background:#faf8f4;border:1.5px dashed rgba(153,92,68,.25);border-radius:10px;padding:1.2rem;text-align:center;margin-bottom:1rem;">
-      <div style="font-size:1.4rem;margin-bottom:.3rem;">📷</div>
       <div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);">Foto próximamente disponible</div>
     </div>
     <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);font-family:sans-serif;margin-bottom:.75rem;">Procedimiento de limpieza</div>
     ${mkStepsMT(data.pasos)}
     <div class="crit-box" style="margin-top:.5rem;">
       <div class="crit-lbl">Antes de salir, verifica:</div>
-      ${data.criterios.map(c=>`<div class="crit-row">✓ ${c}</div>`).join('')}
+      ${data.criterios.map(c=>`<div class="crit-row"> ${c}</div>`).join('')}
     </div>`;
   setConScreen(casita.nombre,
     () => openManualSection('limp', backKey, backTitle),
@@ -2361,7 +2472,7 @@ function openMapaTierramor() {
     `<div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;margin-bottom:.75rem;">Vista aérea · Tierramor, Santa Cruz, Guanacaste</div>
      <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:12px;overflow:hidden;">
        <img src="./mapa-tierramor.jpg" alt="Mapa de Tierramor" style="width:100%;height:auto;display:block;"
-         onerror="this.parentElement.innerHTML='<div style=\'padding:2rem;text-align:center;font-family:sans-serif;color:var(--tm);\'><div style=\'font-size:2rem;margin-bottom:.75rem;\'>🗺️</div><div style=\'font-size:.82rem;\'>Sube <strong>mapa-tierramor.jpg</strong> al repo de GitHub.</div></div>'">
+         onerror="this.parentElement.innerHTML='<div style=\'padding:2rem;text-align:center;font-family:sans-serif;color:var(--tm);\'><div style=\'font-size:2rem;margin-bottom:.75rem;\'></div><div style=\'font-size:.82rem;\'>Sube <strong>mapa-tierramor.jpg</strong> al repo de GitHub.</div></div>'">
      </div>
      <div style="font-size:.68rem;font-family:sans-serif;color:var(--tm);text-align:center;margin-top:.75rem;">Toca la imagen para ampliarla</div>`);
 }
@@ -2390,7 +2501,7 @@ function openPeerEval() {
   document.getElementById('con-title').textContent = 'Evaluación de Pares';
   document.getElementById('con-back').onclick = () => openMyPerformance();
   document.getElementById('conbody').innerHTML = `
-    <div class="doc-note" style="margin-bottom:1rem;">🔒 Respuestas confidenciales · Solo las consulta administración<br>
+    <div class="doc-note" style="margin-bottom:1rem;"> Respuestas confidenciales · Solo las consulta administración<br>
     <span style="font-size:.68rem;">Incidencia: Mensual 20% · Trimestral 30%</span></div>
     <div class="cl-header-info">
       <div class="fg" style="margin-bottom:.6rem"><label>Compañero/a evaluado/a</label>
@@ -2406,7 +2517,7 @@ function openPeerEval() {
         <div style="margin-bottom:1rem;">
           <div style="font-size:.82rem;font-family:sans-serif;font-weight:600;color:var(--brown);margin-bottom:.15rem;">${label}</div>
           <div style="font-size:.7rem;font-family:sans-serif;color:var(--tm);margin-bottom:.4rem;">${desc}</div>
-          <div style="display:flex;gap:.5rem;">${[1,2,3,4,5].map(n=>`<label style="flex:1;text-align:center;cursor:pointer;"><input type="radio" name="${id}" value="${n}" style="display:none;"><div class="ep-star" data-id="${id}" data-val="${n}" style="background:#faf8f4;border:1.5px solid rgba(84,66,54,.15);border-radius:8px;padding:.5rem .2rem;font-size:.75rem;font-family:sans-serif;color:var(--tm);text-align:center;cursor:pointer;transition:all .15s;">${n}<br><span style="font-size:.6rem;">★</span></div></label>`).join('')}</div>
+          <div style="display:flex;gap:.5rem;">${[1,2,3,4,5].map(n=>`<label style="flex:1;text-align:center;cursor:pointer;"><input type="radio" name="${id}" value="${n}" style="display:none;"><div class="ep-star" data-id="${id}" data-val="${n}" style="background:#faf8f4;border:1.5px solid rgba(84,66,54,.15);border-radius:8px;padding:.5rem .2rem;font-size:.75rem;font-family:sans-serif;color:var(--tm);text-align:center;cursor:pointer;transition:all .15s;">${n}<br><span style="font-size:.6rem;"></span></div></label>`).join('')}</div>
         </div>`).join('')}
     </div>
     <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
@@ -2419,24 +2530,24 @@ function openPeerEval() {
     </div>
     <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
       <div class="cl-sec-title">Preguntas Abiertas</div>
-      <div class="fg" style="margin-bottom:.9rem;"><label>💡 ¿Qué hace especialmente bien esta persona en el equipo?</label>${aw('ep-bien','Sé específico/a — ayuda a reconocer fortalezas reales...')}</div>
-      <div class="fg" style="margin-bottom:0"><label>🔧 ¿En qué área podría mejorar?</label>${aw('ep-mejorar','Feedback constructivo — sin ataques personales...')}</div>
+      <div class="fg" style="margin-bottom:.9rem;"><label> ¿Qué hace especialmente bien esta persona en el equipo?</label>${aw('ep-bien','Sé específico/a — ayuda a reconocer fortalezas reales...')}</div>
+      <div class="fg" style="margin-bottom:0"><label> ¿En qué área podría mejorar?</label>${aw('ep-mejorar','Feedback constructivo — sin ataques personales...')}</div>
     </div>
     <div style="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:.75rem;">
       <div class="cl-sec-title">Valoración Global</div>
       <div style="font-size:.82rem;font-family:sans-serif;color:var(--brown);margin-bottom:.6rem;">¿Recomendarías a esta persona para un rol de mayor responsabilidad?</div>
       <div style="display:flex;gap:.7rem;">
-        <label style="flex:1;cursor:pointer;"><input type="radio" name="ep-rec" value="Sí" style="display:none;"><div class="ep-opt" data-id="ep-rec" data-val="Sí" style="background:#faf8f4;border:1.5px solid rgba(84,66,54,.15);border-radius:8px;padding:.65rem;font-size:.82rem;font-family:sans-serif;color:var(--tm);text-align:center;cursor:pointer;">👍 Sí, la recomiendo</div></label>
-        <label style="flex:1;cursor:pointer;"><input type="radio" name="ep-rec" value="No" style="display:none;"><div class="ep-opt" data-id="ep-rec" data-val="No" style="background:#faf8f4;border:1.5px solid rgba(84,66,54,.15);border-radius:8px;padding:.65rem;font-size:.82rem;font-family:sans-serif;color:var(--tm);text-align:center;cursor:pointer;">👎 No por ahora</div></label>
+        <label style="flex:1;cursor:pointer;"><input type="radio" name="ep-rec" value="Sí" style="display:none;"><div class="ep-opt" data-id="ep-rec" data-val="Sí" style="background:#faf8f4;border:1.5px solid rgba(84,66,54,.15);border-radius:8px;padding:.65rem;font-size:.82rem;font-family:sans-serif;color:var(--tm);text-align:center;cursor:pointer;"> Sí, la recomiendo</div></label>
+        <label style="flex:1;cursor:pointer;"><input type="radio" name="ep-rec" value="No" style="display:none;"><div class="ep-opt" data-id="ep-rec" data-val="No" style="background:#faf8f4;border:1.5px solid rgba(84,66,54,.15);border-radius:8px;padding:.65rem;font-size:.82rem;font-family:sans-serif;color:var(--tm);text-align:center;cursor:pointer;"> No por ahora</div></label>
       </div>
       <div class="fg" style="margin-top:.9rem;margin-bottom:0"><label>Comentario adicional (opcional)</label>
         ${aw('ep-comentario','Comentario adicional...')}
       </div>
     </div>
     <button class="btn-sub" id="ep-sub" onclick="submitPeerEval()">Enviar Evaluación</button>
-    <div class="fnote">🔒 Respuestas confidenciales — solo las consulta administración</div>
-    <div class="ok-msg" id="ep-ok"><p>✅ Evaluación enviada correctamente.</p></div>
-    <div class="err-msg" id="ep-err"><p>❌ Error al enviar. Intenta de nuevo.</p></div>`;
+    <div class="fnote"> Respuestas confidenciales — solo las consulta administración</div>
+    <div class="ok-msg" id="ep-ok"><p>Evaluación enviada correctamente.</p></div>
+    <div class="err-msg" id="ep-err"><p>Error al enviar. Intenta de nuevo.</p></div>`;
   setTimeout(()=>{
     document.querySelectorAll('.ep-star, .ep-opt').forEach(el=>{
       el.addEventListener('click',()=>{
@@ -2463,7 +2574,7 @@ async function submitPeerEval(){
   if(res.ok){
     showCompletado(() => goBack());
   } else {
-    document.getElementById('ep-err').querySelector('p').textContent = '❌ ' + (res.error || 'Error al enviar. Intenta de nuevo.');
+    document.getElementById('ep-err').querySelector('p').textContent = (res.error || 'Error al enviar. Intenta de nuevo.');
     document.getElementById('ep-err').style.display='block';
     btn.disabled=false;
     btn.textContent='Enviar Evaluación';
@@ -2684,7 +2795,7 @@ function renderScheduleDelDia() {
         <div style="font-size:.75rem;font-family:sans-serif;color:var(--tm);font-style:italic;">Hoy es ${dayName}</div>
         ${etiquetaHtml}
       </div>
-      <div class="cs"><div class="csi">🌿</div><h3>No hay tareas programadas para hoy</h3><p>El schedule de limpieza corre de lunes a viernes.</p></div>`;
+      <div class="cs"><div class="csi"></div><h3>No hay tareas programadas para hoy</h3><p>El schedule de limpieza corre de lunes a viernes.</p></div>`;
   }
 
   function renderCol(tareas, rolLabel, color) {
