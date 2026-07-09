@@ -1037,6 +1037,18 @@ input[style*="background:white"]::placeholder,
   </div>
 </div>
 
+<!-- CASITA POPUP (características, Mantenimiento) -->
+<div class="modal-overlay" id="casita-popup-modal" onclick="if(event.target===this) closeCasitaPopupMT()">
+  <div class="modal-box" style="text-align:left;max-width:340px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <div class="modal-title" id="casita-popup-title" style="margin-bottom:0;"></div>
+      <button onclick="closeCasitaPopupMT()" style="background:none;border:none;color:rgba(232,226,209,0.4);font-size:1.3rem;cursor:pointer;line-height:1;padding:0;">×</button>
+    </div>
+    <div id="casita-popup-body"></div>
+    <button class="mbtn-bk" style="width:100%;margin-top:1rem;" onclick="closeCasitaPopupMT()">Cerrar</button>
+  </div>
+</div>
+
 <!-- REPORTES POPUP (Mantenimiento) -->
 <div class="modal-overlay" id="reportes-popup-modal" onclick="if(event.target===this) closeReportesPopup()">
   <div class="modal-box" style="text-align:left;max-width:320px;">
@@ -1078,6 +1090,6 @@ input[style*="background:white"]::placeholder,
   </div>
 </div>
 
-<script src="./portal-ops.js"></script>
+<script src="./portal-ops.js?v=2"></script>
 </body>
 </html>
