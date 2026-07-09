@@ -386,6 +386,7 @@ async function doLogin() {
       renderDeptHome();
       show('home');
     }
+    startGuestReportAlerts();
   } else {
     errEl.textContent = res.error && res.error !== 'El servidor no confirmó el envío. Intenta de nuevo.'
       ? res.error
@@ -393,7 +394,121 @@ async function doLogin() {
   }
 }
 
-function logout() { CU = null; stopRec(); try { localStorage.removeItem('tm_session'); } catch(e) {} show('ls'); }
+function logout() { CU = null; stopRec(); stopGuestReportAlerts(); try { localStorage.removeItem('tm_session'); } catch(e) {} show('ls'); }
+
+// ── ALERTAS EN PANTALLA: nuevos reportes de huésped (averías) ──
+//
+// Mientras el portal esté abierto y con sesión de Mantenimiento (o admin),
+// se consulta get_guest_reports cada cierto tiempo. Si aparece un reporte
+// de huésped que no se había visto en esta sesión, se muestra un banner
+// en pantalla. Limitación real: si nadie tiene el portal abierto en ese
+// momento, el aviso no llega — esto no sustituye una notificación push
+// ni un correo; es un refuerzo visual para cuando el equipo está conectado.
+
+const GUEST_ALERT_POLL_MS = 45000; // cada 45s
+let _guestAlertSeenIds = null; // null = aún no se ha establecido la base
+let _guestAlertTimer = null;
+
+function startGuestReportAlerts() {
+  stopGuestReportAlerts();
+  if (!CU) return;
+  // Solo Mantenimiento (quienes atienden las averías) y administradores.
+  if (CU.departamento !== 'mantenimiento' && CU.rol !== 'admin') return;
+
+  _guestAlertSeenIds = null;
+  pollGuestReportsForAlert(); // primera pasada: solo establece la base, sin alertar
+  _guestAlertTimer = setInterval(pollGuestReportsForAlert, GUEST_ALERT_POLL_MS);
+}
+
+function stopGuestReportAlerts() {
+  if (_guestAlertTimer) { clearInterval(_guestAlertTimer); _guestAlertTimer = null; }
+  _guestAlertSeenIds = null;
+}
+
+async function pollGuestReportsForAlert() {
+  if (!CU) return;
+  try {
+    const res  = await fetch(WEBHOOK + '?action=get_guest_reports');
+    const data = await res.json();
+    if (!data.ok || !data.reportes) return;
+
+    if (_guestAlertSeenIds === null) {
+      // Primera carga de esta sesión: registra lo que ya existe, sin avisar
+      // (evita alertar por reportes que ya estaban pendientes antes de entrar).
+      _guestAlertSeenIds = new Set(data.reportes.map(r => r.id));
+      return;
+    }
+
+    const nuevos = data.reportes.filter(r => !_guestAlertSeenIds.has(r.id));
+    nuevos.forEach(r => {
+      _guestAlertSeenIds.add(r.id);
+      showGuestReportAlertBanner(r);
+    });
+  } catch (e) {
+    // Fallo de red silencioso: se reintenta en el próximo ciclo.
+  }
+}
+
+function showGuestReportAlertBanner(reporte) {
+  const id = 'guest-alert-' + (reporte.id || Date.now());
+  if (document.getElementById(id)) return;
+
+  const banner = document.createElement('div');
+  banner.id = id;
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;'
+    + 'background:#E07A5F;color:white;font-family:var(--font-sans);'
+    + 'padding:.85rem 1rem;display:flex;align-items:center;gap:.75rem;'
+    + 'box-shadow:0 4px 14px rgba(0,0,0,0.3);cursor:pointer;'
+    + 'animation:guestAlertSlideIn .25s ease-out;';
+  banner.innerHTML = `
+    <span style="font-size:1.2rem;flex-shrink:0;">🔴</span>
+    <div style="flex:1;line-height:1.35;">
+      <div style="font-size:.82rem;font-weight:600;">Nueva avería reportada por un huésped</div>
+      <div style="font-size:.75rem;opacity:.9;">${escapeHtml(reporte.descripcion || 'Sin descripción')} — ${escapeHtml(reporte.area || '')}</div>
+    </div>
+    <button aria-label="Cerrar" style="background:none;border:none;color:white;font-size:1.3rem;cursor:pointer;line-height:1;padding:0 .25rem;">×</button>
+  `;
+
+  const cerrar = () => { if (banner.parentElement) banner.remove(); };
+  banner.querySelector('button').onclick = (ev) => { ev.stopPropagation(); cerrar(); };
+  banner.onclick = () => {
+    cerrar();
+    if (CU.rol === 'admin') { renderHome(); } else { renderDeptHome(); }
+    show('home');
+  };
+
+  document.body.appendChild(banner);
+  setTimeout(cerrar, 10000);
+  playGuestAlertSound_();
+}
+
+// Beep corto generado por audio, sin depender de ningún archivo externo.
+// Los navegadores pueden bloquear audio sin interacción previa del usuario;
+// si falla, el banner visual sigue funcionando igual.
+function playGuestAlertSound_() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.4);
+  } catch (e) { /* audio bloqueado o no soportado: se ignora */ }
+}
+
+// Inyecta la animación del banner una sola vez.
+(function injectGuestAlertStyles_() {
+  const style = document.createElement('style');
+  style.textContent = '@keyframes guestAlertSlideIn { from { transform: translateY(-100%); } to { transform: translateY(0); } }';
+  document.head.appendChild(style);
+})();
 
 // ── HOME / NAVEGACIÓN POR DEPARTAMENTO ──
 
@@ -2569,6 +2684,7 @@ document.addEventListener('DOMContentLoaded', () => {
         restoredSession = true;
         if (CU.rol !== 'admin') { renderDeptHome(); } else { renderHome(); }
         show('home');
+        startGuestReportAlerts();
       }
     }
   } catch(e) {}
