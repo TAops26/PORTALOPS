@@ -155,7 +155,7 @@ async function loadGuestReports(deptFilter) {
       // Cada colaborador (Limpieza/Mantenimiento) solo ve los reportes de
       // huésped que le corresponden a su departamento. El admin ve todos
       // (deptFilter no se pasa desde renderHome).
-      if (deptFilter) reportes = reportes.filter(r => (r.departamento || 'Mantenimiento') === deptFilter);
+      if (deptFilter) reportes = reportes.filter(r => ((r.departamento || 'Mantenimiento').toString().trim()) === deptFilter);
       renderGuestReports(reportes);
     }
   } catch(e) {}
