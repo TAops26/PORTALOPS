@@ -850,7 +850,7 @@ button, .dept-btn, .rbtn, .gcard, .area-card, .cluster-card, .cl-cb {
 .cl-txt { color: rgba(232,226,209,0.85) !important; }
 /* Casita detail checklist items — dark bg */
 .doc-viewer div[style*="margin-left:.75rem"] { color: rgba(232,226,209,0.82) !important; }
-/* White card in casita → dark card */
+/* White card in casita  dark card */
 div[style*="background:white;border:1px solid rgba(84,66,54,.1);border-radius:10px;padding:1rem;margin-bottom:1rem"] {
   background: rgba(255,255,255,0.07) !important;
   border-color: rgba(232,226,209,0.1) !important;
@@ -992,12 +992,11 @@ input[style*="background:white"]::placeholder,
 <!-- MODAL -->
 <div class="modal-overlay" id="modal">
   <div class="modal-box">
-    <div class="modal-icon">📋</div>
     <div class="modal-title">Listo para comenzar</div>
     <div class="modal-sub" id="modal-sub"></div>
     <div class="modal-btns">
       <button class="mbtn-bk" id="modal-cancel">← Atrás</button>
-      <button class="mbtn-ok" id="modal-confirm">Aceptar ✓</button>
+      <button class="mbtn-ok" id="modal-confirm">Aceptar </button>
     </div>
   </div>
 </div>
@@ -1006,7 +1005,7 @@ input[style*="background:white"]::placeholder,
 <div class="modal-overlay" id="guest-modal" onclick="if(event.target===this) closeGuestModal()">
   <div class="modal-box" style="text-align:left;max-width:380px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-      <div style="font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;padding:.3rem .65rem;border-radius:20px;font-family:var(--font-sans);background:rgba(113,127,126,0.15);color:#8FACA9;">🏠 Reporte de Huésped</div>
+      <div style="font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;padding:.3rem .65rem;border-radius:20px;font-family:var(--font-sans);background:rgba(113,127,126,0.15);color:#8FACA9;"> Reporte de Huésped</div>
       <button onclick="closeGuestModal()" style="background:none;border:none;color:rgba(232,226,209,0.4);font-size:1.3rem;cursor:pointer;line-height:1;padding:0;">×</button>
     </div>
     <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(232,226,209,0.09);border-radius:12px;padding:.9rem 1rem;margin-bottom:.85rem;">
@@ -1025,7 +1024,7 @@ input[style*="background:white"]::placeholder,
     </div>
     <div class="modal-btns">
       <button class="mbtn-bk" onclick="closeGuestModal()">Cerrar</button>
-      <button class="mbtn-ok" id="guest-modal-btn">✓ Completada</button>
+      <button class="mbtn-ok" id="guest-modal-btn"> Completada</button>
     </div>
   </div>
 </div>
@@ -1054,7 +1053,7 @@ input[style*="background:white"]::placeholder,
     </div>
     <div class="modal-btns">
       <button class="mbtn-bk" onclick="closeAveriaModal()">Cerrar</button>
-      <button class="mbtn-ok" id="averia-modal-btn">✓ Completada</button>
+      <button class="mbtn-ok" id="averia-modal-btn"> Completada</button>
     </div>
   </div>
 </div>
