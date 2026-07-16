@@ -473,7 +473,8 @@ async function loadFarm() {
   _farmData = (res.ok && res.items) ? res.items : [];
   renderFarm();
 }
-const FARM_DAY_ORDER    = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const FARM_DAY_ORDER    = ['Saturday','Sunday','Monday','Tuesday','Wednesday','Thursday','Friday']; // orden visual del carrusel
+const JS_DAY_INDEX      = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; // orden real de Date().getDay() (0=Domingo) — NO reordenar
 const FARM_DAY_COLORS   = { Sunday:'#735145', Monday:'#717F7E', Tuesday:'#76724E', Wednesday:'#995C44', Thursday:'#5C7A78', Friday:'#C1665A', Saturday:'#8a6a52' };
 const FARM_DAY_ABBR_EN  = { Sunday:'Sun', Monday:'Mon', Tuesday:'Tue', Wednesday:'Wed', Thursday:'Thu', Friday:'Fri', Saturday:'Sat' };
 const FARM_DAY_ABBR_ES  = { Sunday:'Dom', Monday:'Lun', Tuesday:'Mar', Wednesday:'Mié', Thursday:'Jue', Friday:'Vie', Saturday:'Sáb' };
@@ -484,7 +485,7 @@ let farmActiveDay = null; // se fija en el día de hoy la primera vez que se ent
 let _farmScrollTimer = null;
 
 function renderFarm() {
-  if (!farmActiveDay) farmActiveDay = FARM_DAY_ORDER[new Date().getDay()];
+  if (!farmActiveDay) farmActiveDay = JS_DAY_INDEX[new Date().getDay()];
   const general = _farmData.filter(f => (f['Dia']||'').toString().trim().toLowerCase() === 'general');
 
   let html = '';
