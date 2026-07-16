@@ -74,6 +74,7 @@ body {
   margin-bottom: 1.1rem; font-size: .85rem; line-height: 1.55;
 }
 .intro-note b { display: block; font-family: 'Cormorant', serif; font-style: italic; font-size: 1.1rem; margin-bottom: .35rem; font-weight: 500; }
+.welcome-title { display: block; font-family: 'Jost', sans-serif; font-style: normal; font-size: 1.5rem; font-weight: 600; margin-bottom: .5rem; letter-spacing: .01em; }
 .sec-lbl { font-size: .65rem; letter-spacing: .16em; text-transform: uppercase; color: var(--tm); margin: 1.1rem 0 .6rem 0.1rem; }
 .sec-lbl:first-child { margin-top: 0; }
 
@@ -141,6 +142,11 @@ body {
     <button class="btn-lang" onclick="toggleLang()" id="lang-btn">ES</button>
   </div>
   <div class="main">
+    <div class="intro-note">
+      <b class="welcome-title"><span data-en>Welcome to Tierramor.</span><span data-es>Bienvenido a Tierramor.</span></b>
+      <span data-en>You've arrived at a living land — 800 acres of regenerative practice, biophilic design, and daily life shared with intention. Whether you're here to rest, to build, or to be part of our residency community, we're glad you're on this ground with us.</span>
+      <span data-es>Has llegado a una tierra viva — 800 acres de práctica regenerativa, diseño biofílico y vida cotidiana compartida con intención. Ya sea que estés aquí para descansar, para construir, o para ser parte de nuestra comunidad de residencia, nos alegra tenerte en esta tierra con nosotros.</span>
+    </div>
     <button class="mod-btn" onclick="show('view-farm')" style="border-left-color:var(--blue);">
       <div><h3><span data-en>Today at the Farm</span><span data-es>Hoy en la Finca</span></h3><p><span data-en>What's happening today</span><span data-es>Qué está pasando hoy</span></p></div>
       <span class="arr">›</span>
@@ -459,14 +465,18 @@ async function loadMenu() {
 function renderMenu() {
   const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const todayKeyEn = dayNames[new Date().getDay()];
+  const general = _menuData.filter(m => (m['Dia']||'').toString().trim().toLowerCase() === 'general');
   const aplica = _menuData.filter(m => {
     const d = (m['Dia']||'').toString().trim().toLowerCase();
-    return !d || d === 'todos los días' || d === 'every day' || d === todayKeyEn.toLowerCase();
+    return d !== 'general' && (!d || d === 'todos los días' || d === 'every day' || d === todayKeyEn.toLowerCase());
   });
   const categorias = [...new Set(aplica.map(m => m['Categoria'] || 'Menu'))];
   let html = '';
+  general.forEach(g => {
+    html += `<div class="intro-note"><b>${escapeHtml(fieldByLang(g,'Nombre'))}</b>${escapeHtml(fieldByLang(g,'Descripcion'))}</div>`;
+  });
   if (!aplica.length) {
-    html = `<div class="cs"><p>${lang==='es' ? 'El menú estará disponible pronto.' : 'Menu coming soon.'}</p></div>`;
+    html += `<div class="cs"><p>${lang==='es' ? 'El menú estará disponible pronto.' : 'Menu coming soon.'}</p></div>`;
   } else {
     categorias.forEach(cat => {
       html += `<div class="sec-lbl">${escapeHtml(cat)}</div>`;
