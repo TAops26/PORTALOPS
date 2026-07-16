@@ -115,6 +115,8 @@ body {
 .day-activity-time { font-size: .68rem; color: rgba(255,255,255,0.75); margin: .15rem 0 .3rem; }
 .day-activity-desc { font-size: .78rem; color: rgba(255,255,255,0.88); line-height: 1.5; }
 .day-empty { font-size: .82rem; color: rgba(255,255,255,0.8); font-style: italic; }
+.day-menu-cat { font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,0.65); margin: .8rem 0 .4rem; }
+.day-menu-cat:first-child { margin-top: 0; }
 .day-hint { text-align: center; font-size: .68rem; color: var(--tm); margin: .2rem 0 1.1rem; font-style: italic; }
 .sec-lbl:first-child { margin-top: 0; }
 
@@ -485,8 +487,68 @@ const FARM_DAY_ABBR_ES  = { Sunday:'Dom', Monday:'Lun', Tuesday:'Mar', Wednesday
 const FARM_DAY_FULL_EN  = { Sunday:'Sunday', Monday:'Monday', Tuesday:'Tuesday', Wednesday:'Wednesday', Thursday:'Thursday', Friday:'Friday', Saturday:'Saturday' };
 const FARM_DAY_FULL_ES  = { Sunday:'Domingo', Monday:'Lunes', Tuesday:'Martes', Wednesday:'Miércoles', Thursday:'Jueves', Friday:'Viernes', Saturday:'Sábado' };
 
+// ── Carrusel de días compartido (Today at the Farm y Menu usan el mismo
+// módulo visual/UX: swipe, día activo grande con color de la paleta, el
+// resto reducido a solo su abreviación). ──
+
+// Arma el HTML del carrusel completo. `contentBuilder(day, fullName)` debe
+// devolver el HTML interno de la tarjeta grande para ese día específico.
+function renderDayCarouselHtml_(trackId, activeDay, contentBuilder) {
+  let html = `<div class="day-carousel-wrap"><div class="day-carousel" id="${trackId}"><div class="day-spacer"></div>`;
+  FARM_DAY_ORDER.forEach(day => {
+    const isActive = day === activeDay;
+    const color = FARM_DAY_COLORS[day];
+    const abbr = lang === 'es' ? FARM_DAY_ABBR_ES[day] : FARM_DAY_ABBR_EN[day];
+    const full = lang === 'es' ? FARM_DAY_FULL_ES[day] : FARM_DAY_FULL_EN[day];
+    html += `<div class="day-card${isActive ? ' active' : ''}" data-day="${day}" style="--day-color:${color};">
+      <div class="day-abbr">${abbr}</div>
+      <div class="day-detail">${contentBuilder(day, full)}</div>
+    </div>`;
+  });
+  html += `<div class="day-spacer"></div></div></div>`;
+  html += `<div class="day-hint">${lang === 'es' ? 'Desliza para ver otros días' : 'Swipe to see other days'}</div>`;
+  return html;
+}
+
+// Conecta el swipe: espera a que el scroll se detenga (~120ms sin
+// movimiento) y centra suavemente el día que quedó más cerca del centro.
+const _dayCarouselScrollTimers = {};
+function setupDayCarousel_(trackId, getActiveDay, setActiveDay) {
+  const track = document.getElementById(trackId);
+  if (!track) return;
+  requestAnimationFrame(() => scrollDayIntoView_(trackId, getActiveDay(), false));
+
+  track.onscroll = () => {
+    clearTimeout(_dayCarouselScrollTimers[trackId]);
+    _dayCarouselScrollTimers[trackId] = setTimeout(() => {
+      const containerRect = track.getBoundingClientRect();
+      const center = containerRect.left + containerRect.width / 2;
+      let closest = null, closestDist = Infinity;
+      track.querySelectorAll('.day-card').forEach(card => {
+        const r = card.getBoundingClientRect();
+        const dist = Math.abs((r.left + r.width / 2) - center);
+        if (dist < closestDist) { closestDist = dist; closest = card; }
+      });
+      if (closest && closest.dataset.day !== getActiveDay()) {
+        setActiveDay(closest.dataset.day);
+        track.querySelectorAll('.day-card').forEach(c => c.classList.toggle('active', c === closest));
+        scrollDayIntoView_(trackId, closest.dataset.day, true);
+      }
+    }, 120);
+  };
+}
+
+function scrollDayIntoView_(trackId, day, smooth) {
+  const track = document.getElementById(trackId);
+  if (!track) return;
+  const card = track.querySelector(`.day-card[data-day="${day}"]`);
+  if (!card) return;
+  const target = card.offsetLeft - (track.clientWidth - card.offsetWidth) / 2;
+  track.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' });
+}
+
+// ── TODAY AT THE FARM ──
 let farmActiveDay = null; // se fija en el día de hoy la primera vez que se entra a la pantalla
-let _farmScrollTimer = null;
 
 function renderFarm() {
   if (!farmActiveDay) farmActiveDay = JS_DAY_INDEX[new Date().getDay()];
@@ -497,106 +559,70 @@ function renderFarm() {
     html += `<div class="intro-note"><b>${escapeHtml(fieldByLang(g,'Titulo'))}</b>${escapeHtml(fieldByLang(g,'Descripcion'))}</div>`;
   });
 
-  html += `<div class="day-carousel-wrap"><div class="day-carousel" id="day-carousel"><div class="day-spacer"></div>`;
-  FARM_DAY_ORDER.forEach(day => {
-    const isActive = day === farmActiveDay;
-    const color = FARM_DAY_COLORS[day];
+  html += renderDayCarouselHtml_('day-carousel', farmActiveDay, (day, full) => {
     const items = _farmData.filter(f => (f['Dia']||'').toString().trim().toLowerCase() === day.toLowerCase())
       .sort((a,b) => (parseInt(a['Orden'])||0) - (parseInt(b['Orden'])||0));
-    const abbr = lang === 'es' ? FARM_DAY_ABBR_ES[day] : FARM_DAY_ABBR_EN[day];
-    const full = lang === 'es' ? FARM_DAY_FULL_ES[day] : FARM_DAY_FULL_EN[day];
-    let detailHtml;
+    let inner = `<div class="day-full-name">${full}</div>`;
     if (!items.length) {
-      detailHtml = `<div class="day-empty">${lang === 'es' ? 'Sin actividades programadas' : 'No activities scheduled'}</div>`;
+      inner += `<div class="day-empty">${lang === 'es' ? 'Sin actividades programadas' : 'No activities scheduled'}</div>`;
     } else {
-      detailHtml = items.map(item => `<div class="day-activity">
+      inner += items.map(item => `<div class="day-activity">
         <div class="day-activity-title">${escapeHtml(fieldByLang(item,'Titulo'))}</div>
         ${item['Hora'] ? `<div class="day-activity-time">${escapeHtml(item['Hora'])}</div>` : ''}
         <div class="day-activity-desc">${escapeHtml(fieldByLang(item,'Descripcion'))}</div>
       </div>`).join('');
     }
-    html += `<div class="day-card${isActive ? ' active' : ''}" data-day="${day}" style="--day-color:${color};">
-      <div class="day-abbr">${abbr}</div>
-      <div class="day-detail">
-        <div class="day-full-name">${full}</div>
-        ${detailHtml}
-      </div>
-    </div>`;
+    return inner;
   });
-  html += `<div class="day-spacer"></div></div></div>`;
-  html += `<div class="day-hint">${lang === 'es' ? 'Desliza para ver otros días' : 'Swipe to see other days'}</div>`;
 
   document.getElementById('farm-body').innerHTML = html;
-  setupFarmCarousel_();
+  setupDayCarousel_('day-carousel', () => farmActiveDay, (d) => { farmActiveDay = d; });
 }
-
-function setupFarmCarousel_() {
-  const track = document.getElementById('day-carousel');
-  if (!track) return;
-  requestAnimationFrame(() => scrollFarmDayIntoView_(farmActiveDay, false));
-
-  track.onscroll = () => {
-    clearTimeout(_farmScrollTimer);
-    _farmScrollTimer = setTimeout(() => {
-      const containerRect = track.getBoundingClientRect();
-      const center = containerRect.left + containerRect.width / 2;
-      let closest = null, closestDist = Infinity;
-      track.querySelectorAll('.day-card').forEach(card => {
-        const r = card.getBoundingClientRect();
-        const dist = Math.abs((r.left + r.width / 2) - center);
-        if (dist < closestDist) { closestDist = dist; closest = card; }
-      });
-      if (closest && closest.dataset.day !== farmActiveDay) {
-        farmActiveDay = closest.dataset.day;
-        track.querySelectorAll('.day-card').forEach(c => c.classList.toggle('active', c === closest));
-        scrollFarmDayIntoView_(farmActiveDay, true);
-      }
-    }, 120);
-  };
-}
-
-function scrollFarmDayIntoView_(day, smooth) {
-  const track = document.getElementById('day-carousel');
-  if (!track) return;
-  const card = track.querySelector(`.day-card[data-day="${day}"]`);
-  if (!card) return;
-  const target = card.offsetLeft - (track.clientWidth - card.offsetWidth) / 2;
-  track.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' });
-}
-
 
 // ── MENU ──
+let menuActiveDay = null;
+
 async function loadMenu() {
   const res = await apiGet('get_menu');
   _menuData = (res.ok && res.items) ? res.items : [];
   renderMenu();
 }
 function renderMenu() {
-  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const todayKeyEn = dayNames[new Date().getDay()];
+  if (!menuActiveDay) menuActiveDay = JS_DAY_INDEX[new Date().getDay()];
   const general = _menuData.filter(m => (m['Dia']||'').toString().trim().toLowerCase() === 'general');
-  const aplica = _menuData.filter(m => {
-    const d = (m['Dia']||'').toString().trim().toLowerCase();
-    return d !== 'general' && (!d || d === 'todos los días' || d === 'every day' || d === todayKeyEn.toLowerCase());
-  });
-  const categorias = [...new Set(aplica.map(m => m['Categoria'] || 'Menu'))];
+
   let html = '';
   general.forEach(g => {
     html += `<div class="intro-note"><b>${escapeHtml(fieldByLang(g,'Nombre'))}</b>${escapeHtml(fieldByLang(g,'Descripcion'))}</div>`;
   });
-  if (!aplica.length) {
-    html += `<div class="cs"><p>${lang==='es' ? 'El menú estará disponible pronto.' : 'Menu coming soon.'}</p></div>`;
-  } else {
-    categorias.forEach(cat => {
-      html += `<div class="sec-lbl">${escapeHtml(cat)}</div>`;
-      aplica.filter(m => (m['Categoria']||'Menu') === cat)
-        .sort((a,b) => (parseInt(a['Orden'])||0) - (parseInt(b['Orden'])||0))
-        .forEach(item => {
-          html += `<div class="card"><h3>${escapeHtml(fieldByLang(item,'Nombre'))}</h3><p>${escapeHtml(fieldByLang(item,'Descripcion'))}</p></div>`;
-        });
+
+  html += renderDayCarouselHtml_('menu-day-carousel', menuActiveDay, (day, full) => {
+    const items = _menuData.filter(m => {
+      const d = (m['Dia']||'').toString().trim().toLowerCase();
+      return d !== 'general' && (!d || d === 'todos los días' || d === 'every day' || d === day.toLowerCase());
     });
-  }
+    let inner = `<div class="day-full-name">${full}</div>`;
+    if (!items.length) {
+      inner += `<div class="day-empty">${lang === 'es' ? 'Menú no disponible' : 'Menu not available'}</div>`;
+    } else {
+      const categorias = [...new Set(items.map(m => m['Categoria'] || 'Menu'))];
+      categorias.forEach(cat => {
+        inner += `<div class="day-menu-cat">${escapeHtml(cat)}</div>`;
+        items.filter(m => (m['Categoria']||'Menu') === cat)
+          .sort((a,b) => (parseInt(a['Orden'])||0) - (parseInt(b['Orden'])||0))
+          .forEach(item => {
+            inner += `<div class="day-activity">
+              <div class="day-activity-title">${escapeHtml(fieldByLang(item,'Nombre'))}</div>
+              <div class="day-activity-desc">${escapeHtml(fieldByLang(item,'Descripcion'))}</div>
+            </div>`;
+          });
+      });
+    }
+    return inner;
+  });
+
   document.getElementById('menu-body').innerHTML = html;
+  setupDayCarousel_('menu-day-carousel', () => menuActiveDay, (d) => { menuActiveDay = d; });
 }
 
 // ── TOURS ──
