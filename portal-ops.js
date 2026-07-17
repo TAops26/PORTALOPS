@@ -877,7 +877,7 @@ const DEPTS = {
     reports: [
       { label:'Reporte de Área',        form:'reporte-area', cls:'' },
       { label:'Repaso de Habitaciones', form:'repaso-hab',   cls:'' },
-      { label:'Reporte de Avería',      form:'averia',       cls:'averia' },
+      { label:'Oportunidad de Mejora y Averías', form:'averia',       cls:'averia' },
     ]
   },
   mantenimiento: {
@@ -902,7 +902,7 @@ const DEPTS = {
     reports: [
       { label:'Solicitud de Herramientas', form:'herramientas',  cls:'' },
       { label:'Uso de Cuadraciclo',        form:'cuadraciclo',   cls:'' },
-      { label:'Reporte de Avería',         form:'averia',        cls:'averia' },
+      { label:'Oportunidad de Mejora y Averías', form:'averia',        cls:'averia' },
     ]
   },
   seguridad: {
@@ -1701,7 +1701,7 @@ function openForm(formId) {
        </div>
        <div class="fg"><label>Observaciones</label>${aw('obs','Anomalías, fugas o situaciones a reportar...')}</div>
        ${photoUploadWidget('form-photos')}` },
-    averia: { title:'Reporte de Avería', dept: CD||'mantenimiento', btnCls:'averia', html:
+    averia: { title:'Oportunidad de Mejora y Averías', dept: CD||'mantenimiento', btnCls:'averia', html:
       `<div class="doc-note" style="margin-bottom:1rem;"> Reporta averías o fallas que requieren atención.</div>
        <div class="fg"><label>Colaborador</label>${all}</div>
        <div class="fg"><label>Fecha</label><input type="date" id="f-fecha" value="${today}"></div>
