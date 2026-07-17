@@ -1641,6 +1641,7 @@ function openForm(formId) {
          <option>Baños de Madera</option><option>Baños de Teca</option><option>Baños de Bahareque</option>
          <option>Duchas de Bahareque</option><option>Deck de Piscina</option><option>Casita Azul</option>
          <option>Lavandería</option><option>Terralab y Bodega</option><option>Oficina</option>
+         <option>Lavado de tubos de baño</option>
        </select></div>
        <div class="fg"><label>Estado del área</label><select id="f-estado">
          <option value="Completada"> Completada</option>
