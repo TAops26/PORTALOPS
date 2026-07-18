@@ -282,8 +282,8 @@ body {
   </div>
   <div class="main">
     <div class="intro-note">
-      <span data-en>Laundry service is $10 USD per kilo, charged to your room.</span>
-      <span data-es>El servicio de lavandería tiene un costo de $10 USD por kilo, cargado a tu habitación.</span>
+      <span data-en>Laundry service is $10 USD per kilo.</span>
+      <span data-es>El servicio de lavandería tiene un costo de $10 USD por kilo.</span>
     </div>
     <div class="fg"><label><span data-en>Your Name</span><span data-es>Tu Nombre</span></label><input type="text" id="lv-nombre" placeholder="John Smith"></div>
     <div class="fg"><label><span data-en>Room</span><span data-es>Habitación</span></label><input type="text" id="lv-habitacion" placeholder="Toensmeier"></div>
@@ -303,21 +303,35 @@ body {
     <button class="btn-lang" onclick="toggleLang()">ES</button>
   </div>
   <div class="main">
+    <div class="intro-note">
+      <span data-en>$30 round trip to Guiones. One-way trips are also $30.</span>
+      <span data-es>$30 ida y vuelta a Guiones. Los viajes de solo ida o solo regreso también cuestan $30.</span>
+    </div>
     <div class="fg"><label><span data-en>Your Name</span><span data-es>Tu Nombre</span></label><input type="text" id="tp-nombre" placeholder="John Smith"></div>
     <div class="fg"><label><span data-en>Room</span><span data-es>Habitación</span></label><input type="text" id="tp-habitacion" placeholder="Toensmeier"></div>
-    <div class="fg"><label><span data-en>Destination</span><span data-es>Destino</span></label><input type="text" id="tp-destino" placeholder="Nosara"></div>
-    <div class="frow" style="display:flex;gap:.65rem;">
-      <div class="fg" style="flex:1;"><label><span data-en>Date</span><span data-es>Fecha</span></label><input type="date" id="tp-fecha"></div>
-      <div class="fg" style="flex:1;"><label><span data-en>Time</span><span data-es>Hora</span></label><input type="time" id="tp-hora"></div>
-    </div>
-    <div class="fg"><label><span data-en>Number of People</span><span data-es>Cantidad de Personas</span></label><input type="number" id="tp-personas" min="1" value="1"></div>
-    <div class="fg">
-      <label><span data-en>Round Trip?</span><span data-es>¿Ida y Vuelta?</span></label>
-      <select id="tp-idayvuelta">
-        <option value="Sí"><span data-en>Yes</span></option>
-        <option value="No">No</option>
+    <div class="fg"><label><span data-en>Trip Type</span><span data-es>Tipo de Viaje</span></label>
+      <select id="tp-tipo" onchange="toggleTransportFields()">
+        <option value="Ida y vuelta" id="tp-opt-roundtrip"></option>
+        <option value="Solo ida" id="tp-opt-oneway-go"></option>
+        <option value="Solo regreso" id="tp-opt-oneway-return"></option>
       </select>
     </div>
+    <div class="fg" id="tp-salida-wrapper">
+      <label><span data-en>Depart Tierramor at</span><span data-es>Salida de Tierramor</span></label>
+      <select id="tp-salida">
+        <option value="8:30 AM">8:30 AM</option>
+        <option value="1:30 PM">1:30 PM</option>
+      </select>
+    </div>
+    <div class="fg" id="tp-regreso-wrapper">
+      <label><span data-en>Return from Guiones at</span><span data-es>Regreso desde Guiones</span></label>
+      <select id="tp-regreso">
+        <option value="11:30 AM">11:30 AM</option>
+        <option value="5:00 PM">5:00 PM</option>
+      </select>
+    </div>
+    <div class="fg"><label><span data-en>Date</span><span data-es>Fecha</span></label><input type="date" id="tp-fecha"></div>
+    <div class="fg"><label><span data-en>Number of People</span><span data-es>Cantidad de Personas</span></label><input type="number" id="tp-personas" min="1" value="1"></div>
     <div class="fg"><label><span data-en>Notes</span><span data-es>Notas</span></label><textarea id="tp-notas" placeholder="..."></textarea></div>
     <button class="btn-submit" id="tp-btn" onclick="submitTransportRequest()"><span data-en>Send Request</span><span data-es>Enviar Solicitud</span></button>
     <div class="err-msg" id="tp-err"></div>
@@ -442,6 +456,7 @@ function toggleLang() {
   const optLimp  = document.getElementById('opt-limp');
   if (optManto) optManto.textContent = lang === 'es' ? 'Mantenimiento' : 'Maintenance';
   if (optLimp)  optLimp.textContent  = lang === 'es' ? 'Limpieza' : 'Housekeeping';
+  updateTransportLabels_();
   // Re-renderiza el contenido bilingüe ya cargado (sin volver a pedirlo al servidor)
   if (_farmData) renderFarm();
   if (_menuData) renderMenu();
@@ -702,25 +717,55 @@ async function submitLaundryRequest() {
 }
 
 // ── TRANSPORTATION ──
+// Muestra/oculta la hora de salida y/o regreso según el tipo de viaje
+// elegido (round trip necesita ambas, one-way solo la que aplica).
+function toggleTransportFields() {
+  const tipo = document.getElementById('tp-tipo').value;
+  const salidaWrap  = document.getElementById('tp-salida-wrapper');
+  const regresoWrap = document.getElementById('tp-regreso-wrapper');
+  salidaWrap.style.display  = (tipo === 'Ida y vuelta' || tipo === 'Solo ida')     ? 'block' : 'none';
+  regresoWrap.style.display = (tipo === 'Ida y vuelta' || tipo === 'Solo regreso') ? 'block' : 'none';
+}
+
+// Traduce las opciones del select de Tipo de Viaje (los <option> no admiten
+// spans anidados, así que se actualizan por JS igual que el select de
+// departamento en Report an Issue).
+function updateTransportLabels_() {
+  const roundtrip = document.getElementById('tp-opt-roundtrip');
+  const onewayGo   = document.getElementById('tp-opt-oneway-go');
+  const onewayBack = document.getElementById('tp-opt-oneway-return');
+  if (!roundtrip) return;
+  if (lang === 'es') {
+    roundtrip.textContent = 'Ida y Vuelta';
+    onewayGo.textContent   = 'Solo Ida (a Guiones)';
+    onewayBack.textContent = 'Solo Regreso (a Tierramor)';
+  } else {
+    roundtrip.textContent = 'Round Trip';
+    onewayGo.textContent   = 'One-way (to Guiones)';
+    onewayBack.textContent = 'One-way (return to Tierramor)';
+  }
+}
+
 async function submitTransportRequest() {
   const nombre = document.getElementById('tp-nombre').value.trim();
   const habitacion = document.getElementById('tp-habitacion').value.trim();
-  const destino = document.getElementById('tp-destino').value.trim();
-  if (!nombre || !habitacion || !destino) { alert(lang==='es' ? 'Por favor completa nombre, habitación y destino.' : 'Please fill in name, room, and destination.'); return; }
+  const tipo = document.getElementById('tp-tipo').value;
+  if (!nombre || !habitacion) { alert(lang==='es' ? 'Por favor completa tu nombre y habitación.' : 'Please fill in your name and room.'); return; }
   const btn = document.getElementById('tp-btn'); btn.disabled = true;
   const res = await apiPost({ type:'transport_request', datos: {
-    nombre, habitacion, destino,
+    nombre, habitacion,
+    tipoViaje: tipo,
+    horaSalida:  (tipo === 'Ida y vuelta' || tipo === 'Solo ida')     ? document.getElementById('tp-salida').value  : '',
+    horaRegreso: (tipo === 'Ida y vuelta' || tipo === 'Solo regreso') ? document.getElementById('tp-regreso').value : '',
     fecha: document.getElementById('tp-fecha').value,
-    hora: document.getElementById('tp-hora').value,
     personas: document.getElementById('tp-personas').value,
-    idaYVuelta: document.getElementById('tp-idayvuelta').value,
     notas: document.getElementById('tp-notas').value,
   }});
   btn.disabled = false;
   if (res.ok) {
     document.getElementById('tp-err').style.display = 'none';
     document.getElementById('tp-ok').style.display = 'block';
-    document.getElementById('tp-nombre').value=''; document.getElementById('tp-habitacion').value=''; document.getElementById('tp-destino').value=''; document.getElementById('tp-notas').value='';
+    document.getElementById('tp-nombre').value=''; document.getElementById('tp-habitacion').value=''; document.getElementById('tp-notas').value='';
   } else {
     document.getElementById('tp-err').textContent = (res.error || (lang==='es'?'Error al enviar.':'Could not send.'));
     document.getElementById('tp-err').style.display = 'block';
@@ -789,6 +834,11 @@ function renderEmergency() {
   });
   document.getElementById('emergency-body').innerHTML = html;
 }
+
+// Inicialización de la pantalla de Transportation (etiquetas del select y
+// visibilidad de los campos de hora según el tipo de viaje por defecto).
+updateTransportLabels_();
+toggleTransportFields();
 </script>
 </body>
 </html>
