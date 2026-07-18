@@ -217,6 +217,10 @@ body {
       <div><h3>Internet</h3><p><span data-en>WiFi networks</span><span data-es>Redes de WiFi</span></p></div>
       <span class="arr">›</span>
     </button>
+    <button class="mod-btn" onclick="openMapModal()" style="border-left-color:#8a6a52;">
+      <div><h3><span data-en>Property Map</span><span data-es>Mapa de la Propiedad</span></h3></div>
+      <span class="arr">›</span>
+    </button>
     <div class="page-footer"><img src="./Tierramor_Emblem-Brown.png" alt="Tierramor"></div>
   </div>
 </div>
@@ -461,9 +465,20 @@ body {
 <div class="modal-overlay" id="service-modal" onclick="if(event.target===this) closeServiceModal()">
   <div class="modal-box">
     <h3><span data-en>Request a Service</span><span data-es>Solicitar un Servicio</span></h3>
-    <button class="modal-opt" onclick="closeServiceModal(); show('view-laundry')"> <span data-en>Laundry</span><span data-es>Lavandería</span></button>
-    <button class="modal-opt" onclick="closeServiceModal(); show('view-transport')"> <span data-en>Transportation</span><span data-es>Transporte</span></button>
+    <button class="modal-opt" onclick="closeServiceModal(); show('view-laundry')"><span data-en>Laundry</span><span data-es>Lavandería</span></button>
+    <button class="modal-opt" onclick="closeServiceModal(); show('view-transport')"><span data-en>Transportation</span><span data-es>Transporte</span></button>
     <button class="modal-close" onclick="closeServiceModal()"><span data-en>Cancel</span><span data-es>Cancelar</span></button>
+  </div>
+</div>
+
+<!-- MAP MODAL -->
+<div class="modal-overlay" id="map-modal" onclick="if(event.target===this) closeMapModal()">
+  <div class="modal-box" style="max-width:92vw;width:92vw;padding:1rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+      <h3 style="margin-bottom:0;"><span data-en>Property Map</span><span data-es>Mapa de la Propiedad</span></h3>
+      <button onclick="closeMapModal()" style="background:none;border:none;color:var(--tm);font-size:1.4rem;cursor:pointer;line-height:1;padding:0;">×</button>
+    </div>
+    <img src="./WhatsApp%20Image%202026-07-17%20at%2014.54.30.jpeg" alt="Property Map" style="width:100%;height:auto;border-radius:10px;display:block;">
   </div>
 </div>
 
@@ -520,6 +535,8 @@ function toggleLang() {
 
 function openServiceModal() { document.getElementById('service-modal').classList.add('show'); }
 function closeServiceModal() { document.getElementById('service-modal').classList.remove('show'); }
+function openMapModal() { document.getElementById('map-modal').classList.add('show'); }
+function closeMapModal() { document.getElementById('map-modal').classList.remove('show'); }
 
 // ── API ──
 async function apiGet(action) {
