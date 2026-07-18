@@ -365,7 +365,7 @@ function renderSolicitudes(hoja, containerId, items) {
         <div style="font-size:.82rem;font-family:var(--font-sans);color:var(--cream);font-weight:500;margin-bottom:.15rem;">${escapeHtml(cfg.titulo(s))}</div>
         <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);">${escapeHtml(cfg.sub(s))}</div>
       </div>
-      <button onclick="marcarSolicitudCompletada('${hoja}','${idAttr}')" style="background:rgba(118,114,78,.2);border:1px solid rgba(118,114,78,.3);border-radius:8px;color:#A8A870;font-size:.65rem;padding:.35rem .65rem;cursor:pointer;flex-shrink:0;"></button>
+      <button onclick="marcarSolicitudCompletada('${hoja}','${idAttr}')" style="background:rgba(118,114,78,.2);border:1px solid rgba(118,114,78,.3);border-radius:8px;color:#A8A870;font-size:.65rem;padding:.35rem .65rem;cursor:pointer;flex-shrink:0;">Completada</button>
     </div>`;
   }).join('');
 }
@@ -1573,7 +1573,7 @@ function aw(id, ph) {
   return `<div class="aw">
     <textarea id="ta-${id}" placeholder="${ph}" style="width:100%;border:none;border-bottom:1px solid rgba(232,226,209,.1);padding:.7rem .85rem;font-size:.88rem;font-family:var(--font-sans);color:var(--cream);background:transparent;outline:none;resize:none;height:72px;line-height:1.5;"></textarea>
     <div class="bclr">
-      <button class="bmk" id="mic-${id}" onclick="toggleMic('${id}')"></button>
+      <button class="bmk" id="mic-${id}" onclick="toggleMic('${id}')">Dictar</button>
       <span id="ms-${id}" style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,.4);flex:1;"></span>
     </div>
   </div>`;
@@ -1581,20 +1581,20 @@ function aw(id, ph) {
 function toggleMic(wid) { if (activeRec&&activeRec.wid===wid){stopRec();return;} stopRec(); startRec(wid); }
 function startRec(wid) {
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if (!SR){setMs(wid,' Navegador no soporta dictado',false);return;}
+  if (!SR){setMs(wid,'Navegador no soporta dictado',false);return;}
   const rec=new SR(); rec.lang='es-CR'; rec.continuous=true; rec.interimResults=true;
   const btn=document.getElementById('mic-'+wid),ta=document.getElementById('ta-'+wid);
   if (!btn||!ta) return;
-  btn.classList.add('rec'); btn.innerHTML='Detener'; setMs(wid,' Grabando...',true);
+  btn.classList.add('rec'); btn.innerHTML='Detener'; setMs(wid,'Grabando...',true);
   let base=ta.value;
   rec.onresult=e=>{let fi='',in2='';for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)fi+=e.results[i][0].transcript+' ';else in2+=e.results[i][0].transcript;}if(fi)base+=fi;ta.value=base+in2;};
   rec.onerror=()=>{setMs(wid,'Error al grabar.',false);cleanMic(wid);activeRec=null;};
-  rec.onend=()=>{ta.value=base.trim();setMs(wid,' Guardado.',false);cleanMic(wid);activeRec=null;};
+  rec.onend=()=>{ta.value=base.trim();setMs(wid,'Guardado.',false);cleanMic(wid);activeRec=null;};
   rec.start(); activeRec={rec,wid}; btn.onclick=()=>stopRec();
 }
 function stopRec(){if(activeRec){try{activeRec.rec.stop();}catch(e){}cleanMic(activeRec.wid);activeRec=null;}}
 function setMs(wid,msg,on){const el=document.getElementById('ms-'+wid);if(!el)return;el.textContent=msg;on?el.classList.add('on'):el.classList.remove('on');}
-function cleanMic(wid){const b=document.getElementById('mic-'+wid);if(!b)return;b.classList.remove('rec');b.innerHTML='';b.onclick=()=>toggleMic(wid);}
+function cleanMic(wid){const b=document.getElementById('mic-'+wid);if(!b)return;b.classList.remove('rec');b.innerHTML='Dictar';b.onclick=()=>toggleMic(wid);}
 
 // ── FORMULARIOS GENÉRICOS (openForm / submitForm) ──
 
