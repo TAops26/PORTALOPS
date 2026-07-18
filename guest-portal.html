@@ -213,6 +213,10 @@ body {
       <div><h3><span data-en>Emergency Contacts</span><span data-es>Contactos de Emergencia</span></h3></div>
       <span class="arr">›</span>
     </button>
+    <button class="mod-btn" onclick="show('view-internet')" style="border-left-color:#5C7A78;">
+      <div><h3>Internet</h3><p><span data-en>WiFi networks</span><span data-es>Redes de WiFi</span></p></div>
+      <span class="arr">›</span>
+    </button>
     <div class="page-footer"><img src="./Tierramor_Emblem-Brown.png" alt="Tierramor"></div>
   </div>
 </div>
@@ -225,7 +229,7 @@ body {
     <button class="btn-lang" onclick="toggleLang()">ES</button>
   </div>
   <div class="main" id="farm-body">
-    <div class="cs"><div class="i">⏳</div><p><span data-en>Loading...</span><span data-es>Cargando...</span></p></div>
+    <div class="cs"><p><span data-en>Loading...</span><span data-es>Cargando...</span></p></div>
   </div>
 </div>
 
@@ -237,7 +241,7 @@ body {
     <button class="btn-lang" onclick="toggleLang()">ES</button>
   </div>
   <div class="main" id="menu-body">
-    <div class="cs"><div class="i">⏳</div><p><span data-en>Loading...</span><span data-es>Cargando...</span></p></div>
+    <div class="cs"><p><span data-en>Loading...</span><span data-es>Cargando...</span></p></div>
   </div>
 </div>
 
@@ -249,7 +253,7 @@ body {
     <button class="btn-lang" onclick="toggleLang()">ES</button>
   </div>
   <div class="main" id="tours-body">
-    <div class="cs"><div class="i">⏳</div><p><span data-en>Loading...</span><span data-es>Cargando...</span></p></div>
+    <div class="cs"><p><span data-en>Loading...</span><span data-es>Cargando...</span></p></div>
   </div>
 </div>
 
@@ -417,7 +421,39 @@ body {
     <button class="btn-lang" onclick="toggleLang()">ES</button>
   </div>
   <div class="main" id="emergency-body">
-    <div class="cs"><div class="i">⏳</div><p><span data-en>Loading...</span><span data-es>Cargando...</span></p></div>
+    <div class="cs"><p><span data-en>Loading...</span><span data-es>Cargando...</span></p></div>
+  </div>
+</div>
+
+<!-- INTERNET -->
+<div id="view-internet" class="screen">
+  <div class="header">
+    <button class="btn-bk" onclick="show('view-home')">←</button>
+    <div class="header-text"><h1>Internet</h1></div>
+    <button class="btn-lang" onclick="toggleLang()">ES</button>
+  </div>
+  <div class="main">
+    <div class="sec-lbl"><span data-en>WiFi Networks</span><span data-es>Redes de WiFi</span></div>
+    <div class="card">
+      <h3>Wooden Casitas</h3>
+      <p>Toensmeier, Hemenway, Primavesi, Salatin</p>
+    </div>
+    <div class="card">
+      <h3>Regenerations</h3>
+      <p>Shiva, Savory, Yeomans, Fukuoka, Mollison</p>
+    </div>
+    <div class="card">
+      <h3>Residents Kitchen</h3>
+      <p>Götsch, Holzer, Ingham, <span data-en>Residents Kitchen</span><span data-es>Cocina de Residentes</span></p>
+    </div>
+    <div class="card">
+      <h3>Tierramor Mesh</h3>
+      <p><span data-en>Office</span><span data-es>Oficina</span>, Terralab, Juice Bar</p>
+    </div>
+    <div class="card">
+      <h3>Lounge</h3>
+      <p>Lounge, <span data-en>Temple</span><span data-es>Templo</span>, <span data-en>Kitchen</span><span data-es>Cocina</span></p>
+    </div>
   </div>
 </div>
 
