@@ -286,7 +286,16 @@ body {
       <span data-es>El servicio de lavandería tiene un costo de $10 USD por kilo.</span>
     </div>
     <div class="fg"><label><span data-en>Your Name</span><span data-es>Tu Nombre</span></label><input type="text" id="lv-nombre" placeholder="John Smith"></div>
-    <div class="fg"><label><span data-en>Room</span><span data-es>Habitación</span></label><input type="text" id="lv-habitacion" placeholder="Toensmeier"></div>
+    <div class="fg"><label><span data-en>Room</span><span data-es>Habitación</span></label>
+      <select id="lv-habitacion">
+        <option value="">— Select your room —</option>
+        <option>Toensmeier</option><option>Hemenway</option><option>Primavesi</option><option>Salatin</option>
+        <option>Shiva</option><option>Savory</option><option>Yeomans</option><option>Fukuoka</option>
+        <option>Mollison</option><option>Lancaster</option><option>Götsch</option><option>Holzer</option>
+        <option>Ingham</option><option>Carson</option><option>Starhawk</option><option>Crawford</option>
+        <option>Einsestein</option><option>Doherty</option><option>Macy</option>
+      </select>
+    </div>
     <div class="fg"><label><span data-en>Pickup Time</span><span data-es>Hora de Recogida</span></label><input type="time" id="lv-hora"></div>
     <div class="fg"><label><span data-en>Details</span><span data-es>Detalles</span></label><textarea id="lv-detalles" placeholder="Number of items, special instructions..."></textarea></div>
     <button class="btn-submit" id="lv-btn" onclick="submitLaundryRequest()"><span data-en>Send Request</span><span data-es>Enviar Solicitud</span></button>
@@ -308,7 +317,16 @@ body {
       <span data-es>$30 ida y vuelta a Guiones. Los viajes de solo ida o solo regreso también cuestan $30.</span>
     </div>
     <div class="fg"><label><span data-en>Your Name</span><span data-es>Tu Nombre</span></label><input type="text" id="tp-nombre" placeholder="John Smith"></div>
-    <div class="fg"><label><span data-en>Room</span><span data-es>Habitación</span></label><input type="text" id="tp-habitacion" placeholder="Toensmeier"></div>
+    <div class="fg"><label><span data-en>Room</span><span data-es>Habitación</span></label>
+      <select id="tp-habitacion">
+        <option value="">— Select your room —</option>
+        <option>Toensmeier</option><option>Hemenway</option><option>Primavesi</option><option>Salatin</option>
+        <option>Shiva</option><option>Savory</option><option>Yeomans</option><option>Fukuoka</option>
+        <option>Mollison</option><option>Lancaster</option><option>Götsch</option><option>Holzer</option>
+        <option>Ingham</option><option>Carson</option><option>Starhawk</option><option>Crawford</option>
+        <option>Einsestein</option><option>Doherty</option><option>Macy</option>
+      </select>
+    </div>
     <div class="fg"><label><span data-en>Trip Type</span><span data-es>Tipo de Viaje</span></label>
       <select id="tp-tipo" onchange="toggleTransportFields()">
         <option value="Ida y vuelta" id="tp-opt-roundtrip"></option>
