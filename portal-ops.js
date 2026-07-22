@@ -176,10 +176,11 @@ function renderGuestReports(reportes) {
     const desc    = escapeHtml(r.descripcion || 'Sin descripción');
     const area    = escapeHtml(r.area || '');
     const fecha   = escapeHtml(fechaStr);
+    const nombreLinea = r.nombre_huesped ? `${escapeHtml(r.nombre_huesped)} · ` : '';
     return `<div class="rbtn" style="border-left-color:#717F7E;cursor:pointer;" id="gr-row-${idAttr}" onclick="openGuestModal('${idAttr}')">
       <div style="flex:1;">
         <div style="font-size:.82rem;font-family:var(--font-sans);color:var(--cream);font-weight:500;margin-bottom:.15rem;">${desc}</div>
-        <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);">${area} · ${fecha}</div>
+        <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);">${nombreLinea}${area} · ${fecha}</div>
       </div>
       <span class="arr">›</span>
     </div>`;
@@ -192,6 +193,13 @@ function openGuestModal(id) {
   document.getElementById('guest-modal-desc').textContent  = r.descripcion || '—';
   document.getElementById('guest-modal-area').textContent  = r.area || '—';
   document.getElementById('guest-modal-fecha').textContent = r.timestamp ? r.timestamp.slice(0,10) : '—';
+  const nombreWrap = document.getElementById('guest-modal-nombre-wrap');
+  if (r.nombre_huesped) {
+    document.getElementById('guest-modal-nombre').textContent = r.nombre_huesped;
+    nombreWrap.style.display = '';
+  } else {
+    nombreWrap.style.display = 'none';
+  }
   const btn = document.getElementById('guest-modal-btn');
   btn.onclick = () => { completarGuestReport(id); closeGuestModal(); };
   document.getElementById('guest-modal').classList.add('show');
