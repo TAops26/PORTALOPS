@@ -1016,6 +1016,10 @@ input[style*="background:white"]::placeholder,
       <div style="font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;padding:.3rem .65rem;border-radius:20px;font-family:var(--font-sans);background:rgba(113,127,126,0.15);color:#8FACA9;"> Reporte de Huésped</div>
       <button onclick="closeGuestModal()" style="background:none;border:none;color:rgba(232,226,209,0.4);font-size:1.3rem;cursor:pointer;line-height:1;padding:0;">×</button>
     </div>
+    <div id="guest-modal-nombre-wrap" style="margin-bottom:.6rem;">
+      <span style="font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(232,226,209,0.4);">Huésped: </span>
+      <span id="guest-modal-nombre" style="font-size:.82rem;font-family:var(--font-sans);color:var(--cream);"></span>
+    </div>
     <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(232,226,209,0.09);border-radius:12px;padding:.9rem 1rem;margin-bottom:.85rem;">
       <div style="font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(232,226,209,0.4);margin-bottom:.3rem;">Descripción</div>
       <div id="guest-modal-desc" style="font-size:.85rem;font-family:var(--font-sans);color:rgba(232,226,209,0.85);line-height:1.5;"></div>
@@ -1090,6 +1094,6 @@ input[style*="background:white"]::placeholder,
   </div>
 </div>
 
-<script src="./portal-ops.js?v=6"></script>
+<script src="./portal-ops.js?v=7"></script>
 </body>
 </html>
