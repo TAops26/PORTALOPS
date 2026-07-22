@@ -271,7 +271,16 @@ body {
   <div class="main">
     <div class="fg"><label><span data-en>Tour</span><span data-es>Tour</span></label><input type="text" id="tr-tour" readonly></div>
     <div class="fg"><label><span data-en>Your Name</span><span data-es>Tu Nombre</span></label><input type="text" id="tr-nombre" placeholder="John Smith"></div>
-    <div class="fg"><label><span data-en>Room</span><span data-es>Habitación</span></label><input type="text" id="tr-habitacion" placeholder="Toensmeier"></div>
+    <div class="fg"><label><span data-en>Room</span><span data-es>Habitación</span></label>
+      <select id="tr-habitacion">
+        <option value="">— Select your room —</option>
+        <option>Toensmeier</option><option>Hemenway</option><option>Primavesi</option><option>Salatin</option>
+        <option>Shiva</option><option>Savory</option><option>Yeomans</option><option>Fukuoka</option>
+        <option>Mollison</option><option>Lancaster</option><option>Götsch</option><option>Holzer</option>
+        <option>Ingham</option><option>Carson</option><option>Starhawk</option><option>Crawford</option>
+        <option>Einsestein</option><option>Doherty</option><option>Macy</option>
+      </select>
+    </div>
     <div class="fg"><label><span data-en>Preferred Date</span><span data-es>Fecha Preferida</span></label><input type="date" id="tr-fecha"></div>
     <div class="fg"><label><span data-en>Number of People</span><span data-es>Cantidad de Personas</span></label><input type="number" id="tr-personas" min="1" value="1"></div>
     <div class="fg"><label><span data-en>Notes</span><span data-es>Notas</span></label><textarea id="tr-notas" placeholder="..."></textarea></div>
@@ -304,7 +313,10 @@ body {
         <option>Einsestein</option><option>Doherty</option><option>Macy</option>
       </select>
     </div>
-    <div class="fg"><label><span data-en>Pickup Time</span><span data-es>Hora de Recogida</span></label><input type="time" id="lv-hora"></div>
+    <div class="frow" style="display:flex;gap:.65rem;">
+      <div class="fg" style="flex:1;"><label><span data-en>Pickup Date</span><span data-es>Día de Recogida</span></label><input type="date" id="lv-fecha"></div>
+      <div class="fg" style="flex:1;"><label><span data-en>Pickup Time</span><span data-es>Hora de Recogida</span></label><input type="time" id="lv-hora"></div>
+    </div>
     <div class="fg"><label><span data-en>Details</span><span data-es>Detalles</span></label><textarea id="lv-detalles" placeholder="Number of items, special instructions..."></textarea></div>
     <button class="btn-submit" id="lv-btn" onclick="submitLaundryRequest()"><span data-en>Send Request</span><span data-es>Enviar Solicitud</span></button>
     <div class="err-msg" id="lv-err"></div>
@@ -373,6 +385,10 @@ body {
     <button class="btn-lang" onclick="toggleLang()">ES</button>
   </div>
   <div class="main">
+    <div class="fg">
+      <label><span data-en>Your Name</span><span data-es>Tu Nombre</span></label>
+      <input type="text" id="g-nombre" placeholder="John Smith">
+    </div>
     <div class="fg">
       <label><span data-en>Which team should handle this?</span><span data-es>¿Qué equipo debe atenderlo?</span></label>
       <select id="g-depto">
@@ -773,6 +789,7 @@ async function submitLaundryRequest() {
   const btn = document.getElementById('lv-btn'); btn.disabled = true;
   const res = await apiPost({ type:'laundry_request', datos: {
     nombre, habitacion,
+    fecha: document.getElementById('lv-fecha').value,
     hora: document.getElementById('lv-hora').value,
     detalles: document.getElementById('lv-detalles').value,
   }});
@@ -851,6 +868,7 @@ function toggleRoomSelect() {
   if (area !== 'My room') document.getElementById('g-room').value = '';
 }
 async function submitGuestReport() {
+  const nombre = document.getElementById('g-nombre').value.trim();
   const desc = document.getElementById('g-desc').value.trim();
   const area = document.getElementById('g-area').value;
   const depto = document.getElementById('g-depto').value;
@@ -864,12 +882,12 @@ async function submitGuestReport() {
 
   const btn = document.getElementById('g-btn'); btn.disabled = true;
   const res = await apiPost({ type:'guest_report', datos: {
-    descripcion: desc, area: areaFinal, departamento: depto, fecha: new Date().toISOString(),
+    nombre, descripcion: desc, area: areaFinal, departamento: depto, fecha: new Date().toISOString(),
   }});
   btn.disabled = false;
   if (res.ok) {
     document.getElementById('g-ok').style.display = 'block';
-    document.getElementById('g-desc').value = ''; document.getElementById('g-area').value = ''; toggleRoomSelect();
+    document.getElementById('g-nombre').value = ''; document.getElementById('g-desc').value = ''; document.getElementById('g-area').value = ''; toggleRoomSelect();
   } else {
     err.textContent = (res.error || (lang==='es'?'Error al enviar.':'Could not send.'));
     err.style.display = 'block';
