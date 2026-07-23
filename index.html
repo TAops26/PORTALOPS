@@ -1042,6 +1042,21 @@ input[style*="background:white"]::placeholder,
   </div>
 </div>
 
+<!-- SOLICITUD DETALLE MODAL (Lavandería/Transporte/Tours) -->
+<div class="modal-overlay" id="solicitud-detalle-modal" onclick="if(event.target===this) closeSolicitudDetalle()">
+  <div class="modal-box" style="text-align:left;max-width:380px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <div class="modal-title" id="solicitud-detalle-title" style="margin-bottom:0;font-size:1.2rem;"></div>
+      <button onclick="closeSolicitudDetalle()" style="background:none;border:none;color:rgba(232,226,209,0.4);font-size:1.3rem;cursor:pointer;line-height:1;padding:0;">×</button>
+    </div>
+    <div id="solicitud-detalle-body"></div>
+    <div class="modal-btns" style="margin-top:.5rem;">
+      <button class="mbtn-bk" onclick="closeSolicitudDetalle()">Cerrar</button>
+      <button class="mbtn-ok" id="solicitud-detalle-btn">Completada</button>
+    </div>
+  </div>
+</div>
+
 <!-- MEAL QR MODAL -->
 <div class="modal-overlay" id="meal-modal" onclick="if(event.target===this) closeMealModal()">
   <div class="modal-box" style="max-width:320px;">
@@ -1107,6 +1122,6 @@ input[style*="background:white"]::placeholder,
   </div>
 </div>
 
-<script src="./portal-ops.js?v=9"></script>
+<script src="./portal-ops.js?v=10"></script>
 </body>
 </html>
