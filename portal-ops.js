@@ -324,13 +324,39 @@ async function marcarAveriaCompletada(id) {
 const SOLICITUD_CONFIG = {
   'LAVANDERIA':     { action:'get_laundry_requests', color:'#8FACA9',
     titulo:(s)=> s['Nombre Huésped'] || '—',
-    sub:(s)=> `Hab. ${s['Habitación']||'—'}${s['Hora de Recogida']?' · '+s['Hora de Recogida']:''}` },
+    sub:(s)=> `Hab. ${s['Habitación']||'—'}${s['Hora de Recogida']?' · '+s['Hora de Recogida']:''}`,
+    detalle:(s)=> [
+      ['Nombre Huésped', s['Nombre Huésped']],
+      ['Habitación', s['Habitación']],
+      ['Fecha de Recogida', s['Fecha de Recogida']],
+      ['Hora de Recogida', s['Hora de Recogida']],
+      ['Detalles', s['Detalles']],
+    ] },
   'TRANSPORTE':     { action:'get_transport_requests', color:'#8FACA9',
     titulo:(s)=> s['Destino'] || '—',
-    sub:(s)=> `${s['Nombre Huésped']||''} · Hab. ${s['Habitación']||''}${s['Fecha']?' · '+s['Fecha']:''}${s['Hora']?' '+s['Hora']:''}` },
+    sub:(s)=> `${s['Nombre Huésped']||''} · Hab. ${s['Habitación']||''}${s['Fecha']?' · '+s['Fecha']:''}${s['Hora']?' '+s['Hora']:''}`,
+    detalle:(s)=> [
+      ['Nombre Huésped', s['Nombre Huésped']],
+      ['Habitación', s['Habitación']],
+      ['Destino', s['Destino']],
+      ['Tipo de Viaje', s['Tipo de Viaje']],
+      ['Salida de Tierramor', s['Hora Salida (Tierramor)']],
+      ['Regreso desde Guiones', s['Hora Regreso (Guiones)']],
+      ['Fecha', s['Fecha']],
+      ['Cantidad de Personas', s['Cantidad Personas']],
+      ['Notas', s['Notas']],
+    ] },
   'TOUR REQUESTS':  { action:'get_tour_requests', color:'#C17A5A',
     titulo:(s)=> s['Tour'] || '—',
-    sub:(s)=> `${s['Nombre Huésped']||''} · Hab. ${s['Habitación']||''}${s['Fecha Preferida']?' · '+s['Fecha Preferida']:''}` },
+    sub:(s)=> `${s['Nombre Huésped']||''} · Hab. ${s['Habitación']||''}${s['Fecha Preferida']?' · '+s['Fecha Preferida']:''}`,
+    detalle:(s)=> [
+      ['Nombre Huésped', s['Nombre Huésped']],
+      ['Habitación', s['Habitación']],
+      ['Tour', s['Tour']],
+      ['Fecha Preferida', s['Fecha Preferida']],
+      ['Cantidad de Personas', s['Cantidad Personas']],
+      ['Notas', s['Notas']],
+    ] },
 };
 
 async function loadSolicitudes(hoja, containerId) {
@@ -368,12 +394,12 @@ function renderSolicitudes(hoja, containerId, items) {
   }
   el.innerHTML = items.map(s => {
     const idAttr = escapeHtml(s.id);
-    return `<div class="rbtn" style="border-left-color:${cfg.color};" id="${prefix}${idAttr}">
+    return `<div class="rbtn" style="border-left-color:${cfg.color};cursor:pointer;" id="${prefix}${idAttr}" onclick="openSolicitudDetalle('${hoja}','${idAttr}')">
       <div style="flex:1;">
         <div style="font-size:.82rem;font-family:var(--font-sans);color:var(--cream);font-weight:500;margin-bottom:.15rem;">${escapeHtml(cfg.titulo(s))}</div>
         <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);">${escapeHtml(cfg.sub(s))}</div>
       </div>
-      <button onclick="marcarSolicitudCompletada('${hoja}','${idAttr}')" style="background:rgba(118,114,78,.2);border:1px solid rgba(118,114,78,.3);border-radius:8px;color:#A8A870;font-size:.65rem;padding:.35rem .65rem;cursor:pointer;flex-shrink:0;">Completada</button>
+      <button onclick="event.stopPropagation(); marcarSolicitudCompletada('${hoja}','${idAttr}')" style="background:rgba(118,114,78,.2);border:1px solid rgba(118,114,78,.3);border-radius:8px;color:#A8A870;font-size:.65rem;padding:.35rem .65rem;cursor:pointer;flex-shrink:0;">Completada</button>
     </div>`;
   }).join('');
 }
@@ -389,6 +415,31 @@ async function marcarSolicitudCompletada(hoja, id) {
     if (row) row.style.opacity = '1';
     alert('No se pudo marcar como completada: ' + (res.error || 'error desconocido') + '. Intenta de nuevo.');
   }
+}
+
+// Detalle completo de una solicitud (Lavandería/Transporte/Tour) — muestra
+// todos los campos guardados (fecha, hora, tipo de viaje, notas, etc.), no
+// solo el resumen de 2 líneas que se ve en la tarjeta.
+function openSolicitudDetalle(hoja, id) {
+  const s = window._solicitudesData?.[hoja]?.[id];
+  if (!s) return;
+  const cfg = SOLICITUD_CONFIG[hoja];
+  const campos = cfg.detalle(s).filter(([, v]) => v !== undefined && v !== null && String(v).trim() !== '');
+
+  document.getElementById('solicitud-detalle-title').textContent = cfg.titulo(s);
+  document.getElementById('solicitud-detalle-body').innerHTML = campos.map(([label, val]) => `
+    <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(232,226,209,0.09);border-radius:10px;padding:.7rem .8rem;margin-bottom:.5rem;">
+      <div style="font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(232,226,209,0.4);margin-bottom:.25rem;">${escapeHtml(label)}</div>
+      <div style="font-size:.82rem;font-family:var(--font-sans);color:var(--cream);line-height:1.4;">${escapeHtml(String(val))}</div>
+    </div>`).join('');
+
+  const btn = document.getElementById('solicitud-detalle-btn');
+  btn.onclick = () => { marcarSolicitudCompletada(hoja, id); closeSolicitudDetalle(); };
+
+  document.getElementById('solicitud-detalle-modal').classList.add('show');
+}
+function closeSolicitudDetalle() {
+  document.getElementById('solicitud-detalle-modal').classList.remove('show');
 }
 
 // ── AUTH / SESIÓN ──
