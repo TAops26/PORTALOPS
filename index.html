@@ -182,6 +182,7 @@ body::before {
   box-shadow: 0 2px 8px rgba(0,0,0,0.25) !important;
 }
 .actl.actl-blue { background: var(--blue) !important; }
+.actl.actl-green { background: var(--green) !important; }
 .sico {
   background: none; border: 1px solid rgba(232,226,209,0.18); border-radius: 8px;
   padding: 0.35rem 0.7rem; color: rgba(232,226,209,0.45);
@@ -1041,6 +1042,18 @@ input[style*="background:white"]::placeholder,
   </div>
 </div>
 
+<!-- MEAL QR MODAL -->
+<div class="modal-overlay" id="meal-modal" onclick="if(event.target===this) closeMealModal()">
+  <div class="modal-box" style="max-width:320px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <div class="modal-title" style="margin-bottom:0;">Meal QR</div>
+      <button onclick="closeMealModal()" style="background:none;border:none;color:rgba(232,226,209,0.4);font-size:1.3rem;cursor:pointer;line-height:1;padding:0;">×</button>
+    </div>
+    <div id="meal-modal-body" style="text-align:center;"></div>
+    <button class="mbtn-bk" style="width:100%;margin-top:1rem;" onclick="closeMealModal()">Cerrar</button>
+  </div>
+</div>
+
 <!-- CASITA POPUP (características, Mantenimiento) -->
 <div class="modal-overlay" id="casita-popup-modal" onclick="if(event.target===this) closeCasitaPopupMT()">
   <div class="modal-box" style="text-align:left;max-width:340px;">
@@ -1094,6 +1107,6 @@ input[style*="background:white"]::placeholder,
   </div>
 </div>
 
-<script src="./portal-ops.js?v=7"></script>
+<script src="./portal-ops.js?v=9"></script>
 </body>
 </html>
