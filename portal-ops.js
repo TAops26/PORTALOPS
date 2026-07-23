@@ -737,8 +737,21 @@ const DEPT_COLORES_GENERICOS = ['#717F7E', '#995C44', '#76724E', '#735145', '#5C
 // Convierte "produccion de alimentos" -> "Producción De Alimentos" (mejor
 // esfuerzo: no puede restituir tildes que ya se perdieron en la hoja, pero
 // al menos capitaliza cada palabra en vez de mostrar el texto plano).
+// Etiquetas "bien escritas" (con tildes) para departamentos nuevos ya
+// identificados — se puede seguir agregando una línea aquí cada vez que
+// aparezca un nombre nuevo que merezca una etiqueta prolija en vez de la
+// capitalización automática genérica.
+const ETIQUETAS_DEPTO_CONOCIDAS = {
+  cocina: 'Cocina',
+  experiencias: 'Experiencias',
+  finca: 'Finca',
+  bioconstruccion: 'Bioconstrucción',
+};
+
 function capitalizarDepto_(str) {
   if (!str) return '';
+  const clave = str.toString().trim().toLowerCase();
+  if (ETIQUETAS_DEPTO_CONOCIDAS[clave]) return ETIQUETAS_DEPTO_CONOCIDAS[clave];
   return str.toString().split(' ').map(w => w ? w.charAt(0).toUpperCase() + w.slice(1) : '').join(' ');
 }
 
