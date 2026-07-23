@@ -670,6 +670,50 @@ function playGuestAlertSound_() {
 
 // ── HOME / NAVEGACIÓN POR DEPARTAMENTO ──
 
+// ── DEPARTAMENTOS DINÁMICOS ──
+// Los 4 departamentos originales (limpieza/mantenimiento/proveeduria/
+// seguridad) siguen con su configuración fija (íconos, colores, recursos,
+// reportes). Cualquier OTRO departamento que aparezca en la pestaña
+// "Usuarios" (ej. cocina, experiencias, produccion de alimentos,
+// bioconstruccion, basecamp, regeneracion, o los que se agreguen después)
+// se detecta automáticamente — sin que haya que tocar código cada vez que
+// se contrata a alguien de un área nueva. Esos departamentos nuevos ven una
+// pantalla base (perfil, Meal, Talentify, Salir) con un aviso de "módulos en
+// construcción" hasta que se diseñe su contenido específico.
+
+const DEPT_COLORES_GENERICOS = ['#717F7E', '#995C44', '#76724E', '#735145', '#5C7A78', '#8a6a52'];
+
+// Convierte "produccion de alimentos" -> "Producción De Alimentos" (mejor
+// esfuerzo: no puede restituir tildes que ya se perdieron en la hoja, pero
+// al menos capitaliza cada palabra en vez de mostrar el texto plano).
+function capitalizarDepto_(str) {
+  if (!str) return '';
+  return str.toString().split(' ').map(w => w ? w.charAt(0).toUpperCase() + w.slice(1) : '').join(' ');
+}
+
+// Devuelve la lista de TODOS los departamentos con colaboradores (rol
+// distinto de admin, y distinto de "all"), en el orden en que aparecen por
+// primera vez en la pestaña Usuarios.
+function listaDeptosDinamica_() {
+  const vistos = [];
+  USERS.forEach(u => {
+    const dep = (u.departamento || '').toString().trim().toLowerCase();
+    if (!dep || dep === 'all') return;
+    if (vistos.indexOf(dep) === -1) vistos.push(dep);
+  });
+  return vistos;
+}
+
+// Config de un departamento: usa la fija si existe (los 4 originales),
+// o arma una genérica (ícono de 2 letras, color rotativo) para los nuevos.
+function deptCfgPara_(d, deptCfgFijo, indiceGenerico) {
+  if (deptCfgFijo[d]) return deptCfgFijo[d];
+  const color = DEPT_COLORES_GENERICOS[indiceGenerico % DEPT_COLORES_GENERICOS.length];
+  const etiqueta = capitalizarDepto_(d);
+  const ico = etiqueta.replace(/[^A-Za-zÁÉÍÓÚáéíóú]/g, '').slice(0, 2).toUpperCase() || 'OP';
+  return { lbl: etiqueta, sub: 'Módulos en construcción', ico, cls: '', colorGenerico: color };
+}
+
 function renderHome() {
   const isAdmin = CU.rol === 'admin';
   const deptLabel = { limpieza:'Limpieza', mantenimiento:'Mantenimiento', proveeduria:'Proveduría y Transportes', seguridad:'Seguridad', all:'Todos los Departamentos' };
@@ -684,6 +728,7 @@ function renderHome() {
         </div>
         <div class="pub-icon">
           <a href="https://app.talentify.cr/" target="_blank" class="actl">Talentify</a>
+          <button class="actl actl-green" onclick="openMealModal()">Meal</button>
           <button class="sico" onclick="logout()">Salir</button>
         </div>
       </div>
@@ -700,7 +745,7 @@ function renderHome() {
     seguridad:     { lbl:'Seguridad',                sub:'Protocolos y reportes de incidencias',  ico:'SG', cls:'d' },
   };
 
-  const showDepts = isAdmin ? ['limpieza','mantenimiento','proveeduria','seguridad'] : [CU.departamento];
+  const showDepts = isAdmin ? listaDeptosDinamica_() : [CU.departamento];
   const GUEST_SECTION = `<div id="guest-reports-section" style="margin-bottom:1rem;">
     <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;padding:.45rem .7rem;background:rgba(113,127,126,0.15);border:1px solid rgba(113,127,126,0.25);border-radius:8px;">
       <span style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#8FACA9;font-family:var(--font-sans);">Reportes de Huéspedes</span>
@@ -735,12 +780,15 @@ function renderHome() {
     btns += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem;">`;
   }
 
+  let indiceGenerico = 0;
   showDepts.forEach(d => {
-    const c = deptCfg[d];
-    if (!c) return;
-    btns += `<button class="dept-btn dept-${d}" onclick="openDept('${d}')">
-      <div class="dico ${c.cls}">${c.ico}</div>
-      <div class="dinf"><h3>${c.lbl}</h3></div>
+    const c = deptCfgPara_(d, deptCfg, indiceGenerico);
+    if (!deptCfg[d]) indiceGenerico++;
+    const estiloColor = c.colorGenerico ? ` style="border-top:2px solid ${c.colorGenerico};"` : '';
+    const estiloIcono = c.colorGenerico ? ` style="background:${c.colorGenerico}33;color:${c.colorGenerico};"` : '';
+    btns += `<button class="dept-btn dept-${d}"${estiloColor} onclick="openDept('${d}')">
+      <div class="dico ${c.cls}"${estiloIcono}>${c.ico}</div>
+      <div class="dinf"><h3>${escapeHtml(c.lbl)}</h3></div>
     </button>`;
   });
 
@@ -782,7 +830,7 @@ function renderDeptHome() {
   };
   const d = CU.departamento;
   CD = d; // establece el dept activo para que nav('dept') funcione
-  const cfg = deptCfg[d] || { lbl:d, sub:'', ico:'OP', cls:'a' };
+  const cfg = deptCfgPara_(d, deptCfg, 0);
   document.getElementById('home').className = 'screen home-' + d;
 
   document.getElementById('home-profile').innerHTML = `
@@ -795,6 +843,7 @@ function renderDeptHome() {
         </div>
         <div class="pub-icon">
           <a href="https://app.talentify.cr/" target="_blank" class="actl">Talentify</a>
+          <button class="actl actl-green" onclick="openMealModal()">Meal</button>
           ${(d === 'limpieza' || d === 'mantenimiento' || d === 'proveeduria') ? `<button class="actl actl-blue" onclick="openForm('reunion')">Reunión</button>` : ''}
           <button class="sico" onclick="logout()">Salir</button>
         </div>
@@ -858,6 +907,15 @@ function renderDeptHome() {
         </button>`;
       });
     }
+  } else {
+    // Departamento nuevo (ej. Cocina, Experiencias, Producción de Alimentos,
+    // Bioconstrucción, Basecamp, Regeneración) — todavía no tiene recursos ni
+    // reportes propios diseñados. Se avisa claramente en vez de dejar la
+    // pantalla vacía sin explicación.
+    btns += `<div style="background:rgba(255,255,255,0.055);border:1px solid rgba(232,226,209,0.09);border-radius:14px;padding:1.2rem;text-align:center;">
+      <div style="font-family:var(--font-serif);font-style:italic;font-size:1.05rem;color:var(--cream);margin-bottom:.4rem;">Módulos en construcción</div>
+      <div style="font-size:.8rem;color:rgba(232,226,209,0.5);line-height:1.5;">Los recursos y reportes de tu área todavía se están configurando. Por ahora puedes usar Meal y Talentify arriba.</div>
+    </div>`;
   }
 
   document.getElementById('home-depts').innerHTML = btns + '<div class="tm-page-footer"><img src="./Tierramor_Emblem-Brown.png" alt="" style="height:36px;opacity:0.18;filter:brightness(2);"></div>';
@@ -928,9 +986,22 @@ const DEPTS = {
 function openDept(dept) {
   CD = dept;
   const d = DEPTS[dept];
-  if (!d) return;
   document.getElementById('dept').className = 'screen dept-' + dept;
-  document.getElementById('dept-title').textContent = d.label;
+  document.getElementById('dept-title').textContent = d ? d.label : capitalizarDepto_(dept);
+
+  if (!d) {
+    // Departamento nuevo sin recursos/reportes configurados todavía.
+    document.getElementById('rgrid').innerHTML = `<div class="gcard" style="cursor:default;grid-column:1/-1;">
+      <div class="ct">Módulos en construcción</div>
+      <div class="cd">Los recursos y reportes de este departamento todavía se están configurando.</div>
+    </div>`;
+    document.getElementById('averias-section').innerHTML = '';
+    document.getElementById('rlist-lbl').style.display = 'none';
+    document.getElementById('rlist').innerHTML = '';
+    show('dept');
+    return;
+  }
+
   document.getElementById('rgrid').innerHTML = d.resources.map(r =>
     `<div class="gcard" onclick="openResource('${r.id}','${r.title}','${r.type||'doc'}')">
       <div class="ct">${r.title}</div><div class="cd">${r.desc||''}</div>
@@ -2463,6 +2534,24 @@ function openCasitaPopupMT(tipo, casitaId) {
 }
 function closeCasitaPopupMT() {
   document.getElementById('casita-popup-modal').classList.remove('show');
+}
+
+// QR de Meal — personal de cada colaborador (columna "QR_Meal" en la pestaña
+// Usuarios). Se genera con QuickChart, el mismo servicio que ya usaba el
+// spreadsheet original, sin depender de ningún otro proyecto/Apps Script.
+function openMealModal() {
+  const valorQr = CU && CU.qr_meal ? CU.qr_meal.trim() : '';
+  const body = document.getElementById('meal-modal-body');
+  if (!valorQr) {
+    body.innerHTML = `<p style="font-size:.82rem;font-family:var(--font-sans);color:rgba(232,226,209,0.5);">No hay un código QR configurado para tu usuario. Contacta a administración.</p>`;
+  } else {
+    const src = 'https://quickchart.io/qr?text=' + encodeURIComponent(valorQr) + '&size=300';
+    body.innerHTML = `<img src="${src}" alt="Meal QR" style="width:100%;max-width:260px;border-radius:10px;">`;
+  }
+  document.getElementById('meal-modal').classList.add('show');
+}
+function closeMealModal() {
+  document.getElementById('meal-modal').classList.remove('show');
 }
 
 function openCasitaDetalle(tipo, casitaId) {
