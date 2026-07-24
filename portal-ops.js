@@ -379,6 +379,37 @@ async function loadSolicitudes(hoja, containerId) {
   }
 }
 
+// Flujo de estados para Lavandería, Transporte y Tours: Pendiente -> Recogida
+// -> En progreso -> Completada. El botón siempre muestra la PRÓXIMA acción a
+// realizar; al llegar a "Completada" la solicitud desaparece de la lista.
+// Una flecha pequeña permite retroceder un paso si alguien se equivoca.
+const SIGUIENTE_ESTADO_SOLICITUD = { '': 'Recogida', 'Pendiente': 'Recogida', 'Recogida': 'En progreso', 'En progreso': 'Completada' };
+const ANTERIOR_ESTADO_SOLICITUD  = { 'Recogida': 'Pendiente', 'En progreso': 'Recogida', 'Completada': 'En progreso' };
+const ESTADO_SOLICITUD_ESTILO = {
+  'Recogida':    { bg:'rgba(224,122,95,.18)',  border:'rgba(224,122,95,.3)',  color:'#E07A5F' },
+  'En progreso': { bg:'rgba(113,127,126,.18)', border:'rgba(113,127,126,.3)', color:'#8FACA9' },
+  'Completada':  { bg:'rgba(118,114,78,.2)',   border:'rgba(118,114,78,.3)',  color:'#A8A870' },
+};
+const SOLICITUD_CONTAINER = {
+  'LAVANDERIA':    'laundry-requests-list',
+  'TRANSPORTE':    'transport-requests-list',
+  'TOUR REQUESTS': 'tour-requests-list',
+};
+
+// Arma el HTML del botón de avance + la flecha de retroceso (si aplica) para
+// una solicitud en su estado actual. Se usa tanto en la tarjeta de la lista
+// como en el modal de detalle.
+function botonEstadoSolicitudHtml_(hoja, id, estadoActual) {
+  const actual = estadoActual || 'Pendiente';
+  const siguiente = SIGUIENTE_ESTADO_SOLICITUD[actual];
+  const estilo = ESTADO_SOLICITUD_ESTILO[siguiente] || ESTADO_SOLICITUD_ESTILO['Recogida'];
+  const puedeRetroceder = !!ANTERIOR_ESTADO_SOLICITUD[actual];
+  const flecha = puedeRetroceder
+    ? `<button onclick="event.stopPropagation(); retrocederEstadoSolicitud('${hoja}','${id}')" title="Retroceder" style="background:none;border:1px solid rgba(232,226,209,0.18);border-radius:8px;color:rgba(232,226,209,0.45);font-size:.7rem;padding:.35rem .5rem;cursor:pointer;flex-shrink:0;">‹</button>`
+    : '';
+  return `${flecha}<button onclick="event.stopPropagation(); avanzarEstadoSolicitud('${hoja}','${id}')" style="background:${estilo.bg};border:1px solid ${estilo.border};border-radius:8px;color:${estilo.color};font-size:.65rem;padding:.35rem .65rem;cursor:pointer;flex-shrink:0;">${siguiente}</button>`;
+}
+
 function renderSolicitudes(hoja, containerId, items) {
   const el = document.getElementById(containerId);
   if (!el) return;
@@ -399,21 +430,47 @@ function renderSolicitudes(hoja, containerId, items) {
         <div style="font-size:.82rem;font-family:var(--font-sans);color:var(--cream);font-weight:500;margin-bottom:.15rem;">${escapeHtml(cfg.titulo(s))}</div>
         <div style="font-size:.65rem;font-family:var(--font-sans);color:rgba(232,226,209,0.4);">${escapeHtml(cfg.sub(s))}</div>
       </div>
-      <button onclick="event.stopPropagation(); marcarSolicitudCompletada('${hoja}','${idAttr}')" style="background:rgba(118,114,78,.2);border:1px solid rgba(118,114,78,.3);border-radius:8px;color:#A8A870;font-size:.65rem;padding:.35rem .65rem;cursor:pointer;flex-shrink:0;">Completada</button>
+      <div style="display:flex;gap:.35rem;align-items:center;flex-shrink:0;">${botonEstadoSolicitudHtml_(hoja, idAttr, s['Estado'])}</div>
     </div>`;
   }).join('');
 }
 
-async function marcarSolicitudCompletada(hoja, id) {
+// Avanza un paso en el flujo (Pendiente -> Recogida -> En progreso ->
+// Completada). Solo al llegar a "Completada" se quita de la lista; los pasos
+// intermedios refrescan la lista para mostrar el nuevo botón/color.
+async function avanzarEstadoSolicitud(hoja, id) {
+  const s = window._solicitudesData?.[hoja]?.[id];
+  const actual = s ? (s['Estado'] || 'Pendiente') : 'Pendiente';
+  const siguiente = SIGUIENTE_ESTADO_SOLICITUD[actual];
+  if (!siguiente) return;
+  await cambiarEstadoSolicitud_(hoja, id, siguiente);
+}
+
+async function retrocederEstadoSolicitud(hoja, id) {
+  const s = window._solicitudesData?.[hoja]?.[id];
+  const actual = s ? (s['Estado'] || 'Pendiente') : 'Pendiente';
+  const anterior = ANTERIOR_ESTADO_SOLICITUD[actual];
+  if (!anterior) return;
+  await cambiarEstadoSolicitud_(hoja, id, anterior);
+}
+
+async function cambiarEstadoSolicitud_(hoja, id, nuevoEstado) {
   const rowId = 'sol-' + hoja.replace(/\s+/g,'') + '-' + id;
   const row = document.getElementById(rowId);
   if (row) row.style.opacity = '0.5';
-  const res = await sendToSheets({ type: 'completar_solicitud', hoja, id });
+  const res = await sendToSheets({ type: 'completar_solicitud', hoja, id, estado: nuevoEstado });
   if (res.ok) {
-    if (row) row.remove();
+    if (nuevoEstado === 'Completada') {
+      if (row) row.remove();
+    } else {
+      // Actualiza el estado guardado localmente y refresca la lista para
+      // mostrar el botón/color correspondiente al nuevo paso.
+      if (window._solicitudesData?.[hoja]?.[id]) window._solicitudesData[hoja][id]['Estado'] = nuevoEstado;
+      loadSolicitudes(hoja, SOLICITUD_CONTAINER[hoja]);
+    }
   } else {
     if (row) row.style.opacity = '1';
-    alert('No se pudo marcar como completada: ' + (res.error || 'error desconocido') + '. Intenta de nuevo.');
+    alert('No se pudo actualizar el estado: ' + (res.error || 'error desconocido') + '. Intenta de nuevo.');
   }
 }
 
@@ -433,8 +490,21 @@ function openSolicitudDetalle(hoja, id) {
       <div style="font-size:.82rem;font-family:var(--font-sans);color:var(--cream);line-height:1.4;">${escapeHtml(String(val))}</div>
     </div>`).join('');
 
+  const actual = s['Estado'] || 'Pendiente';
+  const siguiente = SIGUIENTE_ESTADO_SOLICITUD[actual];
+  const estilo = ESTADO_SOLICITUD_ESTILO[siguiente] || ESTADO_SOLICITUD_ESTILO['Recogida'];
   const btn = document.getElementById('solicitud-detalle-btn');
-  btn.onclick = () => { marcarSolicitudCompletada(hoja, id); closeSolicitudDetalle(); };
+  btn.textContent = siguiente;
+  btn.style.background = estilo.color;
+  btn.onclick = async () => { await avanzarEstadoSolicitud(hoja, id); closeSolicitudDetalle(); };
+
+  const backBtn = document.getElementById('solicitud-detalle-back');
+  if (ANTERIOR_ESTADO_SOLICITUD[actual]) {
+    backBtn.style.display = '';
+    backBtn.onclick = async () => { await retrocederEstadoSolicitud(hoja, id); closeSolicitudDetalle(); };
+  } else {
+    backBtn.style.display = 'none';
+  }
 
   document.getElementById('solicitud-detalle-modal').classList.add('show');
 }
