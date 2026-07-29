@@ -458,7 +458,11 @@ async function cambiarEstadoSolicitud_(hoja, id, nuevoEstado) {
   const rowId = 'sol-' + hoja.replace(/\s+/g,'') + '-' + id;
   const row = document.getElementById(rowId);
   if (row) row.style.opacity = '0.5';
-  const res = await sendToSheets({ type: 'completar_solicitud', hoja, id, estado: nuevoEstado });
+  // El nombre de quien completa solo se envía en el paso final (Completada),
+  // no en los pasos intermedios (Recogida/En progreso).
+  const payload = { type: 'completar_solicitud', hoja, id, estado: nuevoEstado };
+  if (nuevoEstado === 'Completada') payload.colaborador = CU?.nombre || CU?.usuario || '';
+  const res = await sendToSheets(payload);
   if (res.ok) {
     if (nuevoEstado === 'Completada') {
       if (row) row.remove();
